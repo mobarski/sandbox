@@ -5,6 +5,7 @@
 
 ## EX4 CHANGES:
 ## - tsv format, multiple tabulators no longer treated as one
+## - removed export function
 ## EX3 CHANGES:
 ## - ability to split long columns into multiple rows
 ## - pipe and star characters no longer a comment
@@ -30,6 +31,7 @@ p_section = """ (?xms)
 """
 
 p_eol = '\n\r|\r\n|\n|\r'
+p_sep = '\t'
 
 def parse(text,cnt=0,default='',comments='#<>!@+-',empty='.',select=''):
 	"parse body of dash section and return list of values for each row"
@@ -37,9 +39,9 @@ def parse(text,cnt=0,default='',comments='#<>!@+-',empty='.',select=''):
 		return x.strip() if x.strip()!=empty else default
 	def fields(line):
 		if cnt:
-			return ([field(x) for x in re.split('\t+',line)]+[default]*cnt)[:cnt]
+			return ([field(x) for x in re.split(p_sep,line)]+[default]*cnt)[:cnt]
 		else:
-			return [field(x) for x in re.split('\t+',line)]
+			return [field(x) for x in re.split(p_sep,line)]
 
 	if select:
 		lines = [x.strip() for x in re.split(p_eol,text.strip()) if x.strip() and x.strip()[0] in select]
@@ -70,11 +72,6 @@ def sections(text):
 	"return [name,hint,body] for each section"
 	return re.findall(p_section,dedent(text))
 
-def export(text,path):
-	f=open(path,'w')
-	out = re.sub('\t+','\t',dedent(text))
-	f.write(out)
-
 __SCITE_CFG = """
 	-- DASH
 	file.patterns.diff=$(file.patterns.diff);*.dash
@@ -90,14 +87,14 @@ __SCITE_CFG = """
 if __name__=="__main__":
 	test = """
 	*** sekcja ***
-		to		@		test		@
-		|		jest				raz
-		|		pewien			dwa
-		|		dosyc			trzy
-		|		maly i niezbyt
-		|		skomplikowany
-		|		(ale i tak moge zajac bardzo duzo z tej jednej linii)
-		aaa		bbb		ccc		ddd
+		to	@	test	@
+		|	jest		raz
+		|	pewien	dwa
+		|	dosyc	trzy
+		|	maly i niezbyt
+		|	skomplikowany
+		|	(ale i tak moge zajac bardzo duzo z tej jednej linii)
+		aaa	bbb	ccc	ddd
 
 	*** costam *** xxx
 	@	k1	v1
@@ -108,4 +105,3 @@ if __name__=="__main__":
 	for name,hint,body in sections(test):
 		print(name,parse(body))
 	test=open('conceptual.dash','r').read()
-	export(test,'dash.test.xls')
