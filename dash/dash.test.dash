@@ -1,17 +1,16 @@
+
 *** sekcja ***
-!!	meta		10
-!!	engine	spark
-!!	date		2014-10-10
+	to	@	test	@
+	|	jest	raz
+	|	pewien	dwa
+	|	dosyc	trzy
+	|	maly i niezbyt
+	|	skomplikowany
+	|	(ale i tak moge zajac bardzo duzo z tej jednej linii)
+	aaa	bbb	ccc	ddd
 
-@	one		two		three
-	to		jest		test
-	raz		2		trzy
-	comment	\		\
-
-
-*** costam *** 		xxx:42
->	one		first argument
->	two		second argument
-@	one		two	
-	bbb		zzz
-	ccc
+*** costam *** xxx
+@	k1	v1
+@	k2	v2
+>	col1	col2	col3
+	a	b	c

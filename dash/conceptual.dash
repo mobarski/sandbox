@@ -1,0 +1,36 @@
+*** nodes ***
+@model	conceptual
+@area	emissions
+@mark	1
+>	cluster	alt cluster	node		label		tags		val
+	who		\		aaa		\		fact		10
+	what		\		bbb		\		\		100
+	where	\		ccc		\		\		1000
+	how		\		ddd		\		\		10000
+	when		\		eee		\		\		100000
+	why		\		fff		\		\		1000000
+
+
+*** edges ***
+@model	conceptual
+@area	emissions
+@mark	1
+>	cluster	node		node2	tags
+	\		aaa		bbb		fact
+	\		bbb		ccc		
+	\		ccc		aaa
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*** nodes ***
+@model	conceptual
+@area	emissions
+@mark	1
+>	cluster	node		...
+	who		aaa		tags:fact	val:10
+	what		bbb				val:100
+	where	ccc		alt:how	val:1000
+	how		ddd				val:10000
+	when		eee				val:100000
+	why		fff				val:1000000

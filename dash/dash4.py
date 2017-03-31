@@ -1,8 +1,10 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: EX3
+## version: EX4
 
+## EX4 CHANGES:
+## - tsv format, multiple tabulators no longer treated as one
 ## EX3 CHANGES:
 ## - ability to split long columns into multiple rows
 ## - pipe and star characters no longer a comment
