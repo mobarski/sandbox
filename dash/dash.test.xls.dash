@@ -1,12 +1,13 @@
 *** nodes ***
-@model	conceptual
-@area	emissions
-@mark	1
->	cluster	altclu	node	label	tags	val
+-model	conceptual
+-area	emissions
+-mark	1
++	cluster	altclu	node	label	tags	val
 	who		aaa	@	fact	@
-	|			To jest bardzo dlugi	10
-	|			string ktory jest tak
-	|			bardzo dlugi ze az strach
+	|			|		|
+	|			|		10
+	|			to jest bardzo dlugi string ktory jest tak
+	|			dlugi ze az strach
 	what		bbb			100
 	where		ccc			1000
 	how		ddd			10000

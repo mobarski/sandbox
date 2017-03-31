@@ -9,8 +9,8 @@
 	|	(ale i tak moge zajac bardzo duzo z tej jednej linii)
 	aaa	bbb	ccc	ddd
 
-*** costam *** xxx
-@	k1	v1
-@	k2	v2
+*** costam ***	xxx
+@k1	v1
+@k2	v2
 >	col1	col2	col3
 	a	b	c

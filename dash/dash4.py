@@ -72,14 +72,6 @@ def sections(text):
 	"return [name,hint,body] for each section"
 	return re.findall(p_section,dedent(text))
 
-__SCITE_CFG = """
-	-- DASH
-	file.patterns.diff=$(file.patterns.diff);*.dash
-	use.tabs.*.dash=1
-	tab.size.*.dash=8
-	indent.size.*.dash=8
-	fold.flags=0
-"""
 
 ###################################################
 
