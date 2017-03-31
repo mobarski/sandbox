@@ -1,0 +1,17 @@
+*** sekcja ***
+!!	meta		10
+!!	engine	spark
+!!	date		2014-10-10
+
+@	one		two		three
+	to		jest		test
+	raz		2		trzy
+	comment	\		\
+
+
+*** costam *** 		xxx:42
+>	one		first argument
+>	two		second argument
+@	one		two	
+	bbb		zzz
+	ccc
