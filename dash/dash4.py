@@ -5,7 +5,10 @@
 
 ## EX4 CHANGES:
 ## - tsv format, multiple tabulators no longer treated as one
-## - removed export function
+## - comments replaced by selectors 
+## - lines are no longer stripped (only rstripped)
+## - fields stripping can now be turned off
+## - removed export function (not needed - dash files can now be edited in excel)
 ## EX3 CHANGES:
 ## - ability to split long columns into multiple rows
 ## - pipe and star characters no longer a comment
@@ -19,10 +22,11 @@
 import re
 from textwrap import dedent
 
+# TODO line extension
+# TODO empty -> null
 # TODO complex types -> collect after x cols into list, dict
 # TODO rename parse->???
 # TODO rename cnt->cols->col_cnt
-# TODO control over stripping cells 
 
 p_section = """ (?xms)
 	^ \*{3} \s* (.+?) \s* \*{3}	# name
@@ -33,10 +37,12 @@ p_section = """ (?xms)
 p_eol = '\n\r|\r\n|\n|\r'
 p_sep = '\t'
 
-def parse(text,cnt=0,default='',comments='#<>!@+-',empty='.',select=''):
+def parse(text,cnt=0,default='',empty='.',select='',strip=True):
 	"parse body of dash section and return list of values for each row"
 	def field(x):
-		return x.strip() if x.strip()!=empty else default
+		x = x.strip() if strip else x
+		return x if x!=empty else default
+		
 	def fields(line):
 		if cnt:
 			return ([field(x) for x in re.split(p_sep,line)]+[default]*cnt)[:cnt]
@@ -44,28 +50,31 @@ def parse(text,cnt=0,default='',comments='#<>!@+-',empty='.',select=''):
 			return [field(x) for x in re.split(p_sep,line)]
 
 	if select:
-		lines = [x.strip() for x in re.split(p_eol,text.strip()) if x.strip() and x.strip()[0] in select]
+		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0] in select]
 	else:
-		lines = [x.strip() for x in re.split(p_eol,text.strip()) if x.strip() and x.strip()[0] not in comments]
+		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0]=='\t']
 
 	out = []
 	while lines:
 		line = lines.pop(0)
 		row = fields(line) 
-		if '@' in row: # line extension support
-			extension = []
-			while True:
-				if not lines: break
-				ext = fields(lines[0])
-				if ext[0] != '|': break
-				lines.pop(0)
-				extension += [ext]
-			n = 1
-			for i in range(len(row)):
-				if row[i]!='@': continue
-				row[i] = ' '.join([x[n] for x in extension if len(x)>=n+1])
-				n += 1
-		out += [row]
+		#~ if '@' in row: # line extension support
+			#~ extension = []
+			#~ while True:
+				#~ if not lines: break
+				#~ ext = fields(lines[0])
+				#~ if ext[0] != '|': break
+				#~ lines.pop(0)
+				#~ extension += [ext]
+			#~ n = 1
+			#~ for i in range(len(row)):
+				#~ if row[i]!='@': continue
+				#~ row[i] = ' '.join([x[n] for x in extension if len(x)>=n+1])
+				#~ n += 1
+		if select:
+			out += [row]
+		else:
+			out += [row[1:]]
 	return out
 
 def sections(text):
@@ -79,21 +88,16 @@ def sections(text):
 if __name__=="__main__":
 	test = """
 	*** sekcja ***
-		to	@	test	@
-		|	jest		raz
-		|	pewien	dwa
-		|	dosyc	trzy
-		|	maly i niezbyt
-		|	skomplikowany
-		|	(ale i tak moge zajac bardzo duzo z tej jednej linii)
+		to	jest	test	:)
 		aaa	bbb	ccc	ddd
 
 	*** costam *** xxx
-	@	k1	v1
-	@	k2	v2
+	@k1	v1
+	@k2	v2
 	>	col1	col2	col3
 		a	b	c
 	"""
 	for name,hint,body in sections(test):
 		print(name,parse(body))
+		print(name,parse(body,select='@'))
 	test=open('conceptual.dash','r').read()
