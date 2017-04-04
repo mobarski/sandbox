@@ -1,8 +1,10 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: EX4
+## version: EX4 MOD1
 
+## MOD1 CHANGE:
+## - fixed cnt argument
 ## EX4 CHANGES:
 ## - tsv format, multiple tabulators no longer treated as one
 ## - comments replaced by selectors 
@@ -45,7 +47,7 @@ def parse(text,cnt=0,default='',empty='.',select='',strip=True):
 		
 	def fields(line):
 		if cnt:
-			return ([field(x) for x in re.split(p_sep,line)]+[default]*cnt)[:cnt]
+			return ([field(x) for x in re.split(p_sep,line)]+[default]*cnt)
 		else:
 			return [field(x) for x in re.split(p_sep,line)]
 
@@ -57,24 +59,29 @@ def parse(text,cnt=0,default='',empty='.',select='',strip=True):
 	out = []
 	while lines:
 		line = lines.pop(0)
-		row = fields(line) 
-		#~ if '@' in row: # line extension support
-			#~ extension = []
-			#~ while True:
-				#~ if not lines: break
-				#~ ext = fields(lines[0])
-				#~ if ext[0] != '|': break
-				#~ lines.pop(0)
-				#~ extension += [ext]
-			#~ n = 1
-			#~ for i in range(len(row)):
-				#~ if row[i]!='@': continue
-				#~ row[i] = ' '.join([x[n] for x in extension if len(x)>=n+1])
-				#~ n += 1
+		row = fields(line)
 		if select:
-			out += [row]
+			if cnt:
+				row = row[:cnt]
 		else:
-			out += [row[1:]]
+			row = row[1:] # skip first column
+			if cnt:
+				row = row[:cnt]
+		out += [row]
+		# TODO support of line extension
+			#~ if '@' in row: # line extension support
+				#~ extension = []
+				#~ while True:
+					#~ if not lines: break
+					#~ ext = fields(lines[0])
+					#~ if ext[0] != '|': break
+					#~ lines.pop(0)
+					#~ extension += [ext]
+				#~ n = 1
+				#~ for i in range(len(row)):
+					#~ if row[i]!='@': continue
+					#~ row[i] = ' '.join([x[n] for x in extension if len(x)>=n+1])
+					#~ n += 1
 	return out
 
 def sections(text):
@@ -100,4 +107,4 @@ if __name__=="__main__":
 	for name,hint,body in sections(test):
 		print(name,parse(body))
 		print(name,parse(body,select='@'))
-	test=open('conceptual.dash','r').read()
+
