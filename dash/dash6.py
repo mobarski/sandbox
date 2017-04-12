@@ -112,8 +112,11 @@ def tab_meta_rows(text):
 
 def get_rows(text):
 	"""yields rows from section body
-	each row looks like a list of strings but allows access to elements by name and to the column metadata:
-		for row in rows(text):
+	
+	each row looks like a list of strings but allows access
+	to its elements by name and to the column metadata:
+	
+		for row in get_rows(text):
 			x = row[0]
 			x = row.column_x
 			xt = row.column_x.type
