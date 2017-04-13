@@ -1,10 +1,10 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: EX6
+## version: MK6
 
 
-## EX6 CHANGES:
+## MK6 CHANGES:
 ## - list support in table metadata
 ## - row.first and row.last flags in table interface
 ## - reading from files and paths
