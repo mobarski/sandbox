@@ -139,9 +139,9 @@ def get_rows(text):
 			val = str_obj(v)
 			for k,meta_list in meta:
 				m = meta_list[i] if i<len(meta_list) else ''
-				val.__dict__[k] = m
+				setattr(val,k,m)
 				if k=='name' and m:
-					row.__dict__[m] = val
+					setattr(row,m,val)
 			row += [val]
 		yield row
 
