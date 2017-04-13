@@ -4,7 +4,7 @@ file.patterns.props=$(file.patterns.props);*.smash
 
 -- PYTHON
 command.go.*.py=C:\python35\pythonw -u "$(FileNameExt)"
-command.build.*.py=C:\python36\pythonw -m doctest -v "$(FileNameExt)"
+command.build.*.py=C:\python35\pythonw -m doctest -v "$(FileNameExt)"
 command.compile.*.py=C:\python27\pythonw -u C:\maciek\apps\pyinstaller\pyinstaller.py --onefile "$(FileNameExt)"
 
 -- PYTHON version
@@ -16,17 +16,17 @@ command.name.7.*.py=Go Python27
 command.7.*.py=C:\python27\pythonw -u "$(FileNameExt)"
 
 -- DOT
-command.go.*.dot=C:/graphviz/bin/dot.exe -Tpng -o$(FileName).png $(FileNameExt)
-command.build.*.dot=start $(FileName).png
+command.go.*.dot=C:/maciek/apps/graphviz/bin/dot.exe -Tpdf -o$(FileName).pdf $(FileNameExt)
+command.build.*.dot=start $(FileName).pdf
 
 -- TESTING
 command.go.*.robot=robot --critical critical $(FileNameExt)
 
 -- COMMENTS
-comment.block.sql=-- 
+comment.block.sql=--
 
 -- FIND
-find.files=*.py *.sql *.txt *.md *.rst *.ini *.smash
+find.files=*.py *.sql *.txt *.md *.rst *.ini *.smash *.dash
 
 -- SHORTCUTS
 user.shortcuts=\
@@ -35,9 +35,13 @@ Ctrl+Down|2621|\
 F1|IDM_FINDINFILES|
 
 -- DASH
+command.go.*.dash=python $(FileName).py
 file.patterns.diff=$(file.patterns.diff);*.dash
 use.tabs.*.dash=1
 tab.size.*.dash=32
 indent.size.*.dash=32
+style.diff.*=fore:$(font.monospace)
 fold.flags=0
-comment.block.diff=!!
+
+-- C
+command.go.*.c=c:\maciek\apps\tcc\tcc.exe -run "$(FileNameExt)"
