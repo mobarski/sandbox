@@ -5,6 +5,7 @@
 
 
 ## EX6 CHANGES:
+## - row.first and row.last flags in table interface
 ## - reading from files and paths
 ## - high level interface for tables
 ## - high level interfece for rows with column metadata
@@ -36,7 +37,6 @@ import re
 from textwrap import dedent
 
 # TODO multi line table metadata
-# TODO indexed row_list (i.first, i.last, i.len)
 # TODO mulit column table metadata
 # TODO line extension - split long column into multiple rows
 # TODO empty vs null
@@ -115,6 +115,9 @@ def tab_meta_rows(text='',path='',file=None):
 	for tab,hint,body in sections(text):
 		meta = get_dict(body)
 		rows = list(get_rows(body))
+		if rows:
+			setattr(rows[0],'first',True)
+			setattr(rows[-1],'last',True)
 		yield tab,meta,rows
 
 def get_rows(text):
@@ -136,6 +139,8 @@ def get_rows(text):
 	for row_as_list in parse(text,col_cnt):
 		row = list_obj()
 		for i,v in enumerate(row_as_list):
+			setattr(row,'first',False) # real value set in tab_meta_rows
+			setattr(row,'last',False) # real value set in tab_meta_rows
 			val = str_obj(v)
 			for k,meta_list in meta:
 				m = meta_list[i] if i<len(meta_list) else ''
@@ -171,8 +176,12 @@ if __name__=="__main__":
 	@k2	v2
 	+name	col1	col2	col3
 		a	b	c
+		d	e	f
 		x	y	z
 	"""
 	for tab,meta,rows in tab_meta_rows(test):
 		print(tab,meta,rows)
+		for row in rows:
+			print(row,row.first,row.last)
+	
 
