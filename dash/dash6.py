@@ -5,6 +5,7 @@
 
 
 ## EX6 CHANGES:
+## - reading from files and paths
 ## - high level interface for tables
 ## - high level interfece for rows with column metadata
 ## - medium level interface for metadata
@@ -105,7 +106,11 @@ def get_meta(text,select="+",strip=False):
 
 ## high level interface ##################################
 
-def tab_meta_rows(text):
+def tab_meta_rows(text='',path='',file=None):
+	if path:
+		file = open(path,'r')
+	if file:
+		text = file.read()
 	for tab,hint,body in sections(text):
 		meta = get_dict(body)
 		rows = list(get_rows(body))
