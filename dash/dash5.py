@@ -1,9 +1,10 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: EX5
+## version: MK5
 
-## EX5 CHANGES:
+## MK5 CHANGES:
+## - spliting long columns into multiple rows NOT AVAILABLE - requires rework
 ## - tail option
 ## EX4 CHANGES:
 ## - fixed cnt argument

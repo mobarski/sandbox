@@ -9,7 +9,8 @@
 ## - high level interfece for rows with column metadata
 ## - medium level interface for metadata
 ## - parse changed to generator
-## EX5 CHANGES:
+## MK5 CHANGES:
+## - spliting long columns into multiple rows NOT AVAILABLE - requires rework
 ## - tail option
 ## EX4 CHANGES:
 ## - fixed cnt argument
