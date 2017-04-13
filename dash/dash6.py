@@ -5,6 +5,7 @@
 
 
 ## EX6 CHANGES:
+## - list support in table metadata
 ## - row.first and row.last flags in table interface
 ## - reading from files and paths
 ## - high level interface for tables
@@ -36,8 +37,7 @@
 import re
 from textwrap import dedent
 
-# TODO multi line table metadata
-# TODO mulit column table metadata
+# TODO ??? table as str_obj with meta attributes
 # TODO line extension - split long column into multiple rows
 # TODO empty vs null
 # TODO complex types -> collect after x cols into list, dict
@@ -150,10 +150,13 @@ def get_rows(text):
 			row += [val]
 		yield row
 
-# @key vs @@key
+from collections import defaultdict
 def get_dict(text,select='@'):
 	meta = get_meta(text,select=select,strip=True)
-	return dict([(k,v[0]) for k,v in meta])
+	out = defaultdict(list)
+	for k,v in meta:
+		out[k].append(v[0])
+	return dict([(k,v[0] if len(v)==1 else v) for k,v in out.items()])
 
 class list_obj(list): pass
 class str_obj(str): pass
@@ -166,6 +169,8 @@ if __name__=="__main__":
 	*** sekcja ***
 	@k1	va
 	@k2	vb
+	@k3	aaa
+	@k3	bbb
 	+type	a	a	b	b
 	+name	c1	c2	c3	c4
 		to	jest	test:1	abc:2
