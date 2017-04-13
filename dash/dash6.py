@@ -35,11 +35,12 @@
 import re
 from textwrap import dedent
 
-# TODO line extension
-# TODO empty -> null
+# TODO multi line table metadata
+# TODO indexed row_list (i.first, i.last, i.len)
+# TODO mulit column table metadata
+# TODO line extension - split long column into multiple rows
+# TODO empty vs null
 # TODO complex types -> collect after x cols into list, dict
-# TODO rename parse->???
-# TODO rename cnt->cols->col_cnt
 
 p_section = """ (?xms)
 	^ \*{3} \s* (.+?) \s* \*{3}	# name
