@@ -133,7 +133,7 @@ def get_rows(text):
 			xt = row[0].type
 			xn = row[0].name
 	"""
-	meta = get_meta(text,select='+',strip=True)
+	meta = get_meta(text,select='>',strip=True)
 	col_cnt = max([len(m[1]) for m in meta])
 	
 	for row_as_list in parse(text,col_cnt):
