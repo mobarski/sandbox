@@ -1,9 +1,11 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK6 MOD1
+## version: MK6 MOD2
 
 
+## MK6 MOD2 CHANGES: column name attribute: lowercase + spaces to underscores, renamed tab_meta_rows to split
+## MK6 MOD1 CHANGES: fixed test / example
 ## MK6 CHANGES:
 ## - list support in table metadata
 ## - row.first and row.last flags in table interface
@@ -107,7 +109,7 @@ def get_meta(text,select="+",strip=False):
 
 ## high level interface ##################################
 
-def tab_meta_rows(text='',path='',file=None):
+def split(text='',path='',file=None):
 	if path:
 		file = open(path,'r')
 	if file:
@@ -146,7 +148,7 @@ def get_rows(text):
 				m = meta_list[i] if i<len(meta_list) else ''
 				setattr(val,k,m)
 				if k=='name' and m:
-					setattr(row,m,val)
+					setattr(row, m.replace(' ','_').lower(), val)
 			row += [val]
 		yield row
 
@@ -172,21 +174,14 @@ if __name__=="__main__":
 	@k3	aaa
 	@k3	bbb
 	>type	a	a	b	b
-	>name	c1	c2	c3	c4
+	>name	c1	c2	c3	c 4
 		to	jest	test:1	abc:2
 		aaa	bbb	ccc:3	ddd:4
 
-	*** costam *** xxx
-	@k1	v1
-	@k2	v2
-	>name	col1	col2	col3
-		a	b	c
-		d	e	f
-		x	y	z
 	"""
-	for tab,meta,rows in tab_meta_rows(test):
-		print(tab,meta,rows)
-		for row in rows:
-			print(row,row.first,row.last)
+	tab,meta,rows = next(split(test))
+	print(tab,meta,rows)
+	for row in rows:
+		print(row,row.first,row.last,row.c_4)
 	
 
