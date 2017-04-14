@@ -1,9 +1,9 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK6 MOD2
+## version: MK6 MOD3
 
-
+## MK6 MOD3 CHANGES: fix - table with no metadata
 ## MK6 MOD2 CHANGES: column name attribute: lowercase + spaces to underscores, renamed tab_meta_rows to split
 ## MK6 MOD1 CHANGES: fixed test / example
 ## MK6 CHANGES:
@@ -136,7 +136,7 @@ def get_rows(text):
 			xn = row[0].name
 	"""
 	meta = get_meta(text,select='>',strip=True)
-	col_cnt = max([len(m[1]) for m in meta])
+	col_cnt = max([len(m[1]) for m in meta]) if meta else 0
 	
 	for row_as_list in parse(text,col_cnt):
 		row = list_obj()
