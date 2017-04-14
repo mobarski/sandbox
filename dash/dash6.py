@@ -1,7 +1,7 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK6
+## version: MK6 MOD1
 
 
 ## MK6 CHANGES:
@@ -171,15 +171,15 @@ if __name__=="__main__":
 	@k2	vb
 	@k3	aaa
 	@k3	bbb
-	+type	a	a	b	b
-	+name	c1	c2	c3	c4
+	>type	a	a	b	b
+	>name	c1	c2	c3	c4
 		to	jest	test:1	abc:2
 		aaa	bbb	ccc:3	ddd:4
 
 	*** costam *** xxx
 	@k1	v1
 	@k2	v2
-	+name	col1	col2	col3
+	>name	col1	col2	col3
 		a	b	c
 		d	e	f
 		x	y	z
