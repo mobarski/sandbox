@@ -29,6 +29,7 @@
 @	   b) pod znacznikiem dlugiego napisu, napis po spacji
 @	   c) pod pierwsza kolumna, napis we wlasciwej kolumnie
 @	   d) pod poprzednia kolumna, napis we wlasciwej kolumnie
+@	   e) brak prowadnic - znacznik konca dlugiego napisu lub pusta linia
 	opcje c i d sa wygodne do edycji excelem
 >	odpada opcja d -> najmniej czytelna
 	

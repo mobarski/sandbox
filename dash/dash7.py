@@ -4,8 +4,8 @@
 ## version: EX7
 
 ## MK7 PLAN:
-## - meta as attributes
 ## - ability to split long columns into multiple rows
+## - meta as attributes
 ## - mechanism for text alignment in text files that also works with excel
 ## EX7 CHANGES:
 ## - default value for meta items and rows

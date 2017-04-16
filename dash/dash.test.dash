@@ -1,12 +1,38 @@
 
 *** sekcja ***
 	to	@	test	@
-	|	jest	raz
-	|	pewien	dwa
-	|	dosyc	trzy
-	|	maly i niezbyt
-	|	skomplikowany
-	|	(ale i tak moge zajac bardzo duzo z tej jednej linii)
+|		jest		raz
+|		pewien		dwa
+|		dosyc		trzy
+|		maly i niezbyt	
+|		skomplikowany	
+|		(ale i tak moge zajac bardzo duzo z tej jednej linii)
+	aaa	bbb	ccc	ddd
+
+
+
+*** sekcja ***
+	to	@	test	@
+		jest		raz
+		pewien		dwa
+		dosyc		trzy
+		maly i niezbyt		#	
+		skomplikowany	
+		(ale i tak moge zajac bardzo duzo z tej jednej linii)
+		#
+	aaa	bbb	ccc	ddd
+
+*** sekcja ***
+	to	@	test	@
+		|	jest		
+		|	pewien		
+		|	dosyc		
+		|	maly i niezbyt	
+		|	skomplikowany	
+		|	(ale i tak moge zajac bardzo duzo z tej jednej linii)
+				|	raz
+				|	dwa
+				|	trzy
 	aaa	bbb	ccc	ddd
 
 *** costam ***	xxx
