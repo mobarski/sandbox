@@ -1,0 +1,102 @@
+majonez	1
+żółtko	314
+białko	55
+jajko	1
+
+*** NABIAL ************
+ser żółty	1
+jogurt	1
+jogurt lekki 	1
+mleko ryżowe	1
+mleko	1
+śmietana	1
+śmietanka	1
+masło	750
+margaryna	717
+mozarella	224
+parmezan	408
+twaróg chudy	98
+twaróg półtłusty	132
+twaróg	176
+ser biały	176
+ser wiejski	101
+serek wiejski	101
+serek homogenizowany	1
+serek homo	1
+
+miód	304
+cukier	400
+sezamki	511
+smalec	896
+wiórki kokosowe	606
+arbuz	15
+awokado	160
+szczypiorek	39
+chałwa	530
+
+*** płyny *************
+olej	884
+oliwa	884
+woda	0
+
+*** karbo *************
+płatki kukurydziane	390
+płatki owsiane	366
+płatki ryżowe	344
+płatki jaglane 	361
+mąka	364
+chleb	1
+ryż	110
+ryż suchy	344
+makaron	140
+makaron suchy	330
+ziemniaki	77
+kasza gryczana	1
+kasza gryczana sucha	1
+kasza jaglana	1
+kasza jaglana sucha	1
+
+*** warzywa ***********
+brokuły	37
+szparagi	24
+brukselka	58
+buraki	46
+buraczki	46
+cebula	37
+cebulka	37
+marchew	41
+marchewka	41
+marchew gotowana	35
+marchewka gotowana	35
+kapusta kiszona	19
+ogórek kiszony	11
+ogórki kiszone	11
+ogórek konserwowy 	23
+ogórki konserwowe	23
+kalafior	25
+cukinia	18
+cykoria	25
+czosnek	144
+dynia	39
+endywia	17
+cytryna	46
+kabaczek	17
+papryka czerwona	28
+papryka zielona	18
+papryka żółta	27
+
+*** owoce *************
+banan	74
+
+*** zielenina *********
+szpinak	26
+szczaw	39
+kapusta	1
+sałata	1
+
+*** pestki ************
+pestki dyni	582
+dynia łuskana	582
+słonecznik	573
+pestki słonecznika	573
+słonecznik łuskany	573
