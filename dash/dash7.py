@@ -1,7 +1,7 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK7
+## version: MK7 MOD1
 
 #################################################
 
