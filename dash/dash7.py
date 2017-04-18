@@ -1,7 +1,7 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK7 MOD1
+## version: MK7 MOD2
 
 #################################################
 
@@ -75,7 +75,7 @@ def sections(text):
 
 ## medium level interface ################################
 
-def get_meta(text,select="+",strip=False):
+def get_selected(text,select,strip=False):
 	if strip:
 		return [(r[0][1:],r[1:]) for r in parse(text,select=select)]
 	else:
@@ -89,7 +89,7 @@ def split(text='',path='',file=None):
 	if file:
 		text = file.read()
 	for tab,hint,body in sections(text):
-		meta = get_dict(body)
+		meta = get_meta(body)
 		rows = list(get_rows(body))
 		if rows:
 			setattr(rows[0],'first',True)
@@ -109,7 +109,7 @@ def get_rows(text):
 			xt = row[0].type
 			xn = row[0].name
 	"""
-	meta = get_meta(text,select='>',strip=True)
+	meta = get_selected(text,select='>',strip=True) # columns metadata
 	col_cnt = max([len(m[1]) for m in meta]) if meta else 0
 	
 	for row_as_list in parse(text,col_cnt):
@@ -126,8 +126,8 @@ def get_rows(text):
 			row += [val]
 		yield row
 
-def get_dict(text,select='@'):
-	meta = get_meta(text,select=select,strip=True)
+def get_meta(text,select='@'):
+	meta = get_selected(text,select=select,strip=True) # table metadata
 	out = defaultdict(list)
 	for k,v in meta:
 		out[k].append(v[0])
