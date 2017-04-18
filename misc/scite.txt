@@ -42,6 +42,11 @@ tab.size.*.dash=32
 indent.size.*.dash=32
 style.diff.*=fore:$(font.monospace)
 fold.flags=0
+comment.block.diff=!!
+comment.block.at.line.start.diff=1
 
 -- C
 command.go.*.c=c:\maciek\apps\tcc\tcc.exe -run "$(FileNameExt)"
+
+-- SANDBOX
+-- output.code.page=65001

@@ -3,11 +3,12 @@
 ## licence: MIT
 ## version: EX7
 
+## MK? PLAN:
+## - mechanism for text alignment in text files that also works with excel
 ## MK7 PLAN:
 ## - ability to split long columns into multiple rows
-## - meta as attributes
-## - mechanism for text alignment in text files that also works with excel
 ## EX7 CHANGES:
+## - meta as attributes
 ## - default value for meta items and rows
 ## MK6 MOD3 CHANGES: fix - table with no metadata
 ## MK6 MOD2 CHANGES: column name attribute: lowercase + spaces to underscores, renamed tab_meta_rows to split
@@ -165,10 +166,13 @@ def get_dict(text,select='@'):
 	out = defaultdict(list)
 	for k,v in meta:
 		out[k].append(v[0])
-	return dict([(k,v[0] if len(v)==1 else v) for k,v in out.items()])
+	return dict_obj([(k,v[0] if len(v)==1 else v) for k,v in out.items()])
 
 ## UTIL ##############################################
 
+class dict_obj(dict):
+	def __getattr__(self,x):
+		return self.get(x,'')
 class attr_default_str:
 	def __getattr__(self,x):
 		return self.__dict__.get(x,'')
