@@ -3,52 +3,7 @@
 ## licence: MIT
 ## version: MK7
 
-## MK? PLAN:
-## - mechanism for text alignment in text files that also works with excel
-
-## MK7 CHANGES:
-## - ability to split long columns into multiple rows
-## - meta as attributes
-## - default value for meta items and rows
-## MK6 MOD3 CHANGES: fix - table with no metadata
-## MK6 MOD2 CHANGES: column name attribute: lowercase + spaces to underscores, renamed tab_meta_rows to split
-## MK6 MOD1 CHANGES: fixed test / example
-## MK6 CHANGES:
-## - list support in table metadata
-## - row.first and row.last flags in table interface
-## - reading from files and paths
-## - high level interface for tables
-## - high level interfece for rows with column metadata
-## - medium level interface for metadata
-## - parse changed to generator
-## MK5 CHANGES:
-## - spliting long columns into multiple rows NOT AVAILABLE - requires rework
-## - tail option
-## EX4 CHANGES:
-## - fixed cnt argument
-## - tsv format, multiple tabulators no longer treated as one
-## - comments replaced by selectors 
-## - lines are no longer stripped (only rstripped)
-## - fields stripping can now be turned off
-## - removed export function (not needed - dash files can now be edited in excel)
-## EX3 CHANGES:
-## - ability to split long columns into multiple rows
-## - pipe and star characters no longer a comment
-## - export (to xls) function
-## MK2 CHANGES:
-## - text after section name -> section hint (one line description)
-## - dedent code before splitting it into sections
-## - ability to select lines based on first character (to pass metadata in comments)
-## - default value changed from None to empty string 
-
-#####################################################################
-
-# TODO ??? table as str_obj with meta attributes
-# TODO line extension - split long column into multiple rows
-# TODO empty vs null
-# TODO complex types -> collect after x cols into list, dict
-
-#####################################################################
+#################################################
 
 import re
 from textwrap import dedent
@@ -56,8 +11,8 @@ from collections import defaultdict
 
 p_section = """ (?xms)
 	^ \*{3} \s* (.+?) \s* \*{3}	# name
-	[ \t]* (.*?) [ \t]* $			# meta
-	(.+?) (?= ^ \*{3} | \Z)		# body
+	[ \t]* (.*?) [ \t]* $		# meta
+	(.+?) (?= ^ \*{3} | \Z)	# body
 """
 p_eol = '\n\r|\r\n|\n|\r'
 p_sep = '\t'
