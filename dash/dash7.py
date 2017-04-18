@@ -1,7 +1,7 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK7 MOD2
+## version: MK7 MOD3
 
 #################################################
 
@@ -108,6 +108,8 @@ def get_rows(text):
 			xt = row.column_x.type
 			xt = row[0].type
 			xn = row[0].name
+	
+	accessing data via attribute returns empty string when key is not found
 	"""
 	meta = get_selected(text,select='>',strip=True) # columns metadata
 	col_cnt = max([len(m[1]) for m in meta]) if meta else 0
@@ -127,6 +129,17 @@ def get_rows(text):
 		yield row
 
 def get_meta(text,select='@'):
+	"""return table related metadata dictionary object
+	
+	values (strings) can be accessed by key (string) as in normal dictionary,
+	but also as attributes of the dictionary object:
+	
+		m = get_meta(body)
+		x = m['key_a']
+		x = m.key_a
+	
+	accessing data via attribute returns empty string when key is not found
+	"""
 	meta = get_selected(text,select=select,strip=True) # table metadata
 	out = defaultdict(list)
 	for k,v in meta:

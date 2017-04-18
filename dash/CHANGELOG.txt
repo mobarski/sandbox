@@ -1,6 +1,7 @@
 MKx PLAN:
 - mechanism for text alignment in text files that also works with excel
 
+MK7 MOD3 CHANGES: more docstrings
 MK7 MOD2 CHANGES: renamed functions in medium and high level api
 MK7 MOD1 CHANGES: moved changelog to separate file
 
