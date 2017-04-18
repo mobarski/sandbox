@@ -1,13 +1,13 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: EX7
+## version: MK7
 
 ## MK? PLAN:
 ## - mechanism for text alignment in text files that also works with excel
-## MK7 PLAN:
+
+## MK7 CHANGES:
 ## - ability to split long columns into multiple rows
-## EX7 CHANGES:
 ## - meta as attributes
 ## - default value for meta items and rows
 ## MK6 MOD3 CHANGES: fix - table with no metadata
@@ -79,7 +79,7 @@ def parse(text,cnt=0,default='',empty='.',select='',strip=True,tail=''):
 	if select:
 		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0] in select]
 	else:
-		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0]=='\t']
+		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0] in ('\t','|')] # 
 
 	while lines:
 		line = lines.pop(0)
@@ -101,7 +101,17 @@ def parse(text,cnt=0,default='',empty='.',select='',strip=True,tail=''):
 						raise
 				else:
 					row = row[:cnt]
-		# TODO support of line extension
+			if '@' in row: # line extension support
+				extension = []
+				while True: # get extension lines
+					if not lines: continue
+					ext = fields(lines[0])
+					if ext[0] != '|': break
+					lines.pop(0)
+					extension += [ext]
+				for i,col in enumerate(row): # build columns 
+					if col != '@': continue
+					row[i] = ' '.join([x[i+1] for x in extension if len(x)>=i+1 and x[i+1]]) # TODO DECISION - strip
 		yield row
 
 def sections(text):
@@ -181,23 +191,17 @@ class str_obj(str,attr_default_str): pass
 
 ###################################################
 
-
 if __name__=="__main__":
 	test = """
 	*** sekcja ***
-	@k1	va
-	@k2	vb
-	@k3	aaa
-	@k3	bbb
-	>type	a	a	b	b
-	>name	c1	c2	c3	c 4
-		to	jest	test:1	abc:2
-		aaa	bbb	ccc:3	ddd:4
-
+	>name	c1	c2	c3	c4
+		@	jest	@	abc
+	|			x
+	|	b		y
+	|	c		z
+		aaa	bbb	ccc	ddd
 	"""
 	tab,meta,rows = next(split(test))
 	print(tab,meta,rows)
 	for row in rows:
-		print(row,row.first,row.last,row.xxx,row.c1.xxx)
-	
-
+		pass
