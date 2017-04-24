@@ -1,0 +1,35 @@
+
+*** fact agg v0 ***
+@name	emissions			
+@prefix	em				
+@groupby	h_start_d,h_gemius_user_id,h_content_id,h_emission_no
+@hint	
+@source	mo_tip_fact_emission_hits
+
+*** fact agg v1 ***
+@name	emissions			
+@prefix	em				
+@groupby	h_start_d
+@groupby	h_gemius_user_id
+@groupby	h_content_id
+@groupby	h_emission_no
+@hint	
+@source	mo_tip_fact_emission_hits
+
+*** fact agg v2 ***
+@name	emissions			
+@prefix	em				
+@groupby	@
+|	h_start_d
+|	h_gemius_user_id
+|	h_content_id
+|	h_emission_no
+@hint	
+@source	mo_tip_fact_emission_hits
+
+*** fact agg v3 ***
+@name	emissions			
+@prefix	em				
+@@groupby	h_start_d	h_gemius_user_id	h_content_id	h_emission_no
+@hint	
+@source	mo_tip_fact_emission_hits
