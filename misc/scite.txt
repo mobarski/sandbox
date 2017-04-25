@@ -32,6 +32,7 @@ find.files=*.py *.sql *.txt *.md *.rst *.ini *.smash *.dash
 user.shortcuts=\
 Ctrl+Up|2620|\
 Ctrl+Down|2621|\
+Ctrl+e|2338|\
 F1|IDM_FINDINFILES|
 
 -- DASH
