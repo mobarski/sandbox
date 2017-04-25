@@ -1,7 +1,7 @@
 ## DECLARATIVE AUTOMATION SHELL
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK7 MOD3
+## version: MK7 MOD4
 
 #################################################
 
@@ -81,21 +81,6 @@ def get_selected(text,select,strip=False):
 	else:
 		return [(r[0],r[1:]) for r in parse(text,select=select)]
 
-## high level interface ##################################
-
-def split(text='',path='',file=None):
-	if path:
-		file = open(path,'r')
-	if file:
-		text = file.read()
-	for tab,hint,body in sections(text):
-		meta = get_meta(body)
-		rows = list(get_rows(body))
-		if rows:
-			setattr(rows[0],'first',True)
-			setattr(rows[-1],'last',True)
-		yield tab,meta,rows
-
 def get_rows(text):
 	"""yields rows from section body
 	
@@ -143,8 +128,23 @@ def get_meta(text,select='@'):
 	meta = get_selected(text,select=select,strip=True) # table metadata
 	out = defaultdict(list)
 	for k,v in meta:
-		out[k].append(v[0])
+		out[k].append(v[0] if v else '')
 	return dict_obj([(k,v[0] if len(v)==1 else v) for k,v in out.items()])
+
+## high level interface ##################################
+
+def split(text='',path='',file=None):
+	if path:
+		file = open(path,'r')
+	if file:
+		text = file.read()
+	for tab,hint,body in sections(text):
+		meta = get_meta(body)
+		rows = list(get_rows(body))
+		if rows:
+			setattr(rows[0],'first',True)
+			setattr(rows[-1],'last',True)
+		yield tab,meta,rows
 
 ## UTIL ##############################################
 
@@ -162,6 +162,8 @@ class str_obj(str,attr_default_str): pass
 if __name__=="__main__":
 	test = """
 	*** sekcja ***
+	@k	
+	@kk	x
 	>name	c1	c2	c3	c4
 		@	jest	@	abc
 	|			x
