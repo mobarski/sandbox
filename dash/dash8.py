@@ -81,21 +81,6 @@ def get_selected(text,select,strip=False):
 	else:
 		return [(r[0],r[1:]) for r in parse(text,select=select)]
 
-## high level interface ##################################
-
-def split(text='',path='',file=None):
-	if path:
-		file = open(path,'r')
-	if file:
-		text = file.read()
-	for tab,hint,body in sections(text):
-		meta = get_meta(body)
-		rows = list(get_rows(body))
-		if rows:
-			setattr(rows[0],'first',True)
-			setattr(rows[-1],'last',True)
-		yield tab,meta,rows
-
 def get_rows(text):
 	"""yields rows from section body
 	
@@ -141,10 +126,31 @@ def get_meta(text,select='@'):
 	accessing data via attribute returns empty string when key is not found
 	"""
 	meta = get_selected(text,select=select,strip=True) # table metadata
-	out = defaultdict(list)
+	out = {}
 	for k,v in meta:
-		out[k].append(v[0] if v else '')
-	return dict_obj([(k,v[0] if len(v)==1 else v) for k,v in out.items()])
+		if k[0]=='@':
+			k=k[1:]
+			if k not in out:
+				out[k] = []
+			out[k].extend(v)
+		else:
+			out[k] = v[0] if v else ''
+	return dict_obj(out)
+
+## high level interface ##################################
+
+def split(text='',path='',file=None):
+	if path:
+		file = open(path,'r')
+	if file:
+		text = file.read()
+	for tab,hint,body in sections(text):
+		meta = get_meta(body)
+		rows = list(get_rows(body))
+		if rows:
+			setattr(rows[0],'first',True)
+			setattr(rows[-1],'last',True)
+		yield tab,meta,rows
 
 ## UTIL ##############################################
 
@@ -162,7 +168,13 @@ class str_obj(str,attr_default_str): pass
 if __name__=="__main__":
 	test = """
 	*** sekcja ***
-	@x	
+	@@i	1
+	@@i	2	3
+	@@j	4
+	@@k	5
+	@a	6
+	@a	7
+	@@b	
 	>name	c1	c2	c3	c4
 		@	jest	@	abc
 	|			x

@@ -1,5 +1,4 @@
 EX8 PLAN:
-- ability to force table metadata value to be list
 - line extension delimiters
 - line extension lists
 - mechanism for text alignment in text files that also works with excel
@@ -8,6 +7,9 @@ EX8 PLAN:
 - meta line extension delimiters
 - metadata about line extension in column
 - documentation
+
+EX8 CHANGES:
+- ability to force table metadata value to be list
 
 MK7 MOD4 CHANGES: allow empty meta value, moved two high level functions to mid level
 MK7 MOD3 CHANGES: more docstrings
