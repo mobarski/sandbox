@@ -32,15 +32,4 @@ if __name__=="__main__":
 	print(f.expand('v'))
 	print(f.v)
 	
-	v_circ = formula("circular orbit velocity",
-		v='({u}/{r})**0.5',
-		u='{r}*{v}**2',
-		r='{u}/{v}**2')
-
-	v_elip = formula("elipse orbit velocity",
-		v='(2*{u}/{r}-{u}/{a})**0.5',
-		u='{r}*{v}**2',
-		r='{u}/{v}**2')
-
-	print(v_elip.formula['v'])
 	

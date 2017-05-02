@@ -5,6 +5,9 @@ def to_seconds(h=0,m=0,s=0):
 # gravitational constant
 G = 6.673e-11
 
+# gravitational acceleration at earth surface
+g = 9.81
+
 # stefan-boltzmann constant
 sigma = 5.67e-8
 
@@ -45,3 +48,6 @@ SRP=namespace('Sidereal rotation period [s]')
 SRP.earth = to_seconds(23,56,4)
 SRP.mars = to_seconds(24,37,22)
 
+# TODO conflict with equatorial radius
+# R=namespace('specific gas constant [J/(kg*K)]')
+# R.air = 287
