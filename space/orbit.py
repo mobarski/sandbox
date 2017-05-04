@@ -1,6 +1,4 @@
-class namespace(str): pass
-def to_seconds(h=0,m=0,s=0):
-	return h*3600+m*60+s
+from util import *
 
 # gravitational constant
 G = 6.673e-11
