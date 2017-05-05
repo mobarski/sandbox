@@ -1,12 +1,19 @@
 from math import *
 from util import *
 
+## CONST ############################################
+
+#R=namespace('specific gas constant [J/(kg*K)]')
+#R.air = 287.00
+
 # EARTH ISA (International Standard Atmosphere)
 
 # h=0m t=288.15K=15C rho=1.225 kg/m3 p=101325Pa
 
-g = 9.81
+g = 9.80665
 R = 287.00
+
+## MODELS ###########################################
 
 # 0c=273.15K
 levels = [ # h[m] a[K/km] t[K] rho[kg/m3] p[N/m2]
@@ -92,11 +99,11 @@ def get_rho(h):
 			return rho
 
 earth=model()
-earth.get_t=lambda:get_t(m.h)
-earth.get_tc=lambda:get_t(m.h)-273.15
-earth.get_p=lambda:get_p(m.h)
-earth.get_rho=lambda:get_rho(m.h)
+earth.get_t=lambda:get_t(earth.h)
+earth.get_tc=lambda:get_t(earth.h)-273.15
+earth.get_p=lambda:get_p(earth.h)
+earth.get_rho=lambda:get_rho(earth.h)
 
-earth.h=1000
+earth.h=31333
 a=earth
 print(a.h, a.tc, a.t, a.p, a.rho)

@@ -1,12 +1,13 @@
-from const import *
+#from const import *
 
 ## EX4 ########################
 
 class formula:
-	def __init__(self,hint,info='',**formulas):
+	def __init__(self,hint,g={},info='',**formulas):
 		self.hint=hint
 		self.info=info
 		self.formula=formulas
+		self.globals=g
 	def copy(self):
 		f = formula(self.hint,**self.formula)
 		f.__dict__=self.__dict__.copy()
@@ -17,7 +18,8 @@ class formula:
 			f = f.replace('{','({').replace('}','})').format(**self.__dict__)
 		return f
 	def __getattr__(self,x):
-		return eval(self.expand(x))
+		print(self.globals)
+		return eval(self.expand(x),self.globals)
 
 if __name__=="__main__":
 	f=formula("eliptical orbit velocity",
