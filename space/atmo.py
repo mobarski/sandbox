@@ -103,7 +103,8 @@ earth.get_t=lambda:get_t(earth.h)
 earth.get_tc=lambda:get_t(earth.h)-273.15
 earth.get_p=lambda:get_p(earth.h)
 earth.get_rho=lambda:get_rho(earth.h)
+earth.get_c=lambda:331.3+0.606*earth.tc # speed of sound
 
 earth.h=31333
 a=earth
-print(a.h, a.tc, a.t, a.p, a.rho)
+print(a.h, a.tc, a.t, a.p, a.rho, a.c)
