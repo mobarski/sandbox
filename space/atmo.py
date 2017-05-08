@@ -98,12 +98,22 @@ def get_rho(h):
 				rho = b[3]*ratio
 			return rho
 
-earth=model()
-earth.get_t=lambda:get_t(earth.h)
-earth.get_tc=lambda:get_t(earth.h)-273.15
-earth.get_p=lambda:get_p(earth.h)
-earth.get_rho=lambda:get_rho(earth.h)
-earth.get_c=lambda:331.3+0.606*earth.tc # speed of sound
+earth=m=model()
+m.t_doc	= "temperature [K]"
+m.t_fun	= lambda m:get_t(m.h)
+
+m.tc_doc	= "temperature [C]"
+m.tc_fun	= lambda m:get_t(m.h)-273.15
+
+m.p_doc	= "pressure [Pa] [N/m2]"
+m.p_fun	= lambda m:get_p(m.h)
+
+m.rho_doc	= "density [kg/m3]"
+m.rho_fun	= lambda m:get_rho(m.h)
+
+m.c_doc	= "speed of sound [m/s]"
+m.c_fun	= lambda m:331.3+0.606*m.tc
+# TODO: http://hyperphysics.phy-astr.gsu.edu/hbase/Sound/souspe3.html#c1
 
 earth.h=31333
 a=earth

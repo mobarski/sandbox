@@ -117,7 +117,30 @@ n = formula('mean motion',
 # R=namespace('specific gas constant [J/(kg*K)]')
 # R.air = 287
 
+orbit=m=model()
+m.v_doc = "velocity [m/s]"
+m.v_fun = lambda m: (2*m.u/m.r - m.u/m.a)**0.5
+m.a_doc = "semi-major axis [m]"
+m.a_fun = lambda m: m.r
+m.r_doc = "distance to the center of the central body [m]"
+m.u_doc = "G*M of the central body"
+
+grav=m=model()
+m.a_doc = "gravitational acceleration"
+m.a_fun = lambda m: m.u/m.r**2
+m.u_doc = "G*M of the central body"
+m.r_doc = "distance to the center of the central body [m]"
+
 if __name__=="__main__":
 	a_grav.u='GM.earth'
 	a_grav.r='R.earth+100e3'
 	print(a_grav.a)
+	grav.u=GM.earth
+	grav.r=R.earth+100e3
+	print(grav.a)
+	f= formula("gravitational acceleration")
+	f.formula['a']="{u}/{r}**2"
+	f.u=GM.earth
+	f.r=R.earth+100e3
+	print(f.a)
+	

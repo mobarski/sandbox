@@ -1,3 +1,5 @@
+from model import model
+
 class namespace(str): pass
 
 class namespace2(str):
@@ -7,14 +9,6 @@ class namespace2(str):
 			out.__dict__[k]=v
 		return out
 class const(float): pass
-
-class model(dict):
-	def __getattr__(self,x):
-		getter = 'get_'+x
-		if getter in self.__dict__:
-			return self.__dict__[getter]()
-		else:
-			return self[x]
 
 def to_seconds(h=0,m=0,s=0):
 	return h*3600+m*60+s
