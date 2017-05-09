@@ -10,7 +10,7 @@ class model1:
 			self.__dict__[k]=v
 		return self
 
-if 0:
+if __name__=="__main__":
 	x = model1()
 	x.var_a = lambda: 20
 	x.var_b = lambda: x.a+1
@@ -28,7 +28,7 @@ class model2:
 		self.__dict__.update(other.__dict__)
 		return self
 
-if 0:
+if __name__=="__main__":
 	x = model2()
 	x.a = lambda: 20
 	x.b = lambda: x.a+1
@@ -48,7 +48,7 @@ class model3(object):
 		self.__dict__.update(other.__dict__)
 		return self
 
-if 0:
+if __name__=="__main__":
 	x = model3()
 	x.a = lambda: 20
 	x.b = lambda: x.a+1
@@ -70,7 +70,7 @@ class model4:
 			self.__dict__[k]=v
 		return self
 
-if 0:
+if __name__=="__main__":
 	x = model4()
 	x.var_a = lambda: 20
 	x.var_b = lambda: x.a+1
@@ -100,7 +100,7 @@ class model5(object):
 		self.__chain__=other
 		return self
 
-if 0:
+if __name__=="__main__":
 	x = model5()
 	x.a = lambda: 20
 	x.b = lambda: x.a+1
@@ -128,7 +128,7 @@ class model6(object):
 		self.__dict__.update(other.__dict__)
 		return self
 
-if 0:
+if __name__=="__main__":
 	x = model6()
 	x.a = lambda x: 20
 	x.b = lambda x: x.a+1
@@ -158,7 +158,7 @@ class model7:
 		for a in attributes:
 			del self.__dict__[a]
 
-if 0:
+if __name__=="__main__":
 	x = model7()
 	x.a_fun = lambda x: 20
 	x.b_fun = lambda x: x.a+1

@@ -11,3 +11,12 @@ class model:
 	def copy(self):
 		m = model()
 		return m.update(self)
+
+if __name__=="__main__":
+	m = model()
+	m.a = lambda m: m.r
+	m.v = lambda m: (2*m.u/m.r - m.u/m.a)**0.5
+	m.r = 10
+	m.u = 123
+	z = m.copy()
+	print(z.v)
