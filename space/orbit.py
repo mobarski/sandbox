@@ -21,4 +21,3 @@ if __name__=="__main__":
 	m.distance = R.earth + 200e3
 	m.mass = 100
 	print(m.velocity)
-	

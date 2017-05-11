@@ -12,6 +12,7 @@ from util import *
 
 g = 9.80665
 R = 287.00
+gamma = 1.4
 
 ## MODELS ###########################################
 
@@ -112,10 +113,12 @@ m.rho_doc	= "density [kg/m3]"
 m.rho = lambda m: get_rho(m.h)
 
 m.c_doc = "speed of sound [m/s]"
-m.c = lambda m: 331.3+0.606*m.tc
+#m.c = lambda m: 331.3+0.606*m.tc
+m.c = lambda m: (gamma*R*m.t)**0.5
 # TODO: http://hyperphysics.phy-astr.gsu.edu/hbase/Sound/souspe3.html#c1
 
-earth.h=31333
-a=earth
-print(a.h, a.tc, a.t, a.p, a.rho, a.c)
+if __name__=="__main__":
+	earth.h=41333
+	a=earth
+	print(a.h, a.tc, a.t, a.p, a.rho, a.c)
 
