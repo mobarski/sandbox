@@ -10,6 +10,7 @@ EX8 PLAN:
 
 EX8 CHANGES:
 - ability to force table metadata value to be list
+- column continuation line character changed from pipe to plus
 
 MK7 MOD4 CHANGES: allow empty meta value, moved two high level functions to mid level
 MK7 MOD3 CHANGES: more docstrings

@@ -16,6 +16,7 @@ p_section = """ (?xms)
 """
 p_eol = '\n\r|\r\n|\n|\r'
 p_sep = '\t'
+cont_chr = '+'
 
 ## low level interfece #####################################################
 
@@ -34,7 +35,7 @@ def parse(text,cnt=0,default='',empty='.',select='',strip=True,tail=''):
 	if select:
 		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0] in select]
 	else:
-		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0] in ('\t','|')] # 
+		lines = [x.rstrip() for x in re.split(p_eol,text) if x.strip() and x[0] in ('\t',cont_chr)] # 
 
 	while lines:
 		line = lines.pop(0)
@@ -61,7 +62,7 @@ def parse(text,cnt=0,default='',empty='.',select='',strip=True,tail=''):
 				while True: # get extension lines
 					if not lines: continue
 					ext = fields(lines[0])
-					if ext[0] != '|': break
+					if ext[0] != cont_chr: break
 					lines.pop(0)
 					extension += [ext]
 				for i,col in enumerate(row): # build columns 
@@ -177,12 +178,12 @@ if __name__=="__main__":
 	@@b	
 	>name	c1	c2	c3	c4
 		@	jest	@	abc
-	|			x
-	|	b		y
-	|	c		z
+	+			x
+	+	b		y
+	+	c		z
 		aaa	bbb	ccc	ddd
 	"""
 	tab,meta,rows = next(split(test))
 	print(tab,meta,rows)
 	for row in rows:
-		pass
+		print(row)
