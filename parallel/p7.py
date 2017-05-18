@@ -35,9 +35,8 @@ def line_gen(f,partition):
 		line = f.readline().rstrip('\r\n')
 		yield line
 
-def raw_gen(f,partition,block_size=None):
+def raw_gen(f,partition,block_size):
 	f=clone_file(f)
-	block_size = block_size or 4096
 	p_start,p_end = partition
 	f.seek(p_start)
 	while f.tell()<p_end:
@@ -50,8 +49,8 @@ def raw_gen(f,partition,block_size=None):
 import shlex
 import subprocess
 import time
-def run(cmd,f,cnt,out_prefix,out_suffix='',block_size=None):
-	"run CMD in parallel on CNT partitions of line oriented file F"
+def run(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
+	"run CMD in parallel batch on CNT partitions of line oriented file F"
 	t0=time.time()
 	generators = []
 	processes = []
@@ -104,31 +103,53 @@ def run(cmd,f,cnt,out_prefix,out_suffix='',block_size=None):
 	### END STATISITCS ###
 	print('[END]\ttime={0:.2f}s'.format(time.time()-t0))
 
+
+def run_str(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
+	"run CMD in parallel streaming on CNT partitions of line oriented input F"
+	t0=time.time()
+	processes = []
+	meta_by_pid = {}
+	
+	### INIT ###
+	f = open(f,'rb') if isinstance(f,str) else f
+	for i in range(cnt):
+		f_out = open('{0}.out.part{1}{2}'.format(out_prefix,i,out_suffix),'w') 
+		f_log = open('{0}.log.part{1}{2}'.format(out_prefix,i,out_suffix),'w')
+		args = shlex.split(cmd)
+		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
+		processes += [proc]
+		### DIAGNOSTICS ###
+		print("[START]\tpartition={0} pid={1} block_size={2}".format(i, proc.pid, block_size))
+		pid = proc.pid
+		meta_by_pid[pid] = {}
+		meta_by_pid[pid]['partition']=i
+		meta_by_pid[pid]['done_bytes']=0
+		meta_by_pid[pid]['start_time']=time.time()
+		
+	### MAIN LOOP ### 
+	while processes:
+		done = set()
+		for proc in processes:
+			block = f.read(block_size)+f.readline()
+			if len(block)<block_size:
+				done.add(proc)
+			proc.stdin.write(block)
+			meta_by_pid[proc.pid]['done_bytes'] += len(block)
+			# print('[ACTIVE] pid={0}'.format(proc.pid))
+		for proc in done:
+			pid = proc.pid
+			m = meta_by_pid[pid]
+			print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s".format(pid,m['done_bytes'],m['partition'],time.time()-m['start_time']))
+			processes.remove(proc)
+			proc.stdin.close()
+			proc.wait()
+	
+	### END STATISITCS ###
+	print('[END]\ttime={0:.2f}s'.format(time.time()-t0))
+
 ######################################################################################
 
 if __name__=="__main__":
-	f=open('test2.txt','rb')
-	parts = partitions(f,14)
-	#print(parts)
-	for ps,pe in parts:
-		if 0:
-			f.seek(ps)
-			while f.tell()<pe:
-				line = f.readline().rstrip('\r\n')
-				print(line)
-			print('-'*40)
-		if 0:
-			gen = line_gen(f,(ps,pe))
-			for line in gen:
-				print(line)
-			print('+'*40)
-		if 0:
-			gen = raw_gen(f,(ps,pe),10)
-			for raw in gen:
-				print(raw,end='')
-			print()
-			print('+'*40)
-	if 1:
-		run('python -c "import sys; print(sys.stdin.read())" ', 'test.txt', 4, 'test', '.txt', 10)
+	run_str('python -c "import sys; print(sys.stdin.read())" ', 'test.txt', 4, 'test/test', '.txt', 5)
 	
 
