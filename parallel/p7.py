@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+###
+
 def partitions(f,cnt):
 	"return list of file partitions as (part_start,part_end) file offsets"
 	out = []
@@ -22,8 +25,7 @@ def partitions(f,cnt):
 ###
 
 def clone_file(f):
-	import os
-	return os.fdopen(os.dup(f.fileno()),f.mode)
+	return open(f.name,f.mode)
 
 def line_gen(f,partition):
 	f=clone_file(f)
@@ -35,7 +37,7 @@ def line_gen(f,partition):
 
 def raw_gen(f,partition,block_size=None):
 	f=clone_file(f)
-	block_size = block_size or 4096*16
+	block_size = block_size or 4096
 	p_start,p_end = partition
 	f.seek(p_start)
 	while f.tell()<p_end:
