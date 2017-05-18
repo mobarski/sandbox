@@ -1,19 +1,21 @@
+from __future__ import print_function
 def partitions(f,cnt):
 	"return list of file partitions as (part_start,part_end) file offsets"
 	out = []
 	initial_pos = f.tell()
 	f.seek(0,2) # seek end
-	fsize = f.tell()
-	psize = int(fsize/cnt)
+	f_size = f.tell()
+	avg_part_size = f_size/cnt
 	f.seek(0) # seek start
 	prev = 0
 	for n in range(cnt-1):
-		f.seek(prev+psize,0)
+		target_part_end = int((n+1)*avg_part_size)
+		f.seek(min(f_size,target_part_end))
 		f.readline()
 		pos = f.tell()
 		out += [(prev,pos)]
 		prev=pos
-	out += [(prev,fsize)]
+	out += [(prev,f_size)]
 	f.seek(initial_pos)
 	return out
 
@@ -21,14 +23,15 @@ def partitions(f,cnt):
 
 def clone_file(f):
 	import os
-	return os.fdopen(os.dup(f.fileno()))
+	return os.fdopen(os.dup(f.fileno()),f.mode)
 
 def line_gen(f,partition):
 	f=clone_file(f)
 	p_start,p_end = partition
 	f.seek(p_start)
 	while f.tell()<p_end:
-		yield f.readline().rstrip('\r\n')
+		line = f.readline().rstrip('\r\n')
+		yield line
 
 def raw_gen(f,partition,block_size=None):
 	f=clone_file(f)
@@ -37,17 +40,23 @@ def raw_gen(f,partition,block_size=None):
 	f.seek(p_start)
 	while f.tell()<p_end:
 		cnt = min(block_size, p_end-f.tell())
-		yield f.read(cnt)
+		raw = f.read(cnt)
+		yield raw
 
 ###
 
 import shlex
 import subprocess
-def run(f,cnt,cmd,out_prefix,out_suffix='',block_size=None):
+import time
+def run(cmd,f,cnt,out_prefix,out_suffix='',block_size=None):
+	"run CMD in parallel on CNT partitions of line oriented file F"
+	t0=time.time()
 	generators = []
 	processes = []
+	meta_by_pid = {}
 	
 	### INIT ###
+	f = open(f,'rb') if isinstance(f,str) else f
 	parts = partitions(f,cnt)
 	for i in range(cnt):
 		p = parts[i]
@@ -58,7 +67,16 @@ def run(f,cnt,cmd,out_prefix,out_suffix='',block_size=None):
 		args = shlex.split(cmd)
 		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
 		processes += [proc]
-		print("[START] partition{0} pid={1} start:{2} stop:{3}".format(i, proc.pid, p[0], p[1]))
+		### DIAGNOSTICS ###
+		print("[START]\tpartition={0} pid={1} todo={4} start={2} stop={3}".format(i, proc.pid, p[0], p[1],p[1]-p[0]))
+		pid = proc.pid
+		meta_by_pid[pid] = {}
+		meta_by_pid[pid]['partition']=i
+		meta_by_pid[pid]['part_start']=p[0]
+		meta_by_pid[pid]['part_end']=p[1]
+		meta_by_pid[pid]['todo_bytes']=p[1]-p[0]
+		meta_by_pid[pid]['done_bytes']=0
+		meta_by_pid[pid]['start_time']=time.time()
 		
 	### MAIN LOOP ### 
 	while generators:
@@ -69,20 +87,26 @@ def run(f,cnt,cmd,out_prefix,out_suffix='',block_size=None):
 			except StopIteration:
 				done.add((gen,proc))
 				continue
-			proc.stdin.write(block.encode())
+			proc.stdin.write(block)
+			meta_by_pid[proc.pid]['done_bytes'] += len(block)
 			# print('[ACTIVE] pid={0}'.format(proc.pid))
 		for gen,proc in done:
-			print("[DONE] pid={0}".format(proc.pid))
+			pid = proc.pid
+			m = meta_by_pid[pid]
+			print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s".format(pid,m['done_bytes'],m['partition'],time.time()-m['start_time']))
 			generators.remove(gen)
 			processes.remove(proc)
 			proc.stdin.close()
 			proc.wait()
+	
+	### END STATISITCS ###
+	print('[END]\ttime={0:.2f}s'.format(time.time()-t0))
 
 ######################################################################################
 
 if __name__=="__main__":
-	f=open('test.txt','r')
-	parts = partitions(f,4)
+	f=open('test2.txt','rb')
+	parts = partitions(f,14)
 	#print(parts)
 	for ps,pe in parts:
 		if 0:
@@ -99,9 +123,10 @@ if __name__=="__main__":
 		if 0:
 			gen = raw_gen(f,(ps,pe),10)
 			for raw in gen:
-				print(raw)
+				print(raw,end='')
+			print()
 			print('+'*40)
 	if 1:
-		run(open('test.txt','r'),4,'''python -c "import sys; print(sys.stdin.read())" ''','test','.txt',10)
+		run('python -c "import sys; print(sys.stdin.read())" ', 'test.txt', 4, 'test', '.txt', 10)
 	
 
