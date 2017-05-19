@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 
-# TODO - fix python2 error
+# TODO - fix python2 error in stdin.write(block) for some input files
 # TODO - refactor all run functions
 
 ###
