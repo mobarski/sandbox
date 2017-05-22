@@ -66,6 +66,7 @@ import shlex
 import subprocess
 import time
 import sys
+import os
 
 class Job:
 	def __init__(self,cmd,f,cnt,out,log,block_size=4096):
@@ -75,22 +76,50 @@ class Job:
 		self.out=out # TODO str
 		self.log=log # TODO str
 		self.block_size=block_size
+		self.meta = {}
+		self.args = shlex.split(cmd)
+		self.active = []
 		self.t0=time.time()
-	
+		self.init()
+
+	def run(self):
+		while self.active:
+			pass
+
 	def init(self):
-		self.meta_by_pid = {}
-		args = shlex.split(cmd)
+		self.init_f()
+		self.init_proc()
+		
+	def init_f(self):
 		for i in range(cnt):
-			f_out = None # TODO
-			f_log = None # TODO
-			proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
-			# meta
-			pid = proc.pid
-			meta_by_pid[pid] = {}
-			m = meta_by_pid[pid]
-			m['proc']=proc
-			m['partition']=i
+			self.meta[i] = {}
+			m=self.meta[i]
+			m['part'] = i
+			m['f_in'] = self.get_in(i)
+			m['f_out'] = self.get_out(i)
+			m['f_log'] = self.get_log(i)
+	
+	def init_proc(self):
+		for i in range(cnt):
+			m=self.meta[i]
+			f_in = m['f_in']
+			f_out = m['f_out']
+			f_log = m['f_log']
+			proc = subprocess.Popen(self.args, stdin=f_in, stdout=f_out, stderr=f_log)
+			self.active += [proc.pid]
+			m['pid'] = proc.pid
+			m['proc'] = proc
+			m['done'] = 0
 			m['start_time']=time.time()
+
+	def get_in(self,i):
+		return subprocess.PIPE
+	
+	def get_out(self,i):
+		return sys.stdout
+	
+	def get_log(self,i):
+		return sys.stderr
 
 
 def run_pump(f, start_offset, end_offset, block_size=4096):
