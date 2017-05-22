@@ -1,8 +1,13 @@
 ## p7.py - parallel processing microframework
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK2 MOD2 (proc metadata access, broken pipe does not count as completed bytes)
+## version: MK2 MOD3 (run_stream_red prototype)
 
+# TODO - run_batch3 - p7.py just as a pump to stdout, piping in run_batch3 function
+# TODO - reduce out and log to single files
+# TODO - list of input files
+# TODO - reducer
+# TODO - combiner
 # TODO - refactor all run functions
 
 ###  py2 vs py3 compatibility ##########################################
@@ -138,6 +143,60 @@ def run_stream(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
 	for i in range(cnt):
 		f_out = open('{0}.out.part{1}{2}'.format(out_prefix,i,out_suffix),'w') 
 		f_log = open('{0}.log.part{1}{2}'.format(out_prefix,i,out_suffix),'w')
+		args = shlex.split(cmd)
+		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
+		processes += [proc]
+		### DIAGNOSTICS ###
+		print("[START]\tpartition={0} pid={1}".format(i, proc.pid))
+		pid = proc.pid
+		meta_by_pid[pid] = {}
+		m = meta_by_pid[pid]
+		m['partition']=i
+		m['done_bytes']=0
+		m['broken_pipes']=0
+		m['start_time']=time.time()
+		
+	### MAIN LOOP ### 
+	while processes:
+		done = set()
+		for proc in processes:
+			pid=proc.pid
+			m = meta_by_pid[pid]
+			block = f.read(block_size)+f.readline()
+			if len(block)<block_size:
+				done.add(proc)
+			try:
+				proc.stdin.write(block)
+			except BrokenPipe:
+				m['broken_pipes'] += 1
+			else:
+				m['done_bytes'] += len(block)
+			# print('[ACTIVE] pid={0}'.format(proc.pid))
+		for proc in done:
+			pid = proc.pid
+			m = meta_by_pid[pid]
+			print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s broken_pipes={4}".format(
+				pid,m['done_bytes'],m['partition'],time.time()-m['start_time'],m['broken_pipes']))
+			processes.remove(proc)
+			proc.stdin.close()
+			proc.wait()
+	
+	### END STATISITCS ###
+	print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-t0,cnt,block_size))
+
+
+def run_stream_red(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
+	"run CMD in parallel streaming on CNT partitions of line oriented input F, reduce output and log to single files"
+	t0=time.time()
+	processes = []
+	meta_by_pid = {}
+	
+	### INIT ###
+	print('[BEGIN]\tpartitions={0} block_size={1}'.format(cnt,block_size))
+	f = open(f,'rb') if isinstance(f,str) else f
+	f_out = open('{0}.out{2}'.format(out_prefix,0,out_suffix),'w') 
+	f_log = open('{0}.log{2}'.format(out_prefix,0,out_suffix),'w')
+	for i in range(cnt):
 		args = shlex.split(cmd)
 		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
 		processes += [proc]
