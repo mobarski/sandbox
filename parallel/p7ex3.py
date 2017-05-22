@@ -1,7 +1,7 @@
 ## p7.py - parallel processing microframework
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK2 MOD4 (run_pump prototype)
+## version: EX3
 
 # TODO - run_batch3 - p7.py just as a pump to stdout, piping in run_batch3 function
 # TODO - reduce out and log to single files
@@ -65,6 +65,42 @@ def raw_gen(f,partition,block_size):
 import shlex
 import subprocess
 import time
+import sys
+
+class Job:
+	def __init__(self,cmd,f,cnt,out,log,block_size=4096):
+		self.cmd=cmd
+		self.f=open(f,'rb') if isinstance(f,str) else f
+		self.cnt=cnt
+		self.out=out # TODO str
+		self.log=log # TODO str
+		self.block_size=block_size
+		self.t0=time.time()
+	
+	def init(self):
+		self.meta_by_pid = {}
+		args = shlex.split(cmd)
+		for i in range(cnt):
+			f_out = None # TODO
+			f_log = None # TODO
+			proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
+			# meta
+			pid = proc.pid
+			meta_by_pid[pid] = {}
+			m = meta_by_pid[pid]
+			m['proc']=proc
+			m['partition']=i
+			m['start_time']=time.time()
+
+
+def run_pump(f, start_offset, end_offset, block_size=4096):
+	f=open(f,'rb') if isinstance(f,str) else f
+	gen = raw_gen(f,(start_offset,end_offset),block_size)
+	for data in gen:
+		sys.stdout.write(data)
+
+### ### ###
+
 def run_batch(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
 	"run CMD in parallel batch on CNT partitions of line oriented file F using single data pump"
 	t0=time.time()
@@ -296,14 +332,14 @@ def run_batch2(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
 	### END STATISITCS ###
 	print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-t0,cnt,block_size))
 
-def run_part_main():
+def run_pump_main():
 	args_str = sys.stdin.read()
 	args = eval(args_str)
-	run_partition(*args)
+	run_pump(*args)
 
 ######################################################################################
 
 run = run_stream # default run function
 
 if __name__=="__main__":
-	run_part_main()
+	run_pump_main()
