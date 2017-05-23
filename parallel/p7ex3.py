@@ -1,14 +1,12 @@
 ## p7.py - parallel processing microframework
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: EX3
+## version: EX3 MOD1 (working Job class)
 
-# TODO - run_batch3 - p7.py just as a pump to stdout, piping in run_batch3 function
-# TODO - reduce out and log to single files
+# TODO - p7.py just as a pump to stdout, piping in run function
 # TODO - list of input files
 # TODO - reducer
 # TODO - combiner
-# TODO - refactor all run functions
 
 ###  py2 vs py3 compatibility ##########################################
 
@@ -60,6 +58,12 @@ def raw_gen(f,partition,block_size):
 		raw = f.read(cnt)
 		yield raw
 
+class xdict(dict):
+	def __getattr__(self,x):
+		return self[x]
+	def __setattr__(self,k,v):
+		self[k]=v
+
 ### RUN FUNCTIONS #############################################################
 
 import shlex
@@ -69,297 +73,106 @@ import sys
 import os
 
 class Job:
-	def __init__(self,cmd,f,cnt,out,log,block_size=4096):
+	def __init__(self,cmd,f,cnt,out=None,log=None,block_size=4096):
 		self.cmd=cmd
 		self.f=open(f,'rb') if isinstance(f,str) else f
 		self.cnt=cnt
-		self.out=out # TODO str
-		self.log=log # TODO str
+		self.out=open(out,'wb') if isinstance(out,str) and '{0}' not in out else out or sys.stdout
+		self.log=open(log,'wb') if isinstance(log,str) and '{0}' not in log else log or sys.stderr
 		self.block_size=block_size
 		self.meta = {}
 		self.args = shlex.split(cmd)
-		self.active = []
-		self.t0=time.time()
-		self.init()
+		self.active = set()
 
 	def run(self):
+		self.t0=time.time()
+		self.begin_stats()
+		self.init()
 		while self.active:
-			pass
+			done = set()
+			
+			for i in self.active:
+				m = self.meta[i]
+				block = self.f.read(self.block_size)+self.f.readline()
+				if len(block)<self.block_size:
+					done.add(i)
+				try:
+					m.proc.stdin.write(block)
+				except BrokenPipe:
+					pass # TODO
+				else:
+					m['done'] += len(block)
+
+			for i in done:
+				m = self.meta[i]
+				m.proc.stdin.close()
+				m.proc.wait()
+				m['end_time']=time.time()
+				m['time']=time.time()-m.start_time
+				self.partition_done_stats(i)
+				self.active.remove(i)
+		self.end_stats()
+
+	def begin_stats(self):
+		print('[BEGIN]\tpartitions={0} block_size={1}'.format(self.cnt, self.block_size))
+	
+	def partition_start_stats(self,i):
+		m = self.meta[i]
+		print('[START]\tpartition={0} pid={1}'.format(
+			i,m.pid))
+
+	def partition_done_stats(self,i):
+		m = self.meta[i]
+		print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s".format(
+			m.pid,m.done,m.part,m.time))
+	
+	def end_stats(self):
+		print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-self.t0, self.cnt, self.block_size))
 
 	def init(self):
-		self.init_f()
+		self.init_meta()
+		self.init_pipes()
 		self.init_proc()
+
+	def init_meta(self):
+		for i in range(self.cnt):
+			self.meta[i] = xdict()
 		
-	def init_f(self):
-		for i in range(cnt):
-			self.meta[i] = {}
+	def init_pipes(self):
+		for i in range(self.cnt):
 			m=self.meta[i]
 			m['part'] = i
-			m['f_in'] = self.get_in(i)
-			m['f_out'] = self.get_out(i)
-			m['f_log'] = self.get_log(i)
+			m['pipe_in'] = self.pipe_in(i)
+			m['pipe_out'] = self.pipe_out(i)
+			m['pipe_log'] = self.pipe_log(i)
 	
 	def init_proc(self):
-		for i in range(cnt):
+		for i in range(self.cnt):
 			m=self.meta[i]
-			f_in = m['f_in']
-			f_out = m['f_out']
-			f_log = m['f_log']
-			proc = subprocess.Popen(self.args, stdin=f_in, stdout=f_out, stderr=f_log)
-			self.active += [proc.pid]
+			proc = subprocess.Popen(self.args, stdin=m.pipe_in, stdout=m.pipe_out, stderr=m.pipe_log)
+			self.active.add(i)
 			m['pid'] = proc.pid
 			m['proc'] = proc
 			m['done'] = 0
 			m['start_time']=time.time()
+			self.partition_start_stats(i)
 
-	def get_in(self,i):
+	def pipe_in(self,i):
 		return subprocess.PIPE
 	
-	def get_out(self,i):
-		return sys.stdout
+	def pipe_out(self,i):
+		return open(self.out.format(i),'wb') if isinstance(self.out,str) else self.out 
 	
-	def get_log(self,i):
-		return sys.stderr
+	def pipe_log(self,i):
+		return open(self.log.format(i),'wb') if isinstance(self.log,str) else self.log 
 
+### PUMP ###
 
 def run_pump(f, start_offset, end_offset, block_size=4096):
 	f=open(f,'rb') if isinstance(f,str) else f
 	gen = raw_gen(f,(start_offset,end_offset),block_size)
 	for data in gen:
 		sys.stdout.write(data)
-
-### ### ###
-
-def run_batch(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
-	"run CMD in parallel batch on CNT partitions of line oriented file F using single data pump"
-	t0=time.time()
-	generators = []
-	processes = []
-	meta_by_pid = {}
-	
-	### INIT ###
-	print('[BEGIN]\tpartitions={0} block_size={1}'.format(cnt,block_size))
-	f = open(f,'rb') if isinstance(f,str) else f
-	parts = partitions(f,cnt)
-	for i in range(cnt):
-		p = parts[i]
-		f_out = open('{0}.out.part{1}{2}'.format(out_prefix,i,out_suffix),'w') 
-		f_log = open('{0}.log.part{1}{2}'.format(out_prefix,i,out_suffix),'w')
-		gen = raw_gen(f,p,block_size)
-		generators += [gen]
-		args = shlex.split(cmd)
-		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
-		processes += [proc]
-		### DIAGNOSTICS ###
-		print("[START]\tpartition={0} pid={1} todo={4} start={2} stop={3}".format(
-			i, proc.pid, p[0], p[1],p[1]-p[0]))
-		pid = proc.pid
-		meta_by_pid[pid] = {}
-		m = meta_by_pid[pid]
-		m['partition']=i
-		m['part_start']=p[0]
-		m['part_end']=p[1]
-		m['todo_bytes']=p[1]-p[0]
-		m['done_bytes']=0
-		m['broken_pipes']=0
-		m['start_time']=time.time()
-		
-	### MAIN LOOP ### 
-	while processes:
-		done = set()
-		for gen,proc in zip(generators,processes):
-			pid = proc.pid
-			m = meta_by_pid[pid]
-			try:
-				block = next(gen)
-			except StopIteration:
-				done.add((gen,proc))
-				continue
-			try:
-				proc.stdin.write(block)
-			except BrokenPipe:
-				m['broken_pipes'] += 1
-			else:
-				m['done_bytes'] += len(block)
-			# print('[ACTIVE] pid={0}'.format(proc.pid))
-		for gen,proc in done:
-			pid = proc.pid
-			m = meta_by_pid[pid]
-			print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s broken_pipes={4}".format(
-				pid,m['done_bytes'],m['partition'],time.time()-m['start_time'],m['broken_pipes']))
-			generators.remove(gen)
-			processes.remove(proc)
-			proc.stdin.close()
-			proc.wait()
-	
-	### END STATISITCS ###
-	print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-t0,cnt,block_size))
-
-
-def run_stream(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
-	"run CMD in parallel streaming on CNT partitions of line oriented input F"
-	t0=time.time()
-	processes = []
-	meta_by_pid = {}
-	
-	### INIT ###
-	print('[BEGIN]\tpartitions={0} block_size={1}'.format(cnt,block_size))
-	f = open(f,'rb') if isinstance(f,str) else f
-	for i in range(cnt):
-		f_out = open('{0}.out.part{1}{2}'.format(out_prefix,i,out_suffix),'w') 
-		f_log = open('{0}.log.part{1}{2}'.format(out_prefix,i,out_suffix),'w')
-		args = shlex.split(cmd)
-		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
-		processes += [proc]
-		### DIAGNOSTICS ###
-		print("[START]\tpartition={0} pid={1}".format(i, proc.pid))
-		pid = proc.pid
-		meta_by_pid[pid] = {}
-		m = meta_by_pid[pid]
-		m['partition']=i
-		m['done_bytes']=0
-		m['broken_pipes']=0
-		m['start_time']=time.time()
-		
-	### MAIN LOOP ### 
-	while processes:
-		done = set()
-		for proc in processes:
-			pid=proc.pid
-			m = meta_by_pid[pid]
-			block = f.read(block_size)+f.readline()
-			if len(block)<block_size:
-				done.add(proc)
-			try:
-				proc.stdin.write(block)
-			except BrokenPipe:
-				m['broken_pipes'] += 1
-			else:
-				m['done_bytes'] += len(block)
-			# print('[ACTIVE] pid={0}'.format(proc.pid))
-		for proc in done:
-			pid = proc.pid
-			m = meta_by_pid[pid]
-			print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s broken_pipes={4}".format(
-				pid,m['done_bytes'],m['partition'],time.time()-m['start_time'],m['broken_pipes']))
-			processes.remove(proc)
-			proc.stdin.close()
-			proc.wait()
-	
-	### END STATISITCS ###
-	print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-t0,cnt,block_size))
-
-
-def run_stream_red(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
-	"run CMD in parallel streaming on CNT partitions of line oriented input F, reduce output and log to single files"
-	t0=time.time()
-	processes = []
-	meta_by_pid = {}
-	
-	### INIT ###
-	print('[BEGIN]\tpartitions={0} block_size={1}'.format(cnt,block_size))
-	f = open(f,'rb') if isinstance(f,str) else f
-	f_out = open('{0}.out{2}'.format(out_prefix,0,out_suffix),'w') 
-	f_log = open('{0}.log{2}'.format(out_prefix,0,out_suffix),'w')
-	for i in range(cnt):
-		args = shlex.split(cmd)
-		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
-		processes += [proc]
-		### DIAGNOSTICS ###
-		print("[START]\tpartition={0} pid={1}".format(i, proc.pid))
-		pid = proc.pid
-		meta_by_pid[pid] = {}
-		m = meta_by_pid[pid]
-		m['partition']=i
-		m['done_bytes']=0
-		m['broken_pipes']=0
-		m['start_time']=time.time()
-		
-	### MAIN LOOP ### 
-	while processes:
-		done = set()
-		for proc in processes:
-			pid=proc.pid
-			m = meta_by_pid[pid]
-			block = f.read(block_size)+f.readline()
-			if len(block)<block_size:
-				done.add(proc)
-			try:
-				proc.stdin.write(block)
-			except BrokenPipe:
-				m['broken_pipes'] += 1
-			else:
-				m['done_bytes'] += len(block)
-			# print('[ACTIVE] pid={0}'.format(proc.pid))
-		for proc in done:
-			pid = proc.pid
-			m = meta_by_pid[pid]
-			print("[DONE]\tpartition={2} pid={0} done={1} time={3:.2f}s broken_pipes={4}".format(
-				pid,m['done_bytes'],m['partition'],time.time()-m['start_time'],m['broken_pipes']))
-			processes.remove(proc)
-			proc.stdin.close()
-			proc.wait()
-	
-	### END STATISITCS ###
-	print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-t0,cnt,block_size))
-
-
-import os
-def run_partition(cmd,f,part_num,part_start,part_stop,out_prefix,out_suffix='',block_size=4096):
-	i = part_num
-	f = open(f,'rb') if isinstance(f,str) else f
-	f_out = open('{0}.out.part{1}{2}'.format(out_prefix,i,out_suffix),'w') 
-	f_log = open('{0}.log.part{1}{2}'.format(out_prefix,i,out_suffix),'w')
-	p = (part_start,part_stop)
-	gen = raw_gen(f,p,block_size)
-	args = shlex.split(cmd)
-	proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=f_out, stderr=f_log)
-	pid = proc.pid
-	print("[START]\tpartition={0} pid={2} pid_pump={1} todo={5} start={3} stop={4}".format(
-		i,os.getpid(),pid,part_start,part_stop,part_stop-part_start))
-	sys.stdout.flush()
-	start_time=time.time()
-	done_bytes=0
-	broken_pipes=0
-	
-	### MAIN LOOP ###
-	while True:
-		try:
-			block = next(gen)
-		except StopIteration:
-			proc.stdin.close()
-			break
-		try:
-			proc.stdin.write(block)
-		except BrokenPipe:
-			broken_pipes += 1
-		else:
-			done_bytes += len(block)
-	print("[DONE]\tpartition={0} pid={2} pid_pump={1} done={3} time={4:.2f}s broken_pipes={5}".format(
-		i,os.getpid(),pid,done_bytes,time.time()-start_time,broken_pipes))
-
-import sys
-def run_batch2(cmd,f,cnt,out_prefix,out_suffix='',block_size=4096):
-	"run CMD in parallel batch on CNT partitions of line oriented file F using multiple data pumps"
-	t0=time.time()
-	print('[BEGIN]\tpartitions={0} block_size={1}'.format(cnt,block_size))
-	processes = []
-	f_name = f if isinstance(f,str) else f.name
-	f = open(f,'rb') if isinstance(f,str) else f
-	parts = partitions(f,cnt)
-	for i in range(cnt):
-		p = parts[i]
-		args = shlex.split('python p7.py')
-		proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=sys.stdout)
-		args_str = str([cmd,f_name,i,p[0],p[1],out_prefix,out_suffix,block_size])
-		proc.stdin.write(args_str.encode())
-		proc.stdin.close()
-		processes += [proc]	
-	for p in processes:
-		p.wait()
-
-	### END STATISITCS ###
-	print('[END]\ttime={0:.2f}s partitions={1} block_size={2}'.format(time.time()-t0,cnt,block_size))
 
 def run_pump_main():
 	args_str = sys.stdin.read()
@@ -368,7 +181,14 @@ def run_pump_main():
 
 ######################################################################################
 
-run = run_stream # default run function
-
 if __name__=="__main__":
-	run_pump_main()
+	#run_pump_main()
+	from pprint import pprint
+	cmd = 'python -c "import sys; sys.stdout.write(sys.stdin.read())" '
+	f_in = "test.txt"
+	f_out = 'test/out.part.txt'
+	f_log = 'test/log.part.txt'
+	job=Job(cmd,f_in,4,f_out,f_log,block_size=5)
+	#pprint(job.meta)
+	job.run()
+
