@@ -1,11 +1,12 @@
 ## p7.py - parallel processing microframework
 ## (c) 2017 by mobarski (at) gmail (dot) com
 ## licence: MIT
-## version: MK3
+## version: mk3 mod1 (XJob->BatchJob,small refactoring)
 
 # TODO - list of input files
 # TODO - reducer
 # TODO - combiner
+# TODO - split output into multiple streams (within partition)
 
 ###  py2 vs py3 compatibility ##########################################
 
@@ -63,6 +64,24 @@ class xdict(dict):
 	def __setattr__(self,k,v):
 		self[k]=v
 
+### PUMP ####################################################################
+
+def run_pump(f, start_offset, end_offset, block_size=4096):
+	f=open(f,'rb') if isinstance(f,str) else f
+	sys.stdout = os.fdopen(sys.stdout.fileno(),'wb')
+	if sys.platform == "win32" and sys.version_info.major==2:
+		import msvcrt
+		msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+	gen = raw_gen(f,(start_offset,end_offset),block_size)
+	for data in gen:
+		sys.stdout.write(data)
+
+def run_pump_main():
+	args_str = sys.stdin.read()
+	args = eval(args_str)
+	#sys.stderr.write(str(args)+'\n')
+	run_pump(*args)
+
 ### RUN FUNCTIONS #############################################################
 
 import shlex
@@ -72,7 +91,7 @@ import sys
 import os
 
 class Job:
-	"""run CMD in parallel on local computer using CNT subprocesses, piping data from file F
+	"""run CMD in parallel on local computer using CNT subprocesses, piping data from file F in streaming mode
 	
 	Arguments:
 	* cmd - command to be run in pralallel, it should read from standard input and write to standard output and standard error
@@ -174,47 +193,22 @@ class Job:
 		m.proc.stdin.close()
 		m.proc.wait()
 
-	#~ def pipe_in(self,i):
-		#~ return subprocess.PIPE
-	
 	def pipe_out(self,i):
 		return open(self.out.format(i),'wb') if isinstance(self.out,str) else self.out 
 	
 	def pipe_log(self,i):
 		return open(self.log.format(i),'wb') if isinstance(self.log,str) else self.log 
 
-### PUMP ###
-
-def run_pump(f, start_offset, end_offset, block_size=4096):
-	f=open(f,'rb') if isinstance(f,str) else f
-	sys.stdout = os.fdopen(sys.stdout.fileno(),'wb')
-	if sys.platform == "win32" and sys.version_info.major==2:
-		import msvcrt
-		msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-	gen = raw_gen(f,(start_offset,end_offset),block_size)
-	for data in gen:
-		sys.stdout.write(data)
-
-def run_pump_main():
-	args_str = sys.stdin.read()
-	args = eval(args_str)
-	#sys.stderr.write(str(args)+'\n')
-	run_pump(*args)
-
 ######################################################################################
 
-class XJob(Job):		
+class BatchJob(Job):		
 	def init_pipes(self):
+		Job.init_pipes(self)
 		pump_cmd = "python p7ex3.py pump"
 		pump_args = shlex.split(pump_cmd)
 		partitions = list_partitions(self.f, self.cnt)
 		for i in range(self.cnt):
 			m=self.meta[i]
-			m['part'] = i
-			m['pipe_out'] = self.pipe_out(i)
-			m['pipe_log'] = self.pipe_log(i)
-			m['done'] = 'N/A'
-			###
 			p_start,p_end = partitions[i]
 			pump = subprocess.Popen(pump_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=m.pipe_log)
 			pump_param = [self.f_name, p_start, p_end, self.block_size]
@@ -223,6 +217,7 @@ class XJob(Job):
 			m['pump'] = pump
 			m['pump_pid'] = pump.pid
 			m['pipe_in'] = pump.stdout
+			m['done'] = 'N/A'
 
 	def pump_data(self):
 		done = set()
@@ -241,9 +236,16 @@ class XJob(Job):
 		print('[START]\tpartition={0} pid={1} pump_pid={2}'.format(
 			i,m.pid,m.pump_pid))
 
+	def partition_done_stats(self,i):
+		m = self.meta[i]
+		print("[DONE]\tpartition={2} pid={0} pump_pid={1} time={3:.2f}s".format(
+			m.pid,m.pump_pid,m.part,m.time))
+
 	def end_proc(self,i):
 		m = self.meta[i]
 		m.proc.wait()
+
+#################################################################################
 
 if __name__=="__main__":
 	if 'pump' not in sys.argv: exit()
