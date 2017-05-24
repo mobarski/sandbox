@@ -1,5 +1,13 @@
+theme.is.light = 0
+theme.is.dark = 1
+
 -- SANDBOX
 -- output.code.page=65001
+autocompleteword.automatic=1
+--fold=0
+fold.margin.width=0
+line.margin.visible=1
+--fold.compact=0
 
 -- SMASH
 command.go.*.smash=C:\python36\python -u c:\maciek\apps\smash\smash.py "$(FileNameExt)"
@@ -70,8 +78,6 @@ command.shortcut.1.*=F2
 
 
 -- STYLE
-theme.is.light = 0
-theme.is.dark = 0
 keywordclass.python=$(keywordclass.python3)
 
 if theme.is.light
@@ -172,74 +178,153 @@ if theme.is.dark
 	theme.color.purple=#AE81FF
 	theme.color.teal=#007F7F
 	
+	theme.color.black=#000000
 	theme.color.darkgreen=#007F00
 	-- THEME ---------------------------------------------------
 	caret.width=2
 	caret.fore=$(theme.color.grey)
 	selection.back=$(theme.color.grey)
 	selection.alpha=75
+	fold.margin.colour=$(theme.color.back)
+	fold.margin.highlight.colour=$(theme.color.back)
+	#blank.margin.left=4
+	#blank.margin.right=4
 	-- colour.operator=fore:$(theme.color.grey),bold
 	-- colour.code.comment.box=
 	colour.code.comment.line=fore:$(theme.color.darkgreen)
 	-- colour.code.comment.doc=
 	
-	# EOL, whitespace
+	-- EOL, whitespace
 	--style.python.36=fore:$(theme.color.grey)
 	
-	# FORE
-	style.python.32=back:$(theme.color.back),fore:$(theme.color.fore)
-
-	# OUPUT
-	style.errorlist.32=back:$(theme.color.back),$(font.monospace)
-	style.errorlist.0=fore:$(theme.color.fore)
+	-- FORE
+	style.python.32=back:$(theme.color.back),fore:$(theme.color.fore),,$(font.monospace)
 	
-	# White space
+	-- White space
 	style.python.0=fore:#808080
-	# Indent guide
+	-- Indent guide
 	style.python.37=fore:$(theme.color.grey),back:$(theme.color.back)
-	# Comment
+	-- Comment
 	style.python.1=fore:$(theme.color.orange)
 	style.python.12=fore:$(theme.color.grey)
 	
-	# Number
+	-- Number
 	style.python.2=fore:$(theme.color.red)
-	# String
+	-- String
 	style.python.3=fore:$(theme.color.yellow)
 	style.python.4=fore:$(theme.color.yellow)
 	style.python.6=fore:$(theme.color.yellow)
 	style.python.7=fore:$(theme.color.yellow)
-	# F-String
+	-- F-String
 	style.python.16=fore:$(theme.color.blue)
 	style.python.17=fore:$(theme.color.blue)
 	style.python.18=fore:$(theme.color.blue)
 	style.python.19=fore:$(theme.color.blue)
 	
-	# Keyword
+	-- Keyword
 	style.python.5=fore:$(theme.color.blue)
-	# Common names
+	-- Common names
 	style.python.11.1=fore:$(theme.color.fore)
-	# Future
+	-- Future
 	style.python.11.2=fore:$(theme.color.red),italics
 	
-	# Class name definition
+	-- Class name definition
 	style.python.8=fore:$(theme.color.green)
-	# Function or method name definition
+	-- Function or method name definition
 	style.python.9=fore:$(theme.color.green)
-	# Identifiers
+	-- Identifiers
 	style.python.11=fore:$(theme.color.fore)
-	# Highlighted identifiers
+	-- Highlighted identifiers
 	style.python.14=fore:$(theme.color.blue)
 	
-	# Operators
+	-- Operators
 	style.python.10=fore:$(theme.color.fore)
 	style.python.34=back:$(theme.color.red),fore:$(theme.color.fore)
 	style.python.35=fore:$(theme.color.red)
-	# Decorators
-	style.python.15=fore:$(theme.color.teal)
+	-- Decorators
+	style.python.15=fore:$(theme.color.fore)
 	
-	# End of line where string is not closed
+	-- End of line where string is not closed
 	style.python.13=fore:#000000,back:#E0C0E0,eolfilled
 
-	# Line numbers
+	-- Line numbers
 	style.python.33=fore:$(theme.color.grey),back:$(theme.color.back)
+
+	-- Error list styles ---------------------------------------------------------------------
+
+	colour.error=fore:$(theme.color.red),back:#FF0000
+	
+	style.errorlist.32=back:$(theme.color.black),$(font.monospace)
+	-- Default
+	style.errorlist.0=fore:$(theme.color.fore)
+	-- python Error
+	style.errorlist.1=fore:#FF0000
+	-- gcc Error
+	style.errorlist.2=fore:#800080
+	-- Microsoft Error
+	style.errorlist.3=fore:#808000
+	-- command or return status
+	style.errorlist.4=fore:$(theme.color.blue)
+	-- Borland error and warning messages
+	style.errorlist.5=fore:#B06000
+	-- perl error and warning messages
+	style.errorlist.6=fore:#FF0000
+	-- .NET tracebacks
+	style.errorlist.7=fore:#FF0000
+	-- Lua error and warning messages
+	style.errorlist.8=fore:#FF0000
+	-- ctags
+	style.errorlist.9=fore:#FF00FF
+	-- diff changed !
+	style.errorlist.10=fore:#007F00
+	-- diff addition +
+	style.errorlist.11=fore:#00007F
+	-- diff deletion -
+	style.errorlist.12=fore:#007F7F
+	-- diff message ---
+	style.errorlist.13=fore:#7F0000
+	-- PHP error
+	style.errorlist.14=fore:#FF0000
+	-- Essential Lahey Fortran 90 error
+	style.errorlist.15=fore:#FF0000
+	-- Intel Fortran Compiler error
+	style.errorlist.16=fore:#FF0000
+	-- Intel Fortran Compiler v8.0 error/warning
+	style.errorlist.17=fore:#FF0000
+	-- Absoft Pro Fortran 90/95 v8.2 error or warning
+	style.errorlist.18=fore:#FF0000
+	-- HTML Tidy
+	style.errorlist.19=fore:#FF0000
+	-- Java runtime stack trace
+	style.errorlist.20=fore:#FF0000
+	-- Text matched with find in files and message part of GCC errors
+	style.errorlist.21=fore:$(theme.color.fore)
+	-- GCC showing include path to following error
+	style.errorlist.22=fore:#800080
+	-- Escape sequence
+	style.errorlist.23=fore:#000000,notvisible,back:#FFFFFF
+	-- Escape sequence unknown
+	style.errorlist.24=back:$(theme.color.grey)
+	-- Ensures that spacing is not affected by line number styles
+	style.errorlist.33=$(font.small)
+	-- Basic colours
+	style.errorlist.40=fore:$(theme.color.fore)
+	style.errorlist.41=fore:#800000
+	style.errorlist.42=fore:#008000
+	style.errorlist.43=fore:#808000
+	style.errorlist.44=fore:#000080
+	style.errorlist.45=fore:#800080
+	style.errorlist.46=fore:#008080
+	style.errorlist.47=fore:#A0A0A0
+	-- Intense colours
+	style.errorlist.48=fore:$(theme.color.fore),bold
+	style.errorlist.49=fore:#800000,bold
+	style.errorlist.50=fore:#008000,bold
+	style.errorlist.51=fore:#808000,bold
+	style.errorlist.52=fore:#000080,bold
+	style.errorlist.53=fore:#800080,bold
+	style.errorlist.54=fore:#008080,bold
+	style.errorlist.55=fore:#A0A0A0,bold
+
+	error.background=back:#FFF7E7,eolfilled
 	.
