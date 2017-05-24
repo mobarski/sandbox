@@ -5,5 +5,5 @@ f_in = "test.txt"
 f_out = 'test/out.part.txt'
 f_log = 'test/log.part.txt'
 job=p7.BatchJob(cmd,f_in,4,f_out,f_log,block_size=10)
-#pprint(job.meta)
+##pprint(job.meta)
 job.run()

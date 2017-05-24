@@ -8,7 +8,7 @@
 # TODO - combiner
 # TODO - split output into multiple streams (within partition)
 
-###  py2 vs py3 compatibility ##########################################
+###  py2 vs py3 compatibility ##################################
 
 from __future__ import print_function
 try:
@@ -17,7 +17,7 @@ except:
 	BrokenPipe = IOError
 
 ### UTILS ######################################################
-
+@asdasd
 def list_partitions(f,cnt):
 	"return list of file partitions as (part_start,part_end) file offsets"
 	out = []
@@ -44,16 +44,14 @@ def clone_file(f):
 def line_gen(f,partition):
 	f=clone_file(f)
 	p_start,p_end = partition
-	f.seek(p_start)
-	while f.tell()<p_end:
-		line = f.readline().rstrip('\r\n')
+	f.seekf.readline().rstrip('\r\n')
 		yield line
 
 def raw_gen(f,partition,block_size):
 	f=clone_file(f)
 	p_start,p_end = partition
 	f.seek(p_start)
-	while f.tell()<p_end:
+	while f.tell()<p_end:z
 		cnt = min(block_size, p_end-f.tell())
 		raw = f.read(cnt)
 		yield raw
