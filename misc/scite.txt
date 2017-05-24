@@ -1,3 +1,6 @@
+-- SANDBOX
+-- output.code.page=65001
+
 -- SMASH
 command.go.*.smash=C:\python36\python -u c:\maciek\apps\smash\smash.py "$(FileNameExt)"
 file.patterns.props=$(file.patterns.props);*.smash
@@ -14,6 +17,11 @@ command.name.6.*.py=Go Python36
 command.6.*.py=C:\python36\pythonw -u "$(FileNameExt)"
 command.name.7.*.py=Go Python27
 command.7.*.py=C:\python27\pythonw -u "$(FileNameExt)"
+
+command.name.8.*.py=Profile Python27
+command.8.*.py=C:\python27\pythonw -m cProfile -s tottime "$(FileNameExt)"
+command.name.9.*.py=Profile Python35
+command.9.*.py=C:\python35\pythonw -m cProfile -s tottime "$(FileNameExt)"
 
 -- DOT
 command.go.*.dot=C:/maciek/apps/graphviz/bin/dot.exe -Tpdf -o$(FileName).pdf $(FileNameExt)
@@ -32,22 +40,206 @@ find.files=*.py *.sql *.txt *.md *.rst *.ini *.smash *.dash
 user.shortcuts=\
 Ctrl+Up|2620|\
 Ctrl+Down|2621|\
-Ctrl+e|2338|\
-F1|IDM_FINDINFILES|
+F1|IDM_FINDINFILES|\
+F4|IDM_FIND|\
+Ctrl+e|2556|\
+Ctrl+u|2238|\
+Ctrl+i|2239|\
 
 -- DASH
 command.go.*.dash=python $(FileName).py
 file.patterns.diff=$(file.patterns.diff);*.dash
 use.tabs.*.dash=1
-tab.size.*.dash=32
-indent.size.*.dash=32
+tab.size.*.dash=28
+indent.size.*.dash=28
 style.diff.*=fore:$(font.monospace)
 fold.flags=0
-comment.block.diff=!!
+comment.block.diff=!!!
 comment.block.at.line.start.diff=1
 
 -- C
 command.go.*.c=c:\maciek\apps\tcc\tcc.exe -run "$(FileNameExt)"
 
--- SANDBOX
--- output.code.page=65001
+-- SORTING
+-- source: http://lua-users.org/wiki/SciteSortSelection
+command.name.1.*=Sort Selection
+command.subsystem.1.*=3
+command.1.*=sort_text
+command.mode.1.*=savebefore:no
+command.shortcut.1.*=F2
+
+
+-- STYLE
+theme.is.light = 0
+theme.is.dark = 0
+keywordclass.python=$(keywordclass.python3)
+
+if theme.is.light
+	-- COLORS -----------------------------------
+	theme.color.fore=#000000
+	theme.color.back=#FFFFFF
+	
+	theme.color.red=#7F0000
+	theme.color.yellow=#7F7F00
+	theme.color.green=#007F00
+	theme.color.teal=#007F7F
+	theme.color.purple=#7F007F
+	theme.color.orange=#B07F00
+	theme.color.blue=#00007F
+	theme.color.grey=#808080
+	theme.color.light=#E0E0E0
+	
+	-- THEME ---------------------------------------------------
+	caret.width=2
+	caret.fore=$(theme.color.grey)
+	selection.back=$(theme.color.grey)
+	selection.alpha=75
+	-- colour.operator=fore:$(theme.color.grey),bold
+	-- colour.code.comment.box=
+	colour.code.comment.line=fore:$(theme.color.darkgreen)
+	-- colour.code.comment.doc=
+	
+	# EOL, whitespace
+	--style.python.36=fore:$(theme.color.grey)
+	
+	# FORE
+	style.python.32=back:$(theme.color.back),fore:$(theme.color.fore)
+
+	# OUPUT
+	-- style.errorlist.32=back:$(theme.color.back)
+	-- style.errorlist.0=fore:$(theme.color.back)
+	
+	# White space
+	style.python.0=fore:#808080
+	# Indent guide
+	style.python.37=fore:$(theme.color.grey),back:$(theme.color.back)
+	# Comment
+	style.python.1=fore:$(theme.color.red)
+	style.python.12=fore:$(theme.color.grey)
+	
+	# Number
+	style.python.2=fore:$(theme.color.red)
+	# String
+	style.python.3=fore:$(theme.color.purple)
+	style.python.4=fore:$(theme.color.purple)
+	style.python.6=fore:$(theme.color.purple)
+	style.python.7=fore:$(theme.color.purple)
+	# F-String
+	style.python.16=fore:$(theme.color.blue)
+	style.python.17=fore:$(theme.color.blue)
+	style.python.18=fore:$(theme.color.blue)
+	style.python.19=fore:$(theme.color.blue)
+	
+	# Keyword
+	style.python.5=fore:$(theme.color.blue),bold
+	# Common names
+	style.python.11.1=fore:$(theme.color.fore)
+	# Future
+	style.python.11.2=fore:$(theme.color.red),italics
+	
+	# Class name definition
+	style.python.8=fore:$(theme.color.red),bold
+	# Function or method name definition
+	style.python.9=fore:$(theme.color.teal),bold
+	# Identifiers
+	style.python.11=fore:$(theme.color.fore)
+	# Highlighted identifiers
+	style.python.14=fore:$(theme.color.blue)
+	
+	# Operators
+	style.python.10=fore:$(theme.color.fore)
+	style.python.34=back:$(theme.color.back),fore:$(theme.color.red),bold
+	style.python.35=fore:$(theme.color.red)
+	# Decorators
+	style.python.15=fore:$(theme.color.orange),bold
+	
+	# End of line where string is not closed
+	style.python.13=fore:#000000,back:#E0C0E0,eolfilled
+	.
+
+	
+if theme.is.dark
+	-- COLORS -----------------------------------
+	theme.color.fore=#F8F8F2
+	theme.color.back=#272822
+	
+	theme.color.red=#F92672
+	theme.color.yellow=#E6DB74
+	theme.color.green=#A6E22E
+	theme.color.orange=#FD971F
+	theme.color.blue=#66D9EF
+	theme.color.grey=#75715E
+	theme.color.purple=#AE81FF
+	theme.color.teal=#007F7F
+	
+	theme.color.darkgreen=#007F00
+	-- THEME ---------------------------------------------------
+	caret.width=2
+	caret.fore=$(theme.color.grey)
+	selection.back=$(theme.color.grey)
+	selection.alpha=75
+	-- colour.operator=fore:$(theme.color.grey),bold
+	-- colour.code.comment.box=
+	colour.code.comment.line=fore:$(theme.color.darkgreen)
+	-- colour.code.comment.doc=
+	
+	# EOL, whitespace
+	--style.python.36=fore:$(theme.color.grey)
+	
+	# FORE
+	style.python.32=back:$(theme.color.back),fore:$(theme.color.fore)
+
+	# OUPUT
+	style.errorlist.32=back:$(theme.color.back),$(font.monospace)
+	style.errorlist.0=fore:$(theme.color.fore)
+	
+	# White space
+	style.python.0=fore:#808080
+	# Indent guide
+	style.python.37=fore:$(theme.color.grey),back:$(theme.color.back)
+	# Comment
+	style.python.1=fore:$(theme.color.orange)
+	style.python.12=fore:$(theme.color.grey)
+	
+	# Number
+	style.python.2=fore:$(theme.color.red)
+	# String
+	style.python.3=fore:$(theme.color.yellow)
+	style.python.4=fore:$(theme.color.yellow)
+	style.python.6=fore:$(theme.color.yellow)
+	style.python.7=fore:$(theme.color.yellow)
+	# F-String
+	style.python.16=fore:$(theme.color.blue)
+	style.python.17=fore:$(theme.color.blue)
+	style.python.18=fore:$(theme.color.blue)
+	style.python.19=fore:$(theme.color.blue)
+	
+	# Keyword
+	style.python.5=fore:$(theme.color.blue)
+	# Common names
+	style.python.11.1=fore:$(theme.color.fore)
+	# Future
+	style.python.11.2=fore:$(theme.color.red),italics
+	
+	# Class name definition
+	style.python.8=fore:$(theme.color.green)
+	# Function or method name definition
+	style.python.9=fore:$(theme.color.green)
+	# Identifiers
+	style.python.11=fore:$(theme.color.fore)
+	# Highlighted identifiers
+	style.python.14=fore:$(theme.color.blue)
+	
+	# Operators
+	style.python.10=fore:$(theme.color.fore)
+	style.python.34=back:$(theme.color.red),fore:$(theme.color.fore)
+	style.python.35=fore:$(theme.color.red)
+	# Decorators
+	style.python.15=fore:$(theme.color.teal)
+	
+	# End of line where string is not closed
+	style.python.13=fore:#000000,back:#E0C0E0,eolfilled
+
+	# Line numbers
+	style.python.33=fore:$(theme.color.grey),back:$(theme.color.back)
+	.

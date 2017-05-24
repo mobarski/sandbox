@@ -36,7 +36,7 @@ class hll:
 		#return int(estimate)
 		return min(int(estimate), all_cnt)
 
-ranges = [(0,10000),(0,10000),(0,10000)]
+ranges = [(50,1000),(0,1000),(0,1000)]
 
 hx = hll(2048)
 for lo,cnt in ranges:
