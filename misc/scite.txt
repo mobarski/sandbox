@@ -1,5 +1,4 @@
-theme.is.light = 0
-theme.is.dark = 1
+theme.dark = 1
 
 -- SANDBOX
 -- output.code.page=65001
@@ -15,21 +14,37 @@ file.patterns.props=$(file.patterns.props);*.smash
 
 -- PYTHON
 command.go.*.py=C:\python35\pythonw -u "$(FileNameExt)"
-command.build.*.py=C:\python35\pythonw -m doctest -v "$(FileNameExt)"
 command.compile.*.py=C:\python27\pythonw -u C:\maciek\apps\pyinstaller\pyinstaller.py --onefile "$(FileNameExt)"
 
 -- PYTHON version
-command.name.5.*.py=Go Python35
+command.name.5.*.py=Run Python35
 command.5.*.py=C:\python35\pythonw -u "$(FileNameExt)"
-command.name.6.*.py=Go Python36
+command.name.6.*.py=Run Python36
 command.6.*.py=C:\python36\pythonw -u "$(FileNameExt)"
-command.name.7.*.py=Go Python27
+command.name.7.*.py=Run Python27
 command.7.*.py=C:\python27\pythonw -u "$(FileNameExt)"
-
-command.name.8.*.py=Profile Python27
-command.8.*.py=C:\python27\pythonw -m cProfile -s tottime "$(FileNameExt)"
-command.name.9.*.py=Profile Python35
-command.9.*.py=C:\python35\pythonw -m cProfile -s tottime "$(FileNameExt)"
+-- profiling
+command.name.10.*.py=Profile Python27
+command.10.*.py=C:\python27\pythonw -m cProfile -s tottime "$(FileNameExt)"
+command.name.11.*.py=Profile Python35
+command.11.*.py=C:\python35\pythonw -m cProfile -s tottime "$(FileNameExt)"
+command.name.12.*.py=Profile Python36
+command.12.*.py=C:\python36\pythonw -m cProfile -s tottime "$(FileNameExt)"
+-- testing
+command.name.14.*.py=DocTest Python27
+command.14.*.py=C:\python27\pythonw -m doctest -v "$(FileNameExt)"
+command.name.15.*.py=DocTest Python35
+command.15.*.py=C:\python35\pythonw -m doctest -v "$(FileNameExt)"
+command.name.16.*.py=DocTest Python36
+command.16.*.py=C:\python36\pythonw -m doctest -v "$(FileNameExt)"
+-- compilation
+command.name.17.*.py=Compile Python27
+command.17.*.py=C:\python27\pythonw -u C:\maciek\apps\pyinstaller\pyinstaller.py --onefile "$(FileNameExt)"
+command.name.18.*.py=Compile Python35
+command.18.*.py=C:\python35\pythonw -u C:\maciek\apps\pyinstaller\pyinstaller.py --onefile "$(FileNameExt)"
+-- nie dziala
+--command.name.19.*.py=Compile Python36
+--command.19.*.py=C:\python36\pythonw -u C:\maciek\apps\pyinstaller\pyinstaller.py --onefile "$(FileNameExt)"
 
 -- DOT
 command.go.*.dot=C:/maciek/apps/graphviz/bin/dot.exe -Tpdf -o$(FileName).pdf $(FileNameExt)
@@ -58,12 +73,12 @@ Ctrl+i|2239|\
 command.go.*.dash=python $(FileName).py
 file.patterns.diff=$(file.patterns.diff);*.dash
 use.tabs.*.dash=1
-tab.size.*.dash=28
-indent.size.*.dash=28
 style.diff.*=fore:$(font.monospace)
 fold.flags=0
 comment.block.diff=!!!
 comment.block.at.line.start.diff=1
+tab.size.*.dash=8
+indent.size.*.dash=8
 
 -- C
 command.go.*.c=c:\maciek\apps\tcc\tcc.exe -run "$(FileNameExt)"
@@ -79,92 +94,10 @@ command.shortcut.1.*=F2
 
 -- STYLE
 keywordclass.python=$(keywordclass.python3)
-
-if theme.is.light
-	-- COLORS -----------------------------------
-	theme.color.fore=#000000
-	theme.color.back=#FFFFFF
 	
-	theme.color.red=#7F0000
-	theme.color.yellow=#7F7F00
-	theme.color.green=#007F00
-	theme.color.teal=#007F7F
-	theme.color.purple=#7F007F
-	theme.color.orange=#B07F00
-	theme.color.blue=#00007F
-	theme.color.grey=#808080
-	theme.color.light=#E0E0E0
-	
-	-- THEME ---------------------------------------------------
-	caret.width=2
-	caret.fore=$(theme.color.grey)
-	selection.back=$(theme.color.grey)
-	selection.alpha=75
-	-- colour.operator=fore:$(theme.color.grey),bold
-	-- colour.code.comment.box=
-	colour.code.comment.line=fore:$(theme.color.darkgreen)
-	-- colour.code.comment.doc=
-	
-	# EOL, whitespace
-	--style.python.36=fore:$(theme.color.grey)
-	
-	# FORE
-	style.python.32=back:$(theme.color.back),fore:$(theme.color.fore)
-
-	# OUPUT
-	-- style.errorlist.32=back:$(theme.color.back)
-	-- style.errorlist.0=fore:$(theme.color.back)
-	
-	# White space
-	style.python.0=fore:#808080
-	# Indent guide
-	style.python.37=fore:$(theme.color.grey),back:$(theme.color.back)
-	# Comment
-	style.python.1=fore:$(theme.color.red)
-	style.python.12=fore:$(theme.color.grey)
-	
-	# Number
-	style.python.2=fore:$(theme.color.red)
-	# String
-	style.python.3=fore:$(theme.color.purple)
-	style.python.4=fore:$(theme.color.purple)
-	style.python.6=fore:$(theme.color.purple)
-	style.python.7=fore:$(theme.color.purple)
-	# F-String
-	style.python.16=fore:$(theme.color.blue)
-	style.python.17=fore:$(theme.color.blue)
-	style.python.18=fore:$(theme.color.blue)
-	style.python.19=fore:$(theme.color.blue)
-	
-	# Keyword
-	style.python.5=fore:$(theme.color.blue),bold
-	# Common names
-	style.python.11.1=fore:$(theme.color.fore)
-	# Future
-	style.python.11.2=fore:$(theme.color.red),italics
-	
-	# Class name definition
-	style.python.8=fore:$(theme.color.red),bold
-	# Function or method name definition
-	style.python.9=fore:$(theme.color.teal),bold
-	# Identifiers
-	style.python.11=fore:$(theme.color.fore)
-	# Highlighted identifiers
-	style.python.14=fore:$(theme.color.blue)
-	
-	# Operators
-	style.python.10=fore:$(theme.color.fore)
-	style.python.34=back:$(theme.color.back),fore:$(theme.color.red),bold
-	style.python.35=fore:$(theme.color.red)
-	# Decorators
-	style.python.15=fore:$(theme.color.orange),bold
-	
-	# End of line where string is not closed
-	style.python.13=fore:#000000,back:#E0C0E0,eolfilled
-	.
-
-	
-if theme.is.dark
+if theme.dark
+	tab.size.*.dash=28
+	indent.size.*.dash=28
 	-- COLORS -----------------------------------
 	theme.color.fore=#F8F8F2
 	theme.color.back=#272822
