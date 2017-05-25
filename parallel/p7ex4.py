@@ -13,23 +13,41 @@ class Job:
 		self.ops += [(op,a,kw)]
 		return self
 
-	def split(self, *a,**kw): return self._add_op('split',a,kw)
-	def pipe(self, *a, **kw): return self._add_op('pipe',a,kw)
-	def join(self,*a,**kw): return self._add_op('join',a,kw)
+	def split(self, *a, **kw): return self._add_op('split',a,kw)
+	def pipe(self,  *a, **kw): return self._add_op('pipe',a,kw)
+	def join(self,  *a, **kw): return self._add_op('join',a,kw)
 
-	def run(self):
+	def proc_cnt(self):
+		"number of parallel processes in each stage"
 		n = 1
-		dag = {}
-		for step,(op,a,kw) in enumerate(self.ops):
-			dag[step] = {}
+		out = []
+		for stage,(op,a,kw) in enumerate(self.ops):
 			if op=='join':
-				n=1
-			for part in range(n):
-				dag[step][part] = dict(op=op,a=a,kw=kw)
-			if op=='split': # one per job -> python loop
-				n=a[0]
-		from pprint import pprint
-		pprint(dag)
+				n = 1
+				out += [n]
+			elif op=='split':
+				out += [n]
+				n *= a[0]
+			else:
+				out += [n]
+		return out
+
+	def pipes(self):
+		cnt = self.proc_cnt()
+		cnt[0] = 0
+		cnt += [0]
+		print(cnt)
+		for stage,p,p_next in zip(range(len(cnt)),cnt,cnt[1:]):
+			print(self.ops[stage][0])
+			#print(stage,self.ops[stage][0],p,p_next)
+			print('  create out fifo:')
+			for i in range(p_next):
+				print('    s{0}p{1}'.format(stage,i))
+			print('  create proc:')
+			for i in range(p):
+				print('    {0} i:s{1}p{2} o:s{3}p{4}'.format(self.ops[stage][0],stage-1,i,stage,i))
+			
+			
 
 #~ def pump(fi,fo,fe,cfg):
 	#~ block_size = cfg.get('block_size',4096)
@@ -43,12 +61,15 @@ class Job:
 	#~ cmd_args = shlex.parse(cmd)
 	#~ proc = subprocess.Popen(cmd_args)
 
-(Job()
+job=(Job()
 	.pipe('cat plik.txt')
-	.split(4)
-	.pipe('parse.py')
+	.split(2)
+	.pipe('cat')
+	.split(2)
+	.pipe('cat')
 	.pipe('sort')
 	.join()
 	.pipe('hadoop fs -put plik.txt')
-).run()
+).pipes()
+
 
