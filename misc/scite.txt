@@ -7,6 +7,7 @@ autocompleteword.automatic=1
 fold.margin.width=0
 line.margin.visible=1
 --fold.compact=0
+keywordclass.python=$(keywordclass.python3)
 
 -- SMASH
 command.go.*.smash=C:\python36\python -u c:\maciek\apps\smash\smash.py "$(FileNameExt)"
@@ -91,13 +92,10 @@ command.1.*=sort_text
 command.mode.1.*=savebefore:no
 command.shortcut.1.*=F2
 
-
--- STYLE
-keywordclass.python=$(keywordclass.python3)
-	
+-- STYLE	
 if theme.dark
-	tab.size.*.dash=28
-	indent.size.*.dash=28
+	tab.size.python.dash=28
+	indent.size.python.dash=28
 	-- COLORS -----------------------------------
 	theme.color.fore=#F8F8F2
 	theme.color.back=#272822
@@ -128,26 +126,38 @@ if theme.dark
 	-- colour.code.comment.doc=
 	
 	-- EOL, whitespace
-	--style.python.36=fore:$(theme.color.grey)
-	
+	--style.*.36=fore:$(theme.color.grey)
 	-- FORE
-	style.python.32=back:$(theme.color.back),fore:$(theme.color.fore),,$(font.monospace)
-	
+	style.*.32=back:$(theme.color.back),fore:$(theme.color.fore),$(font.monospace)
 	-- White space
-	style.python.0=fore:#808080
+	--style.python.0=fore:$(theme.color.grey)
 	-- Indent guide
-	style.python.37=fore:$(theme.color.grey),back:$(theme.color.back)
+	style.*.37=fore:$(theme.color.grey),back:$(theme.color.back)
+	-- Line numbers
+	style.*.33=fore:$(theme.color.grey),back:$(theme.color.back)
+	-- matching parenthesis
+	style.*.34=back:$(theme.color.red),fore:$(theme.color.fore)
+	style.*.35=fore:$(theme.color.red)
+	
 	-- Comment
 	style.python.1=fore:$(theme.color.orange)
 	style.python.12=fore:$(theme.color.grey)
+	style.lua.1=fore:$(theme.color.orange)
+	style.lua.2=fore:$(theme.color.orange)
+	style.lua.3=fore:$(theme.color.orange)
 	
 	-- Number
 	style.python.2=fore:$(theme.color.red)
+	
 	-- String
 	style.python.3=fore:$(theme.color.yellow)
 	style.python.4=fore:$(theme.color.yellow)
 	style.python.6=fore:$(theme.color.yellow)
 	style.python.7=fore:$(theme.color.yellow)
+	style.lua.6=fore:$(theme.color.yellow)
+	style.lua.7=fore:$(theme.color.yellow)
+	style.lua.8=fore:$(theme.color.yellow)
+	
 	-- F-String
 	style.python.16=fore:$(theme.color.blue)
 	style.python.17=fore:$(theme.color.blue)
@@ -156,6 +166,7 @@ if theme.dark
 	
 	-- Keyword
 	style.python.5=fore:$(theme.color.blue)
+	style.*.5=fore:$(theme.color.blue)
 	-- Common names
 	style.python.11.1=fore:$(theme.color.fore)
 	-- Future
@@ -169,19 +180,15 @@ if theme.dark
 	style.python.11=fore:$(theme.color.fore)
 	-- Highlighted identifiers
 	style.python.14=fore:$(theme.color.blue)
+	style.props.5=fore:$(theme.color.blue)
 	
 	-- Operators
 	style.python.10=fore:$(theme.color.fore)
-	style.python.34=back:$(theme.color.red),fore:$(theme.color.fore)
-	style.python.35=fore:$(theme.color.red)
 	-- Decorators
 	style.python.15=fore:$(theme.color.fore)
 	
 	-- End of line where string is not closed
 	style.python.13=fore:#000000,back:#E0C0E0,eolfilled
-
-	-- Line numbers
-	style.python.33=fore:$(theme.color.grey),back:$(theme.color.back)
 
 	-- Error list styles ---------------------------------------------------------------------
 
