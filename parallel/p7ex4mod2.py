@@ -8,6 +8,7 @@ from pprint import pprint
 
 # IMPORTANT - writes to pipes are atomic if len(data)<=pipe_buf (4096 for linux)
 # IMPORTANT - subprocesses inherit file descriptors when close_fds=False
+# IMPORTANT - pipes in multiprocessing must be closed in target and after .join() 
 
 class Job:
 	def __init__(self,hint=''):
@@ -71,7 +72,7 @@ class Job:
 					print("  proc:{0} i:{1} o:{2}".format(p,fi_id,fo_id,fe_id))
 					if op[0]=='pipe':
 						fe = pipe.get(fe_id,sys.stderr)
-						fi = sproc.PIPE if s>0 else sys.stdin
+						fi = sproc.PIPE if s>0 else None
 						fo = pipe.get(fo_id,sys.stdout)
 						args = shlex.split(op[1][0])
 						proc = sproc.Popen(args,stdin=fi,stdout=fo,stderr=fe,close_fds=False)
@@ -84,14 +85,14 @@ class Job:
 						fi_write = os.fdopen(fd_write,'wb')
 						fo_list = [pipe[fo_id] for fo_id in fo_id]
 						out_fd_list = [f.fileno() for f in fo_list]
-						proc = mproc.Process(target=split,args=(fd_read,out_fd_list))
+						proc = mproc.Process(target=split2,args=(fd_read,out_fd_list))
 						proc.wait = proc.join # single interface for waiting till process ends
 						pipe[fi_id] = fi_write
 						process[fi_id] = proc
 						proc.start()
 					if 1 and op[0]=='split': # subprocess SPLIT with file descriptor inheritance
 						fe = pipe.get(fe_id,sys.stderr)
-						fi = sproc.PIPE if s>0 else sys.stdin
+						fi = sproc.PIPE if s>0 else None
 						fo_list = [pipe[fo_id] for fo_id in fo_id]
 						out_fd_list = [str(f.fileno()) for f in fo_list]
 						args = ['python','split.py']+out_fd_list
@@ -102,45 +103,68 @@ class Job:
 						pass
 		for k,proc in sorted(process.items()):
 			print('waiting for',k)
+			fd = proc.stdout.fileno() if proc.stdout else None
 			proc.wait()
+			if fd:
+				os.close(fd)
 
 
 def split(in_fd, out_fd_list): # for multiprocessing
 	block_size = 1024
 	fi = os.fdopen(in_fd,'rb')
 	fo_list = [os.fdopen(fd,'wb') for fd in out_fd_list]
+	sys.stderr.write('xxx')
 	while True:
 		for fo in fo_list:
 			block = fi.read(block_size)+fi.readline()
 			fo.write(block)
-			if len(block)<block_size: break
+			if len(block)<block_size:
+				for f in fo_list:
+					f.close()
+				break
 		else: continue
 		break
 
+from itertools import cycle
+def split2(in_fd, out_fd_list): # for multiprocessing
+	block_size = 1024
+	fi = os.fdopen(in_fd,'rb')
+	fo_list = [os.fdopen(fd,'wb') for fd in out_fd_list]
+	return
+	for fo in cycle(fo_list):
+		block = fi.read(block_size)+fi.readline()
+		fo.write(block)
+		if len(block)<block_size:
+			break
+	for fd in out_fd_list:
+		os.close(fd)
+	
 #~ def pipe(fi,fo,fe,cfg):
 	#~ cmd = cfg['cmd']
 	#~ cmd_args = shlex.parse(cmd)
 	#~ proc = subprocess.Popen(cmd_args)
 
-job=(Job()
-	#.pipe('cat test.txt')
-	#.pipe('cat test.txt')
-	#.pipe('''python -c "print('hello\\nworld\\n')"''')
-	#.split(2)
-	#.pipe('cat test.txt')
-	#~ .split(2)
-	#~ .pipe('cat')
-	#~ .pipe('cat')
-	#.join(2)
-	#~ .pipe('cat')
-	#~ .join(2)
-	#.pipe('''python -c "import sys; open('usunmnie.txt','w').write(sys.stdin.read())"''')
-	#.pipe('cat test.txt')
-	#.pipe('empty')
-	.split(2)
-	.pipe('cat test.txt')
-	.split(2)
-	.pipe('empty')
-	.join(4)
-	.pipe('empty')
-).init()
+if __name__=="__main__":
+	job=(Job()
+		#.pipe('cat test.txt')
+		#.pipe('cat test.txt')
+		#.pipe('''python -c "print('hello\\nworld\\n')"''')
+		#.split(2)
+		#.pipe('cat test.txt')
+		#~ .split(2)
+		#~ .pipe('cat')
+		#~ .pipe('cat')
+		#.join(2)
+		#~ .pipe('cat')
+		#~ .join(2)
+		#.pipe('''python -c "import sys; open('usunmnie.txt','w').write(sys.stdin.read())"''')
+		#.pipe('cat test.txt')
+		#.pipe('empty')
+		#.pipe('python -c "import sys; sys.stdout.close()"')
+		#.split(2)
+		.pipe('cat test.txt')
+		#.split(2)
+		#.pipe('sort -r')
+		#.join(2)
+		.pipe('cat ')
+	).init()

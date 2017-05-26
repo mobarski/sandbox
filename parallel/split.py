@@ -17,13 +17,13 @@ while fo_list:
 		fo.write(block)
 		fe.write(block)
 		if len(block)<BLOCK_SIZE:
-			#~ for fd in fd_list:
-				#~ os.close(fd)
-			for f in fo_list:
-				f.close()
 			break
 	else: continue
 	break
+#~ for fd in fd_list:
+	#~ os.close(fd)
+for f in fo_list:
+	f.close()
 os.close(0)
 os.close(1)
 os.close(2)
