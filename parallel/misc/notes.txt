@@ -1,0 +1,22 @@
+Windows
+- multiprocessing ma problem z deskryptorami potokow (os.pipe) - zapisane dane nie sa widoczne w rodzicu
+- subprocess ma problem z deskryptorami, ktore nie wiadomo dlaczego sie zamykaja przy close_fds=False
+- w jednym i drugim przypadku nie pomaga stosowanie get_osfhandle i open_osfhandle
+czyli:
+- pod Windows jedyne sensowne rozwiazanie to to z P7 MK3 - glowne zadanie jest spliterem i robi subprocess nastepnego kroku
+
+POSIX:
+- sa nazwane potoki
+- dziala dziedziczenie deskryptorow
+- dziala select - czekanie na wiele deskryptorow na raz
+
+
+job=(Job()
+	.cmd('gunzip')
+	.split(4)
+	.cmd('parse').log_filter(1) >> costam
+	.join
+	.cmd('gzip')
+	.cmd('hadoop -put xxx.gz') >> end
+        .costam.
+).run()

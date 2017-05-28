@@ -32,7 +32,7 @@ class Job:
 				out += [n]
 		return out
 
-	def pipes(self):
+	def pipes1(self):
 		cnt = self.proc_cnt()
 		cnt[0] = 0
 		cnt += [0]
@@ -47,7 +47,24 @@ class Job:
 			for i in range(p):
 				print('    {0} i:s{1}p{2} o:s{3}p{4}'.format(self.ops[stage][0],stage-1,i,stage,i))
 			
-			
+	def pipes(self):
+		stage_cnt = len(self.ops)
+		proc_cnt = self.proc_cnt()
+		for s in reversed(range(stage_cnt)):
+			p_cnt = proc_cnt[s]
+			print('stage',s,self.ops[s][0])
+			for p in range(p_cnt):
+				if s==stage_cnt-1:
+					q=0
+				elif proc_cnt[s+1]==p_cnt:
+					q=p
+				elif proc_cnt[s+1]>p_cnt:
+					q=list(range(proc_cnt[s+1]))
+				else:
+					q=0					
+				print(' s{0}p{1} i={2}:{3} o={4}:{5}'.format(s,p,s,p,s+1,q))
+			print()
+		
 
 #~ def pump(fi,fo,fe,cfg):
 	#~ block_size = cfg.get('block_size',4096)
@@ -65,7 +82,7 @@ job=(Job()
 	.pipe('cat plik.txt')
 	.split(2)
 	.pipe('cat')
-	.split(2)
+	#.split(2)
 	.pipe('cat')
 	.pipe('sort')
 	.join()
