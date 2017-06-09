@@ -1,0 +1,8 @@
+--NEW
+lexer.cpp.escape.sequence=1
+lexer.cpp.verbatim.strings.allow.escapes=1
+style.cpp.27=fore:$(theme.color.red)
+--
+lexer.cpp.backquoted.strings=1
+style.cpp.20=fore:$(theme.color.yellow)
+--END
