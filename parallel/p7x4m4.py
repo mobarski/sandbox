@@ -34,7 +34,7 @@ else:
 	cmd_line_args = parser.parse_args()
 
 if 0:
-	print(cmd_line_args, file=sys.stderr)
+	print(cmd_line_args, file=sys.stdout)
 
 # CONFIG ###################################################################################
 
@@ -59,13 +59,13 @@ t0 = time()
 
 IN = sys.stdin
 OUT = sys.stdout
-LOG = sys.stderr
+LOG = sys.stdout
 
 ctx = {}
 
-print("\nP7 START\n", file=sys.stderr) # stats
+print("\nP7 START\n", file=sys.stdout) # stats
 args = shlex.split(CMD)
-print("ARGS {0}\n".format(args), file=sys.stderr) # stats
+print("ARGS {0}\n".format(args), file=sys.stdout) # stats
 PIPE = subprocess.PIPE
 for i in range(N):
 	ctx[i] = {}
@@ -82,7 +82,7 @@ for i in range(N):
 	ctx[i]['log_file'] = log_file
 	ctx[i]['log_path'] = log_path
 	# stats
-	print("BEGIN  worker:{0}  pid:{1}".format(i,proc.pid), file=sys.stderr)
+	print("BEGIN  worker:{0}  pid:{1}".format(i,proc.pid), file=sys.stdout)
 
 def pump_input():
 	while True:
@@ -114,6 +114,6 @@ for i in range(N):
 
 # stats
 for i in range(N):
-	print("END    worker:{0}  pid:{1}  in:{2}".format(i,ctx[i]['pid'],ctx[i]['head_cnt_in']), file=sys.stderr)
+	print("END    worker:{0}  pid:{1}  in:{2}".format(i,ctx[i]['pid'],ctx[i]['head_cnt_in']), file=sys.stdout)
 
-print("\nRUN_TIME_TOTAL:{0:.1f}s".format(time()-t0), file=sys.stderr)
+print("\nRUN_TIME_TOTAL:{0:.1f}s".format(time()-t0), file=sys.stdout)
