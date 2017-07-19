@@ -1,0 +1,62 @@
+q
+a
+ww
+ss
+eee
+ddd
+rrrr
+ffff
+ttttt
+ggggg
+yyyyyy
+hhhhhh
+uuuuuuu
+jjjjjjj
+iiiiiiii
+kkkkkkkk
+ooooooooo
+lllllllll
+11111111
+2222222
+333333
+44444
+5555
+666
+77
+8
+9
+0
+aa
+bb
+cc
+dd
+ee
+ff
+gg
+hh
+ii
+jj
+kk
+ll
+mm
+nn
+oo
+pp
+qq
+rr
+ss
+tt
+uu
+ww
+xx
+yy
+zz
+import p7
+from pprint import pprint
+cmd = '''python -c "import sys,os; fi=os.fdopen(0,'rb'); fo=os.fdopen(1,'wb'); fo.write(fi.read())" '''
+f_in = "test.txt"
+f_out = 'test/out.part.txt'
+f_log = 'test/log.part.txt'
+job=p7.BatchJob(cmd,f_in,4,f_out,f_log,block_size=10)
+##pprint(job.meta)
+job.run()
