@@ -22,10 +22,11 @@ def write_part(path_in, path_out, offset, blocksize=4096):
 
 if __name__ == "__main__":
 	t0 = time()
+	print("\n\tP7 CONCAT START\n")
 	outpath = sys.argv[1]
 	filenames = sys.argv[2:]
-	print('OUT',outpath)
-	print('IN',filenames)
+	#print('\tOUT',outpath)
+	#print('\tIN\n',filenames)
 
 	meta = {} # filename -> size, offset
 	offset = 0
@@ -43,12 +44,17 @@ if __name__ == "__main__":
 	proc = {}
 	for path in filenames:
 		size,offset = meta[path]
-		proc[path] = Process(target=write_part, args=(path, outpath, offset))
+		p = Process(target=write_part, args=(path, outpath, offset))
+		p.start()
+		print("\tBEGIN  pid:{0}  size:{2}  offset:{1}".format(p.pid,offset,size))
+		proc[path] = p
+		
+	sys.stdout.flush()
 
 	for path in filenames:
-		proc[path].start()
+		p = proc[path]
+		p.join()
+		print("\tEND    pid:{0}".format(p.pid))
 
-	for path in filenames:
-		proc[path].join()
 
-	print(time()-t0)
+	print("\n\tRUN_TIME_TOTAL:{0:.1f}s\n".format(time()-t0))

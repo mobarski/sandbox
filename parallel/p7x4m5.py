@@ -67,12 +67,12 @@ LOG = sys.stdout
 
 ctx = {}
 
-print("\nP7 START\n", file=sys.stdout) # stats
+print("\n\tP7 MAPPER/COMBINER START\n", file=sys.stdout) # stats
 cmd = CMD
 if OUT_PIPE_CMD:
 	cmd += ' | '+OUT_PIPE_CMD
 
-print("CMD {0}\n".format(cmd), file=sys.stdout) # stats
+print("\tCMD {0}\n".format(cmd), file=sys.stdout) # stats
 PIPE = subprocess.PIPE
 for i in range(N):
 	ctx[i] = {}
@@ -89,7 +89,7 @@ for i in range(N):
 	ctx[i]['log_file'] = log_file
 	ctx[i]['log_path'] = log_path
 	# stats
-	print("BEGIN  worker:{0}  pid:{1}".format(i,proc.pid), file=sys.stdout)
+	print("\tBEGIN  worker:{0}  pid:{1}".format(i,proc.pid), file=sys.stdout)
 sys.stdout.flush()
 
 def pump_input():
@@ -122,6 +122,6 @@ for i in range(N):
 
 # stats
 for i in range(N):
-	print("END    worker:{0}  pid:{1}  in:{2}".format(i,ctx[i]['pid'],ctx[i]['head_cnt_in']), file=sys.stdout)
+	print("\tEND    worker:{0}  pid:{1}  in:{2}".format(i,ctx[i]['pid'],ctx[i]['head_cnt_in']), file=sys.stdout)
 
-print("\nRUN_TIME_TOTAL:{0:.1f}s".format(time()-t0), file=sys.stdout)
+print("\n\tRUN_TIME_TOTAL:{0:.1f}s\n".format(time()-t0), file=sys.stdout)
