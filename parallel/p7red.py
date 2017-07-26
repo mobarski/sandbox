@@ -6,7 +6,7 @@ from tempfile import TemporaryFile
 import subprocess
 
 if 0:
-	cmd = 'python p7red.test.py'
+	cmd = 'python p7red.test.key.py'
 	outpath = 'p7red.out.txt'
 	inpaths = ['p7red.test0.txt','p7red.test1.txt']
 	logpath = ''
