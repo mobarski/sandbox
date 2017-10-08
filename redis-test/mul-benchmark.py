@@ -4,6 +4,7 @@ from time import time
 from itertools import islice
 
 # TODO - brakujace elementy - generowanie i obsluga
+# TODO - htoz, hlog, zexp, hexp
 
 N = 10000
 R = 30
@@ -35,7 +36,8 @@ def benchmark(fun, label='', R=5, cleaning_fun=lambda:0):
 
 	
 
-db = redis.StrictRedis('localhost')
+#db = redis.StrictRedis('localhost')
+db = redis.StrictRedis(unix_socket_path='/tmp/redis.sock')
 
 # --- SETUP ---
 
@@ -86,6 +88,53 @@ def interstore_mul():
 	return dict(db.zscan_iter('c'))
 benchmark(interstore_mul,
 'two redis sorted sets multiplied in redis (aggregate mul)')
+
+
+ss_mul = db.register_script('''
+local resp
+local out = {}
+local key = 0
+local cursor = 0
+repeat
+	resp = redis.call('zscan',KEYS[1],cursor)
+	cursor = resp[1]
+	for i,v in pairs(resp[2]) do
+	  if i%2==1 then key=v
+	  else
+	    local x = redis.call('zscore',KEYS[2],key)
+	    out[#out+1] = {key,v*x}
+	  end
+	end
+until cursor=='0'
+return out
+''')
+def lua_ss_mul():
+	return ss_mul(['a','b'],[])
+benchmark(lua_ss_mul,
+'two redis sorted sets multiplied in lua')
+
+
+ss_mul_into = db.register_script('''
+redis.replicate_commands()
+local resp
+local key = 0
+local cursor = 0
+repeat
+	resp = redis.call('zscan',KEYS[1],cursor)
+	cursor = resp[1]
+	for i,v in pairs(resp[2]) do
+	  if i%2==1 then key=v
+	  else
+	    local x = redis.call('zscore',KEYS[2],key)
+	    redis.call('zadd',KEYS[3],v*x,key)
+	  end
+	end
+until cursor=='0'
+''')
+def lua_ss_mul_into_s():
+	return ss_mul_into(['a','b','c'],[])
+benchmark(lua_ss_mul_into_s,
+'two redis sorted sets multiplied in lua, without fetching results')
 
 
 def zscan_py_mul():
@@ -147,32 +196,7 @@ benchmark(lua_hash_mul,
 'two redis hashes multiplied in lua')
 
 
-ss_mul = db.register_script('''
-local resp
-local out = {}
-local key = 0
-local cursor = 0
-repeat
-	resp = redis.call('zscan',KEYS[1],cursor)
-	cursor = resp[1]
-	for i,v in pairs(resp[2]) do
-	  if i%2==1 then key=v
-	  else
-	    local x = redis.call('zscore',KEYS[2],key)
-	    out[#out+1] = {key,v*x}
-	  end
-	end
-until cursor=='0'
-return out
-''')
-def lua_ss_mul():
-	return ss_mul(['a','b'],[])
-benchmark(lua_ss_mul,
-'two redis sorted sets multiplied in lua')
-
-
-
-print('*** SUM **************************************************\n')
+print('*** HELPERS **************************************************\n')
 
 
 hsum = db.register_script('''
@@ -214,11 +238,86 @@ return out
 def lua_zsum():
 	return zsum(['a'],[])
 benchmark(lua_zsum,
-' lua zsum')
+'lua zsum')
 
 
+zlog = db.register_script('''
+redis.replicate_commands()
+local resp
+local key = 0
+local cursor = 0
+repeat
+	resp = redis.call('zscan',KEYS[1],cursor)
+	cursor = resp[1]
+	for i,v in pairs(resp[2]) do
+	  if i%2==1 then key=v
+	  else
+	    redis.call('hset',KEYS[2],key,math.log(v))
+	  end
+	end
+until cursor=='0'
+''')
+def lua_zlog():
+	return zlog(['a','hx'],[])
+benchmark(lua_zlog,
+'lua zlog')
+
+
+ztoh = db.register_script('''
+redis.replicate_commands()
+local resp
+local key = 0
+local cursor = 0
+repeat
+	resp = redis.call('zscan',KEYS[1],cursor)
+	cursor = resp[1]
+	for i,v in pairs(resp[2]) do
+	  if i%2==1 then key=v
+	  else
+	    redis.call('hset',KEYS[2],key,v)
+	  end
+	end
+until cursor=='0'
+''')
+def lua_ztoh():
+	return ztoh(['a','ha2'],[])
+benchmark(lua_ztoh,
+'lua ztoh')
 
 print('*** PRODUCT **********************************************\n')
+
+
+def set_mul_lua_sum_prod():
+	db.zinterstore('c',['a','b'],aggregate='mul')
+	return zsum(['c'],[])
+benchmark(set_mul_lua_sum_prod,
+'two redis sorted sets multiplied in redis (aggregate mul), sum calculated in lua')
+
+
+ss_prod = db.register_script('''
+local resp
+local out = 0
+local key = 0
+local cursor = 0
+repeat
+	resp = redis.call('zscan',KEYS[1],cursor)
+	cursor = resp[1]
+	for i,v in pairs(resp[2]) do
+	  if i%2==1 then key=v
+	  else
+	    local x = redis.call('zscore',KEYS[2],key)
+	    out = out + v*x
+	  end
+	end
+until cursor=='0'
+return out
+''')
+def lua_ss_prod():
+	return ss_prod(['a','b'],[])
+benchmark(lua_ss_prod,
+'two redis sorted sets product calculated in lua')
+
+
 
 hh_prod = db.register_script('''
 local resp
@@ -295,36 +394,5 @@ benchmark(lua_hs_prod,
 
 
 
-ss_prod = db.register_script('''
-local resp
-local out = 0
-local key = 0
-local cursor = 0
-repeat
-	resp = redis.call('zscan',KEYS[1],cursor)
-	cursor = resp[1]
-	for i,v in pairs(resp[2]) do
-	  if i%2==1 then key=v
-	  else
-	    local x = redis.call('zscore',KEYS[2],key)
-	    out = out + v*x
-	  end
-	end
-until cursor=='0'
-return out
-''')
-def lua_ss_prod():
-	return ss_prod(['a','b'],[])
-benchmark(lua_ss_prod,
-'two redis sorted sets product calculated in lua')
 
-
-
-
-
-def set_mul_lua_sum_prod():
-	db.zinterstore('c',['a','b'],aggregate='mul')
-	return zsum(['c'],[])
-benchmark(set_mul_lua_sum_prod,
-'two redis sorted sets multiplied in redis (aggregate mul), sum calculated in lua')
 
