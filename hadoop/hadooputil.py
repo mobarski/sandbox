@@ -1,82 +1,108 @@
 import subprocess
+from textwrap import dedent
+
 
 def run(cmd):
-	print(cmd)
+	print(cmd.strip())
 	#return subprocess.check_call(cmd,shell=True)
 
-def pipe(*cmds):
+
+def run_script(cmd_list):
+	for cmd in cmd_list:
+		run(cmd)
+
+
+def pipe(*cmds, **kw):
 	cmd = ' | '.join(cmds)
-	return run(cmd)
-
-
-class posix:
-	def __init__(self, prefix=''):
-		self.prefix = prefix
-	
-	def cat(self, path, *a, **kw):
-		cmd = 'cat '+path.format(*a,**kw)
-		return self.prefix + cmd
+	if 'doc' in kw:
+		cmd += '\n'
+		for doc in kw['doc']:
+			cmd += doc.rstrip()+'\n'
+		# TODO rstrip?
+	return cmd
 
 
 class hadoop:
 	def __init__(self, prefix=''):
 		self.prefix = prefix.rstrip()+' ' if prefix else ''
-	
-	# TODO host os commands
 
-	def cat(self, path, *a, **kw):
-		cmd = 'hdfs dfs -cat '+path.format(*a,**kw)
+	def os(self, cmd, *a, **kw):
+		return self.prefix + cmd.format(*a,**kw)
+		
+	def cat(self, path):
+		cmd = 'hdfs dfs -cat '+path
 		return self.prefix + cmd
 
-	def text(self, path, *a, **kw):
-		cmd = "hdfs dfs -text "+path.format(*a,**kw)
+	def text(self, path):
+		cmd = "hdfs dfs -text "+path
 		return self.prefix + cmd
 
-	def rm(self, path, *a, **kw):
-		cmd = 'hdfs dfs -rm -f '+path.format(*a,**kw)
+	def getmerge(self, source_path, target_path):
+		cmd = "hdfs dfs -getmerge {0} {1}".format(source_path,target_path)
 		return self.prefix + cmd
 
-	def put_pipe(self, target_path, *a, **kw):
-		cmd = 'hdfs dfs -put - '+target_path.format(*a,**kw)
+	def rm(self, path):
+		cmd = 'hdfs dfs -rm -f '+path
 		return self.prefix + cmd
 
-	def put(self, source_path, target_path, *a, **kw):
-		source = source_path.format(*a,**kw)
-		target = target_path.format(*a,**kw)
+	def rmr(self, path):
+		cmd = 'hdfs dfs -rmr -f '+path
+		return self.prefix + cmd
+
+	def put_pipe(self, target_path):
+		cmd = 'hdfs dfs -put - '+target_path
+		return self.prefix + cmd
+
+	def put(self, source_path, target_path):
+		source = source_path
+		target = target_path
 		cmd = 'hdfs dfs -put {0} {1}'.format(source,target)
 		return self.prefix + cmd
 	
-	def spark(self, args, *a, **kw):
-		cmd = 'spark-submit '+args.format(*a,**kw)
+	def spark(self, args):
+		cmd = 'spark2-submit '+args
 		return self.prefix + cmd
 	
-	def spark2(self, args, *a, **kw):
-		cmd = 'spark2-submit '+args.format(*a,**kw)
-		return self.prefix + cmd
+	def host_write(self, path, text):
+		local = hadoop()
+		return pipe(local.os('cat <<EOF'),self.os('cat >'+path),doc=[text,'EOF'])
 	
-	def spark_load(self, *a, **kw):
-		pass
+
+	# scripts
+
+	def spark_load(self): pass # TODO
 	
-	# TODO jak uruchamiac skrypty?
-	def spark2_extract(self, *a, **kw):
-		script_path = kw['script_path'].format(*a,**kw)
-		script_args = kw.get('script_args','').format(*a,**kw)
-		output_dir = kw['output_dir'].format(*a,**kw)
-		table = kw['table'].format(*a,**kw)
-		script = """
-			spark.table('{table}').write.csv('{output_dir}')
-			""".format(*a,**kw)
-		# execute
-		#self.host().write(script,script_path) # TODO
-		self.spark2("{script_path} {script_args}".format(locals()))
-		self.text(output_dir+'/path*')
+	def spark_run(self, code, script_path, spark_args='', remove='all'):
+		# TODO random/dynamic script path
+		script = dedent(code).strip()
+		yield self.host_write(script_path,script)
+		yield self.spark("{0} {1}".format(script_path, spark_args))
+		if remove.lower() in ['script','all']:
+			yield self.os('rm -f '+script_path)
+	
+	def extract_csv(self, table, output_dir, script_path, spark_args='', remove='none'):
+		# TODO random/dynamic output_dir
+		# TODO clean output dir at start
+		# TODO csv args
+		code = """
+			spark.table('{0}').write.csv('{1}')
+			""".format(table, output_dir)
+		
+		for cmd in self.spark_run(code, script_path, spark_args=spark_args, remove=remove):
+			yield cmd
+		
+		# TODO pipe into ???
+		yield self.text(output_dir+'/part*') # getmerge?
+		if remove.lower() in ['output','all']:
+			yield self.rmr(output_dir)
 		
 
-p=posix()
 h=hadoop('ssh userxxx@aaa.bbb.ccc.ddd.pl')
 
-pipe(p.cat('../costam.txt'), h.put_pipe('/home/mobarki/xxx'))
-pipe(h.put('xxx','ttt'))
-pipe(h.spark2('xxx.py {0}','v13'))
+#pipe(p.cat('../costam.txt'), h.put_pipe('/home/mobarki/xxx'))
+#pipe(h.put('xxx','ttt'))
+#pipe(h.spark2('xxx.py {0}','v13'))
+#pipe(h.put('<<EOF','/tmp/costam.txt'),h.put('<<EOF','/tmp/xxx'),doc=['to\njest\ntest','EOF','zzz\nxxx','EOF'])
 
-
+script = h.extract_csv('testdb.example_table','/sample/output/dir','test_script_path',remove='all')
+run_script(script)
