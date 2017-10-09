@@ -89,13 +89,33 @@ benchmark(interstore_mul,
 'two redis sorted sets multiplied in redis (aggregate mul)')
 
 
+def interstore_mul_count():
+	db.zinterstore('c',['a','b'],aggregate='mul')
+	return dict(db.zscan_iter('c',count=100))
+benchmark(interstore_mul_count,
+'two redis sorted sets multiplied in redis (aggregate mul), count set to 100')
+
+def interstore_mul_count2():
+	db.zinterstore('c',['a','b'],aggregate='mul')
+	return dict(db.zscan_iter('c',count=1000))
+benchmark(interstore_mul_count2,
+'two redis sorted sets multiplied in redis (aggregate mul), count set to 1000')
+
+
+def interstore_mul_count3():
+	db.zinterstore('c',['a','b'],aggregate='mul')
+	return dict(db.zscan_iter('c',count=10000))
+benchmark(interstore_mul_count3,
+'two redis sorted sets multiplied in redis (aggregate mul), count set to 10000')
+
+
 ss_mul = db.register_script('''
 local resp
 local out = {}
 local key = 0
 local cursor = 0
 repeat
-	resp = redis.call('zscan',KEYS[1],cursor)
+	resp = redis.call('zscan',KEYS[1],cursor,'count',ARGV[1])
 	cursor = resp[1]
 	for i,v in pairs(resp[2]) do
 	  if i%2==1 then key=v
@@ -108,10 +128,20 @@ until cursor=='0'
 return out
 ''')
 def lua_ss_mul():
-	return ss_mul(['a','b'],[])
+	return ss_mul(['a','b'],[1])
 benchmark(lua_ss_mul,
 'two redis sorted sets multiplied in lua')
+def lua_ss_mul_count():
+	return ss_mul(['a','b'],[100])
+benchmark(lua_ss_mul_count,
+'two redis sorted sets multiplied in lua, count set to 100')
+def lua_ss_mul_count2():
+	return ss_mul(['a','b'],[1000])
+benchmark(lua_ss_mul_count2,
+'two redis sorted sets multiplied in lua, count set to 1000')
 
+
+exit()
 
 ss_mul_into = db.register_script('''
 redis.replicate_commands()
@@ -167,6 +197,16 @@ def hscan2_py_mul():
 	return {k:aa[k]*bb[k] for k in aa if k in bb}
 benchmark(hscan2_py_mul,
 'two redis hashes multiplied in python')
+
+
+def hscan2_count_py_mul():
+	aa = db.hscan_iter('ha',count=1000)
+	bb = db.hscan_iter('hb',count=1000)
+	aa = {k:float(v) for k,v in aa}
+	bb = {k:float(v) for k,v in bb}
+	return {k:aa[k]*bb[k] for k in aa if k in bb}
+benchmark(hscan2_count_py_mul,
+'two redis hashes multiplied in python, count set to 1000')
 
 
 hash_mul = db.register_script('''
