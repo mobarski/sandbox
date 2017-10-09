@@ -4,7 +4,6 @@ from time import time
 from itertools import islice
 
 # TODO - brakujace elementy - generowanie i obsluga
-# TODO - htoz, hlog, zexp, hexp
 
 N = 10000
 R = 30
@@ -36,8 +35,8 @@ def benchmark(fun, label='', R=5, cleaning_fun=lambda:0):
 
 	
 
-#db = redis.StrictRedis('localhost')
-db = redis.StrictRedis(unix_socket_path='/tmp/redis.sock')
+db = redis.StrictRedis('localhost')
+#db = redis.StrictRedis(unix_socket_path='/tmp/redis.sock')
 
 # --- SETUP ---
 
@@ -151,6 +150,7 @@ benchmark(zscan_py_mul,
 'redis hash and python dict multiplied in python')
 
 
+
 def zscan2_py_mul():
 	aa = db.zscan_iter('a')
 	bb = db.zscan_iter('b')
@@ -167,9 +167,6 @@ def hscan2_py_mul():
 	return {k:aa[k]*bb[k] for k in aa if k in bb}
 benchmark(hscan2_py_mul,
 'two redis hashes multiplied in python')
-
-
-# --- LUA SCRIPTS ---
 
 
 hash_mul = db.register_script('''
@@ -283,6 +280,28 @@ def lua_ztoh():
 	return ztoh(['a','ha2'],[])
 benchmark(lua_ztoh,
 'lua ztoh')
+
+
+htoz = db.register_script('''
+redis.replicate_commands()
+local resp
+local key = 0
+local cursor = 0
+repeat
+	resp = redis.call('hscan',KEYS[1],cursor)
+	cursor = resp[1]
+	for i,v in pairs(resp[2]) do
+	  if i%2==1 then key=v
+	  else
+	    redis.call('zadd',KEYS[2],v,key)
+	  end
+	end
+until cursor=='0'
+''')
+def lua_htoz():
+	return htoz(['ha','a2'],[])
+benchmark(lua_htoz,
+'lua htoz')
 
 print('*** PRODUCT **********************************************\n')
 
