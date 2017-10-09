@@ -1,7 +1,7 @@
 import os
 import re
 
-for fn in os.listdir():
+for fn in os.listdir('.'):
 	if not fn.endswith('.properties'): continue
 	raw = open(fn,'r').read()
 	n = len(re.findall('(?m)^style[.]',raw))
