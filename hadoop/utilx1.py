@@ -1,10 +1,12 @@
 import subprocess
 from textwrap import dedent
 
+EXECUTE = False
 
 def run(cmd):
 	print(cmd.strip())
-	#return subprocess.check_call(cmd,shell=True)
+	if EXECUTE:
+		return subprocess.check_call(cmd,shell=True)
 
 
 def run_script(cmd_list):
@@ -28,6 +30,9 @@ class hadoop:
 
 	def os(self, cmd, *a, **kw):
 		return self.prefix + cmd.format(*a,**kw)
+
+	def dfs(self, cmd, *a, **kw):
+		return self.prefix + ' hdfs dfs -' +cmd.strip().format(*a,**kw)
 		
 	def cat(self, path):
 		cmd = 'hdfs dfs -cat '+path
@@ -46,7 +51,7 @@ class hadoop:
 		return self.prefix + cmd
 
 	def rmr(self, path):
-		cmd = 'hdfs dfs -rmr -f '+path
+		cmd = 'hdfs dfs -rm -r -f '+path
 		return self.prefix + cmd
 
 	def put_pipe(self, target_path):
@@ -65,7 +70,7 @@ class hadoop:
 	
 	def host_write(self, path, text):
 		local = hadoop()
-		return pipe(local.os('cat <<EOF'),self.os('cat >'+path),doc=[text,'EOF'])
+		return pipe(local.os('cat <<EOF'),self.os('"cat >{0}"'.format(path)),doc=[text,'EOF'])
 	
 
 	# scripts
@@ -85,6 +90,8 @@ class hadoop:
 		# TODO clean output dir at start
 		# TODO csv args
 		code = """
+			from pyspark.sql import SparkSession
+			spark = SparkSession.builder.appName('TODO').getOrCreate()
 			spark.table('{0}').write.csv('{1}')
 			""".format(table, output_dir)
 		
