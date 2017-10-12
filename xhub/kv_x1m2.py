@@ -1,14 +1,21 @@
 # encoding: UTF-8
 
+## KV databases family built on top of SQLite
+## (c) 2017 by mobarski (at) gmail (dot) com
+## licence: MIT
+## version: x1m2 (x-experimental, p-preview, r-release, m-modification)
+
+from __future__ import print_function
 import sqlite3
 from zlib import compress,decompress
 #from pickle import loads,dumps
 #from cPickle import loads,dumps
 from marshal import loads,dumps
 
-# version p1 (p-preview, r-release, x-experimental)
+# TODO:
+# [ ] separate ser+de for key, benchmark
 
-class KV:
+class blob_kv:
 	"Key-Value database built on top of SQLite"
 	def __init__(self,path=':memory:',zlevel=0,protocol=2):
 		self.path = path
@@ -90,11 +97,9 @@ class KV:
 	def __contains__(self,k): return self.size(k) is not None
 	def __delitem__(self,k): return self.delete(k)
 	### ### ###
-connect = KV
-
 
 def test_kv():
-	db = connect('usunmnie.db')
+	db = blob_kv('usunmnie.db')
 	#db.set('a','to jest test żółć')
 	db.set('a','to jest test')
 	#db.set('b',['to','jest','test','żółć'])
@@ -121,22 +126,26 @@ def test_kv():
 
 def bench_kv(N):
 	from time import time
-	db = connect('bench.db',0)
-	#db = connect()
-	db.truncate()
-	db.commit()
-	data = {'k'+str(i):'v'+str(i)*100 for i in range(N)}
-	t0=time()
-	db.update(data.items())
-	t1=time()
-	db.commit()
-	t2=time()
-	print('write',int(N/(t2-t0)), t2-t0, t1-t0, t2-t1)
-	[db.get(k) for k in data]
-	t3=time()
-	print('read',int(N/(t3-t2)),t3-t2)
+	#db = blob_kv('bench.db',0)
+	db = blob_kv()
+	data = {'k'+str(i):'v'+str(i) for i in range(N)}
+	if 0:
+		db.truncate()
+		db.commit()
+		t0=time()
+		db.update(data.items())
+		t1=time()
+		db.commit()
+		t2=time()
+		print('WRITE rows/s',int(N/(t2-t0)), "total {0:.2f}s".format(t2-t0), "update {0:.2f}s".format(t1-t0), "commit {0:.2f}s".format(t2-t1))
+	if 1:
+		t0=time()
+		[db.get(k) for k in data]
+		t1=time()
+		print('READ rows/s',int(N/(t1-t0)), "total {0:.2f}s".format(t1-t0))
 	
 
 if __name__=="__main__":
-	bench_kv(10000)
+	for i in range(10):
+		bench_kv(10000)
 	#test_kv()
