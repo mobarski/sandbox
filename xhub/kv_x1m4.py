@@ -3,9 +3,12 @@
 # KV database built on top of SQLite
 # (c) 2017 by mobarski (at) gmail (dot) com
 # licence: MIT
-# version: x1m3 (x-experimental, p-preview, r-release, m-modification)
+# version: x1m4 (x-experimental, p-preview, r-release, m-modification)
+
+# TODO - otwieranie bazy w multiprocessingu -> sqlite3.DatabaseError: database disk image is malformed
 
 # CHANGES:
+# x1m4 - multiple tables
 # x1m3 - key is not serialized, glob key selection for iterators, class renamed
 
 from __future__ import print_function
@@ -18,7 +21,8 @@ from marshal import loads,dumps
 
 class KV:
 	"Key-Value database built on top of SQLite"
-	def __init__(self,path=':memory:',zlevel=0,protocol=2):
+	def __init__(self,path=':memory:',zlevel=0,protocol=2,tab=0):
+		self.tab = 'kv'+str(abs(int(tab)))
 		self.path = path
 		self.zlevel = zlevel
 		self.protocol = protocol
@@ -37,44 +41,44 @@ class KV:
 			return loads(str(x))
 	### CORE ###
 	def get(self,key,default=None):
-		results = self.conn.execute('select v from kv where k=?',(key,))
+		results = self.conn.execute('select v from {0} where k=?'.format(self.tab),(key,))
 		x = results.fetchone()
 		return self.de(x[0]) if x else default
 	def set(self,key,v):
 		val = self.ser(v)
-		self.conn.execute('insert or replace into kv values (?,?)',(key,val))
+		self.conn.execute('insert or replace into {0} values (?,?)'.format(self.tab),(key, val))
 	### ITER ###
 	def keys(self,like=None):
 		if like:
-			for k in self.conn.execute('select k from kv where k glob ?',(like,)):
+			for k in self.conn.execute('select k from {0} where k glob ?'.format(self.tab),(like,)):
 				yield k[0]
 		else:
-			for k in self.conn.execute('select k from kv'):
+			for k in self.conn.execute('select k from {0}'.format(self.tab)):
 				yield k[0]
 	def values(self,like=None):
 		if like:
-			for v in self.conn.execute('select v from kv where k glob ?',(like,)):
+			for v in self.conn.execute('select v from {0} where k glob ?'.format(self.tab),(like,)):
 				yield self.de(v[0])
 		else:
-			for v in self.conn.execute('select v from kv'):
+			for v in self.conn.execute('select v from {0}'.format(self.tab)):
 				yield self.de(v[0])
 	def items(self,like=None):
 		if like:
-			for k,v in self.conn.execute('select k,v from kv where k glob ?',(like,)):
+			for k,v in self.conn.execute('select k,v from {0} where k glob ?'.format(self.tab),(like,)):
 				yield k,self.de(v)			
 		else:
-			for k,v in self.conn.execute('select k,v from kv'):
+			for k,v in self.conn.execute('select k,v from {0}'.format(self.tab)):
 				yield k,self.de(v)
 	def count(self,like=None):
 		if like:
-			for x in self.conn.execute('select count(1) from kv where k glob ?',(like,)):
+			for x in self.conn.execute('select count(1) from {0} where k glob ?'.format(self.tab),(like,)):
 				return x[0]
 		else:
-			for x in self.conn.execute('select count(1) from kv'):
+			for x in self.conn.execute('select count(1) from {0}'.format(self.tab)):
 				return x[0]
 	def update(self,items):
 		ser = self.ser
-		self.conn.executemany('insert or replace into kv values (?,?)',[(k,ser(v)) for k,v in items]) # best-of-5:205k/s
+		self.conn.executemany('insert or replace into {0} values (?,?)'.format(self.tab),[(k,ser(v)) for k,v in items]) # best-of-5:205k/s
 		##from itertools import starmap
 		##ser2 = lambda x:(ser(x[0]),ser(x[1]))
 		##ser3 = lambda k,v:(ser(k),ser(v))
@@ -87,27 +91,30 @@ class KV:
 		[self.delete(k) for k in keys]
 	def size_iter(self,like=None,limit=-1): # TODO rename?
 		if like:
-			for k,vs in self.conn.execute('select k,length(v) from kv where k glob ? order by length(v) desc limit ?',(like,limit)):
+			for k,vs in self.conn.execute('select k,length(v) from {0} where k glob ? order by length(v) desc limit ?'.format(self.tab),(like,limit)):
 				yield k,vs
 		else:
-			for k,vs in self.conn.execute('select k,length(v) from kv order by length(v) desc limit ?',(limit,)):
+			for k,vs in self.conn.execute('select k,length(v) from {0} order by length(v) desc limit ?'.format(self.tab),(limit,)):
 				yield k,vs
 	### OTHER ###
+	def tables(self):
+		rows = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+		return [int(r[0][2:]) for r in rows]
 	def commit(self):
 		self.conn.commit()
 	def create(self):
-		self.conn.execute('create table if not exists kv (k blob,v blob)')
-		self.conn.execute('create unique index if not exists i_kv on kv (k)')		
+		self.conn.execute('create table if not exists {0} (k blob,v blob)'.format(self.tab))
+		self.conn.execute('create unique index if not exists i_{0} on {0} (k)'.format(self.tab))
 	def delete(self,key):
-		self.conn.execute('delete from kv where k=?',(key,))
+		self.conn.execute('delete from {0} where k=?'.format(self.tab),(key,))
 	def clear(self):
-		self.conn.execute('drop table kv')
+		self.conn.execute('drop table {0}'.format(self.tab))
 		self.create()
 		self.vacuum()
 	def vacuum(self):
 		self.conn.execute('vacuum')
 	def size(self,key):
-		results = self.conn.execute('select length(v) from kv where k=?',(key,))
+		results = self.conn.execute('select length(v) from {0} where k=?'.format(self.tab),(key,))
 		x = results.fetchone()
 		return x[0] if x else None
 	### DICT ###
@@ -142,10 +149,12 @@ def test_kv():
 	print(db['x'])
 	print('x' in db)
 	del db['x']
+	print(db.tables())
+
 
 def bench_kv(N,mode='write'):
 	from time import time
-	db = KV('bench_x1m3.db',0)
+	db = KV('bench_x1m4.db',0)
 	#db = KV()
 	data = {'k'+str(i):'v'+str(i) for i in range(N)}
 	#data = {i:'v'+str(i) for i in range(N)}
