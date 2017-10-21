@@ -2,6 +2,8 @@
 from __future__ import print_function
 import re
 
+url_db = text_db('data/url.db',5)
+
 def get_urls(raw):
 	hrefs = re.findall('(?u)<a href="([^"]+)"',raw.decode('utf8'))
 	return list(set(['https://pl.wikipedia.org'+h for h in hrefs]))

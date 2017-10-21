@@ -1,12 +1,12 @@
 from contrib import *
 import urllib3
 import re
-from zlib import compress
 from hashlib import sha1
 from time import time
 
 http = urllib3.PoolManager()
-kv = KV('data/urlid_text.db',5,tab=1)
+text_db = text_db('data/text.db',5)
+url_db = text_db('data/url.db',5)
 
 def fetch_text(url):
 	r = http.request('GET',url)
@@ -21,14 +21,15 @@ def fetch_text(url):
 if __name__=="__main__":
 	import urls
 	t0 = time()
-	if 0:
+	if 1:
 		for topic in urls.topic_urls:
 			for url in urls.topic_urls[topic]:
 				urlid = sha1(url).hexdigest()[:16]
 				print(topic,urlid,url)
+				if urlid in text_db: continue
 				text = fetch_text(url)
-				kv[urlid] = text
-			kv.commit()
-	print(list(kv.keys(limit=5)))
+				text_db[urlid] = text
+			text_db.sync()
+	print(list(text_db.keys(limit=5)))
 	print(time()-t0)
 
