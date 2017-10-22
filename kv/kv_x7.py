@@ -171,7 +171,7 @@ class KV:
 		self.conn.commit()
 	def __enter__(self):
 		return self
-	def __close__(self, ex_type, ex_val, ex_tb):
+	def __exit__(self, ex_type, ex_val, ex_tb):
 		pass # TODO
 	# TODO def pop(
 	# TODO def popitem(
