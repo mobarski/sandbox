@@ -26,17 +26,19 @@ from collections import Counter
 	
 	## return dict(tf), {t:dict(b) for t,b in before.items()}, {t:dict(a) for t,a in after.items()}
 
-# 55/s
-def get_context1(tokens):
-	before = {}
-	after = {}
-	tf = {}
-	for b,t,a in zip(['']+tokens,tokens,tokens[1:]+['']):
-		if t not in tf:
-			tf[t]=0
-			before[t]={}
-			after[t]={}
-		tf[t] += 1
-		if b: before[t][b] = before[t].get(b,0)+1
-		if a: after[t][a] = after[t].get(a,0)+1
-	return tf,before,after
+from context import get_context1
+
+from contrib import *
+from time import time
+tokens = KV('data/tokens.db',5)
+freq = KV('data/freq.db',5)
+t0=time()
+i = 0
+for k,v in tokens.items():
+	print(k)
+	#if k not in freq:
+	freq[k] = get_context1(v.split(' '))
+	i += 1
+print(i/(time()-t0))
+freq.sync()
+freq.compact()

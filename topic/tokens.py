@@ -5,7 +5,8 @@ import re
 def tokenize(text):
 	tokens = re.findall('(?u)[\w.-]+',text)
 	tokens = [t for t in tokens if not re.match('[\d.-]+$',t)]
-	tokens = [t for t in tokens if len(t)>2]
+	#tokens = [t for t in tokens if len(t)>2]
+	# TODO remove stopwords
 	return u' '.join(tokens)
 
 text = KV('data/text.db',5)
