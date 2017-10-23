@@ -10,6 +10,7 @@
 # TODO - lock/pipe/atomic/batch
 
 # CHANGES:
+# x9 - scan=range, keys/values/items as scan call, vk mode
 # x8 - range
 # x7 - init_serde,__enter__,__exit__,__iter__,has_key,close
 # x1m6 - -1=no_serde, commit->sync, incr, order, sum, min, max, tab as str
@@ -38,11 +39,16 @@ class KV:
 			self.ser = lambda x: buffer(compress(dumps(x,protocol),zlevel))
 			self.de  = lambda x: loads(decompress(x))
 		elif zlevel==0:
-			self.ser = lambda x: buffer(dumps(x,protocol))
+			#self.ser = lambda x: buffer(dumps(x,protocol))
+			#self.de  = lambda x: loads(str(x))
+			self.ser = lambda x: dumps(x,protocol)
 			self.de  = lambda x: loads(str(x))
 		else:
 			self.ser = lambda x:x
 			self.de  = lambda x:x
+	def execute(self,sql,vals):
+		print('EXECUTE',sql,vals)
+		return self.conn.execute(sql,vals)
 	### CORE ###
 	def get(self,key,default=None):
 		results = self.conn.execute('select v from {0} where k=?'.format(self.tab),(key,))
@@ -54,46 +60,31 @@ class KV:
 	def delete(self,key):
 		self.conn.execute('delete from {0} where k=?'.format(self.tab),(key,))			
 	### ITER ###
-	def keys(self, pattern=None, limit=-1, order=''):
-		limit_str = self.get_limit_str(limit)
-		order_str = self.get_order_str(order)
-		if pattern:
-			for k in self.conn.execute('select k from {0} where k glob ? {1} {2}'.format(self.tab, order_str, limit_str),(pattern,)):
-				yield k[0]
-		else:
-			for k in self.conn.execute('select k from {0} {1} {2}'.format(self.tab, order_str, limit_str)):
-				yield k[0]
-	def values(self, pattern=None, limit=-1, order=''):
-		limit_str = self.get_limit_str(limit)
-		order_str = self.get_order_str(order)
-		if pattern:
-			for v in self.conn.execute('select v from {0} where k glob ? {1} {2}'.format(self.tab, order_str, limit_str),(pattern,)):
-				yield self.de(v[0])
-		else:
-			for v in self.conn.execute('select v from {0} {1} {2}'.format(self.tab, order_str, limit_str)):
-				yield self.de(v[0])
-	def items(self, pattern=None, limit=-1, order=''):
-		limit_str = self.get_limit_str(limit)
-		order_str = self.get_order_str(order)
-		if pattern:
-			for k,v in self.conn.execute('select k,v from {0} where k glob ? {1} {2}'.format(self.tab, order_str, limit_str),(pattern,)):
-				yield k,self.de(v)			
-		else:
-			for k,v in self.conn.execute('select k,v from {0} {1} {2}'.format(self.tab, order_str, limit_str)):
-				yield k,self.de(v)
-	def range(self, from_k=None, to_k=None, from_eq=True, to_eq=True, mode='k',limit=-1, order=''):
-		where_str = self.get_where_str(from_k,to_k,from_eq,to_eq)
+	def keys(self, like=None, limit=-1, order=''):
+		for k in self.scan(mode='k', like=like,limit=limit,order=order):
+			yield k
+	def values(self, like=None, limit=-1, order=''):
+		for v in self.scan(mode='v', like=like,limit=limit,order=order):
+			yield v
+	def items(self, like=None, limit=-1, order=''):
+		for k,v in self.scan(mode='kv', like=like,limit=limit,order=order):
+			yield k,v			
+	def scan(self, from_k=None, to_k=None, from_eq=True, to_eq=True, mode='k', limit=-1, order='', like=None):
+		where_str,vals = self.get_where_str_vals(from_k,to_k,from_eq,to_eq,like)
 		limit_str = self.get_limit_str(limit)
 		order_str = self.get_order_str(order)
 		if mode=='k':
-			for k in self.conn.execute('select k from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str)):
-				yield k[0]
+			for [k] in self.execute('select k from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				yield k
 		elif mode=='kv':
-			for k,v in self.conn.execute('select k,v from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str)):
-				yield k,self.de(v)
+			for k,v in self.execute('select k,v from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				yield k, self.de(v)
+		elif mode=='vk':
+			for k,v in self.execute('select k,v from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				yield self.de(v), k
 		elif mode=='v':
-			for v in self.conn.execute('select v from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str)):
-				yield self.de(v[0])
+			for [v] in self.execute('select v from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				yield self.de(v)
 	### DICT AND SHELVE INTERFACE ###
 	def __getitem__(self,k): return self.get(k)
 	def __setitem__(self,k,v): return self.set(k,v)
@@ -124,6 +115,7 @@ class KV:
 	def __enter__(self):
 		return self
 	def __exit__(self, ex_type, ex_val, ex_tb):
+		print('EXIT',ex_type,ex_val,ex_tb)
 		pass # TODO
 	# TODO def pop(
 	# TODO def popitem(
@@ -151,9 +143,9 @@ class KV:
 		results = self.conn.execute('select length(v) from {0} where k=?'.format(self.tab),(key,))
 		x = results.fetchone()
 		return x[0] if x else None
-	def size_iter(self,pattern=None,limit=-1): # TODO rename?
-		if pattern:
-			for k,vs in self.conn.execute('select k,length(v) from {0} where k glob ? order by length(v) desc limit ?'.format(self.tab),(pattern,limit)):
+	def size_iter(self,like=None,limit=-1): # TODO rename?
+		if like:
+			for k,vs in self.conn.execute('select k,length(v) from {0} where k glob ? order by length(v) desc limit ?'.format(self.tab),(like,limit)):
 				yield k,vs
 		else:
 			for k,vs in self.conn.execute('select k,length(v) from {0} order by length(v) desc limit ?'.format(self.tab),(limit,)):
@@ -162,30 +154,30 @@ class KV:
 	### ANALYTICS AND AGGREGATIONS ###
 	def incr(self,key,val=1):
 		self.conn.execute('update {0} set v=v+? where k=?'.format(self.tab),(val,key))
-	def count(self,pattern=None):
-		if pattern:
-			for x in self.conn.execute('select count(1) from {0} where k glob ?'.format(self.tab),(pattern,)):
+	def count(self,like=None):
+		if like:
+			for x in self.conn.execute('select count(1) from {0} where k glob ?'.format(self.tab),(like,)):
 				return x[0]
 		else:
 			for x in self.conn.execute('select count(1) from {0}'.format(self.tab)):
 				return x[0]	
-	def sum(self,pattern=None):
-		if pattern:
-			for x in self.conn.execute('select sum(v) from {0} where k glob ?'.format(self.tab),(pattern,)):
+	def sum(self,like=None):
+		if like:
+			for x in self.conn.execute('select sum(v) from {0} where k glob ?'.format(self.tab),(like,)):
 				return x[0]
 		else:
 			for x in self.conn.execute('select sum(v) from {0}'.format(self.tab)):
 				return x[0]
-	def min(self,pattern=None):
-		if pattern:
-			for x in self.conn.execute('select min(v) from {0} where k glob ?'.format(self.tab),(pattern,)):
+	def min(self,like=None):
+		if like:
+			for x in self.conn.execute('select min(v) from {0} where k glob ?'.format(self.tab),(like,)):
 				return x[0]
 		else:
 			for x in self.conn.execute('select min(v) from {0}'.format(self.tab)):
 				return x[0]
-	def max(self,pattern=None):
-		if pattern:
-			for x in self.conn.execute('select max(v) from {0} where k glob ?'.format(self.tab),(pattern,)):
+	def max(self,like=None):
+		if like:
+			for x in self.conn.execute('select max(v) from {0} where k glob ?'.format(self.tab),(like,)):
 				return x[0]
 		else:
 			for x in self.conn.execute('select max(v) from {0}'.format(self.tab)):
@@ -199,34 +191,38 @@ class KV:
 		elif order=='va': return 'order by v asc'
 		elif order=='vd': return 'order by v desc'
 		else: return ''
-	def get_where_str(self,from_k,to_k,from_eq,to_eq):
-		if from_k is None and to_k is None: return u''
-		out = ['where']
+	def get_where_str_vals(self,from_k,to_k,from_eq,to_eq,like):
+		if from_k is None and to_k is None and like is None: return u'',[]
+		sql = ['where']
+		vals = []
 		if from_k != None:
-			if type(from_k) is int:
-				from_k_str = unicode(from_k)
-			else:
-				from_k_str = u'"'+from_k+u'"'
-			out.extend(['k','>=' if from_eq else '>',from_k_str])
-		if from_k != None and to_k != None: out.append('and')
+			sql.extend(['k','>=' if from_eq else '>','?'])
+			vals.append(from_k)
+		if from_k != None and to_k != None: sql.append('and')
 		if to_k != None:
-			if type(to_k) is int:
-				to_k_str = unicode(to_k)
-			else:
-				to_k_str = u'"'+to_k+u'"'
-			out.extend(['k','<=' if to_eq else '<',to_k_str])
-		return u' '.join(out)
+			sql.extend(['k','<=' if to_eq else '<','?'])
+			vals.append(to_k)
+		if to_k != None and like != None: sql.append('and')
+		if like != None:
+			sql.extend(['k','glob','?'])
+			vals.append(like)
+		return u' '.join(sql),vals
 
 def test_kv():
-	db = KV('usunmnie.db')
+	db = KV('usunmnie.db',0)
 	##db.set('a','to jest test żółć')
 	db.set('a','to jest test')
 	##db.set('b',['to','jest','test','żółć'])
 	db.set('b',['to','jest','test'])
 	db.set('c',{'to':1,'jest':2,'test':3})
 	db.sync()
+	print('ITEMS')
 	for k,v in db.items():
 		print(k,v)
+	print('KEYS')
+	for k in db.keys():
+		print(k)
+
 	for k,lv in db.size_iter():
 		v = db.get(k)
 		print(k,lv,v)
@@ -276,11 +272,11 @@ def bench_kv(N,mode='write'):
 		[k for k in db.keys(order='vd')]
 		t1=time()
 		print('KEYS rows/s',int(N/(t1-t0)), "total {0:.2f}s".format(t1-t0))
-	if mode=='range':
+	if mode=='scan':
 		t0=time()
-		out=[k for k in db.range(1,20,1,1,order='ka')]
+		out=[k for k in db.scan(1,20,1,1,order='ka')]
 		t1=time()
-		print('RANGE rows/s',int(N/(t1-t0)), "total {0:.2f}s".format(t1-t0),len(out),list(out)[:10])
+		print('SCAN rows/s',int(N/(t1-t0)), "total {0:.2f}s".format(t1-t0),len(out),list(out)[:10])
 	#print(list(db.items(limit=3)))
 	## print(list(db.items(limit=10,order='va')))
 	## print(db.sum())
@@ -290,7 +286,7 @@ def bench_kv(N,mode='write'):
 
 if __name__=="__main__":
 	#for i in range(1): bench_kv(100000,'write')
-	#for i in range(1): bench_kv(100000,'range')
+	#for i in range(1): bench_kv(100000,'scan')
 	#for i in range(10): bench_kv(100000,'keys')
 	test_kv()
 	
