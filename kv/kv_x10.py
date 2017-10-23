@@ -3,13 +3,14 @@
 # KV database built on top of SQLite
 # (c) 2017 by mobarski (at) gmail (dot) com
 # licence: MIT
-# version: x9 (x-experimental, p-preview, r-release, m-modification)
+# version: x10 (x-experimental, p-preview, r-release, m-modification)
 
 # TODO - multiprocessing fix -> sqlite3.DatabaseError: database disk image is malformed
 # TODO - RENAME kv is already taken on pypi -> kv2? xkv
 # TODO - lock/pipe/atomic/batch
 
 # CHANGES:
+# x10 - agg:min,max,sum,count  scan:klen  sync on __exit__
 # x9 - scan=range, keys/values/items as scan call, vk mode
 # x8 - range
 # x7 - init_serde,__enter__,__exit__,__iter__,has_key,close
@@ -47,7 +48,7 @@ class KV:
 			self.ser = lambda x:x
 			self.de  = lambda x:x
 	def execute(self,sql,vals):
-		print('EXECUTE',sql,vals)
+		#print('EXECUTE',sql,vals)
 		return self.conn.execute(sql,vals)
 	### CORE ###
 	def get(self,key,default=None):
@@ -69,7 +70,7 @@ class KV:
 	def items(self, like=None, limit=-1, order=''):
 		for k,v in self.scan(mode='kv', like=like,limit=limit,order=order):
 			yield k,v			
-	def scan(self, from_k=None, to_k=None, from_eq=True, to_eq=True, mode='k', limit=-1, order='', like=None):
+	def scan(self, mode='k', like=None, limit=-1, order='', from_k=None, to_k=None, from_eq=True, to_eq=True): # TODO args order
 		where_str,vals = self.get_where_str_vals(from_k,to_k,from_eq,to_eq,like)
 		limit_str = self.get_limit_str(limit)
 		order_str = self.get_order_str(order)
@@ -85,6 +86,25 @@ class KV:
 		elif mode=='v':
 			for [v] in self.execute('select v from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
 				yield self.de(v)
+		elif mode=='klen':
+			for k,v in self.execute('select k,length(v) from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				yield k,v
+	def agg(self, mode='sum', like=None, limit=-1, order='', from_k=None, to_k=None, from_eq=True, to_eq=True): # TODO args order
+		where_str,vals = self.get_where_str_vals(from_k,to_k,from_eq,to_eq,like)
+		limit_str = self.get_limit_str(limit)
+		order_str = self.get_order_str(order)
+		if mode=='sum':
+			for [x] in self.execute('select sum(v) from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				return x
+		elif mode=='count':
+			for [x] in self.execute('select count(1) from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				return x
+		elif mode=='min':
+			for [x] in self.execute('select min(v) from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				return x
+		elif mode=='max':
+			for [x] in self.execute('select max(v) from {0} {1} {2} {3}'.format(self.tab, where_str, order_str, limit_str),vals):
+				return x
 	### DICT AND SHELVE INTERFACE ###
 	def __getitem__(self,k): return self.get(k)
 	def __setitem__(self,k,v): return self.set(k,v)
@@ -115,8 +135,10 @@ class KV:
 	def __enter__(self):
 		return self
 	def __exit__(self, ex_type, ex_val, ex_tb):
-		print('EXIT',ex_type,ex_val,ex_tb)
-		pass # TODO
+		if ex_type is None:
+			self.sync()
+		else:
+			print('EXIT',ex_type,ex_val,ex_tb) # TODO
 	# TODO def pop(
 	# TODO def popitem(
 	# TODO def setdefault(
@@ -132,56 +154,29 @@ class KV:
 	def tables(self):
 		rows = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
 		return [r[0] for r in rows]
-	##
 	def remove(self,keys):
 		[self.delete(k) for k in keys]
 
 	def compact(self): # TODO rename?
 		self.conn.execute('vacuum')
-	##
 	def size(self,key):
 		results = self.conn.execute('select length(v) from {0} where k=?'.format(self.tab),(key,))
 		x = results.fetchone()
 		return x[0] if x else None
-	def size_iter(self,like=None,limit=-1): # TODO rename?
-		if like:
-			for k,vs in self.conn.execute('select k,length(v) from {0} where k glob ? order by length(v) desc limit ?'.format(self.tab),(like,limit)):
-				yield k,vs
-		else:
-			for k,vs in self.conn.execute('select k,length(v) from {0} order by length(v) desc limit ?'.format(self.tab),(limit,)):
-				yield k,vs
-
-	### ANALYTICS AND AGGREGATIONS ###
 	def incr(self,key,val=1):
 		self.conn.execute('update {0} set v=v+? where k=?'.format(self.tab),(val,key))
+	# TODO def copyto(
+	### ANALYTICS AND AGGREGATIONS ###
 	def count(self,like=None):
-		if like:
-			for x in self.conn.execute('select count(1) from {0} where k glob ?'.format(self.tab),(like,)):
-				return x[0]
-		else:
-			for x in self.conn.execute('select count(1) from {0}'.format(self.tab)):
-				return x[0]	
+		return self.agg(mode='count', like=like)
 	def sum(self,like=None):
-		if like:
-			for x in self.conn.execute('select sum(v) from {0} where k glob ?'.format(self.tab),(like,)):
-				return x[0]
-		else:
-			for x in self.conn.execute('select sum(v) from {0}'.format(self.tab)):
-				return x[0]
+		return self.agg(mode='sum', like=like)
 	def min(self,like=None):
-		if like:
-			for x in self.conn.execute('select min(v) from {0} where k glob ?'.format(self.tab),(like,)):
-				return x[0]
-		else:
-			for x in self.conn.execute('select min(v) from {0}'.format(self.tab)):
-				return x[0]
+		return self.agg(mode='min', like=like)
 	def max(self,like=None):
-		if like:
-			for x in self.conn.execute('select max(v) from {0} where k glob ?'.format(self.tab),(like,)):
-				return x[0]
-		else:
-			for x in self.conn.execute('select max(v) from {0}'.format(self.tab)):
-				return x[0]
+		return self.agg(mode='max', like=like)
+	# TODO UDF
+	# TODO UDAF
 	### SQL CODE GEN UTILS ###
 	def get_limit_str(self, limit):
 		return "limit "+str(int(limit))
@@ -223,7 +218,8 @@ def test_kv():
 	for k in db.keys():
 		print(k)
 
-	for k,lv in db.size_iter():
+	print('KLEN')
+	for k,lv in db.scan('klen'):
 		v = db.get(k)
 		print(k,lv,v)
 	print(db.size('a'))
@@ -234,16 +230,17 @@ def test_kv():
 	db.clear()
 	print(db.count())
 	db.sync()
-	db['x'] = 42
-	print(db['x'])
-	print('x' in db)
-	del db['x']
-	print(db.tables())
+	with KV('usunmnie.db',0) as db:
+		db['x'] = 42
+		print(db['x'])
+		print('x' in db)
+		del db['x']
+		print(db.tables())
 
 
 def bench_kv(N,mode='write'):
 	from time import time
-	db = KV('bench_x7.db',-1)
+	db = KV('bench_x10.db',-1)
 	#db = KV()
 	#data = {'k'+str(i):str(i)+'.0' for i in range(N)}
 	#data = {'k'+str(i):i for i in range(N)}
