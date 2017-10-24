@@ -5,6 +5,7 @@
 # licence: MIT
 # version: x1m3 (x-experimental, p-preview, r-release, m-modification)
 
+# x1m4 - delete as scan(), __enter__
 # x1m3 - col_store in external file, col_store order, ser/de as args, where_str, scan_col_store
 # x1m2 - incr_many,benchmark,limit,delete,sync,to_col_store(x2),from_col_store(x2)
 
@@ -31,8 +32,12 @@ class KCV:
 		print('EXECUTE',*a,**kw)
 		return self.conn.execute(*a,**kw)
 	
-	# TODO def __enter__(self)
-	# TODO def __exit__(self, ex_type, ex_val, ex_tb)
+	def __enter__(self):
+		return self
+	
+	def __exit__(self, ex_type, ex_val, ex_tb):
+		if ex_type is None:
+			self.sync()
 	
 	### WRITE ###
 	
@@ -54,9 +59,7 @@ class KCV:
 		self.conn.executemany('insert or replace into {0} values (?,?,?+coalesce((select v from {0} where k=? and c=?),0))'.format(self.tab),((k,c,v,k,c) for c,v in items))
 	
 	def delete(self,k,c='*',**kw):
-		# TODO use self.scan(mode='delete'...)
-		where_str,where_vals = self.get_where_str(k,c,kw)
-		self.conn.execute('delete from {0} {1}'.format(self.tab, where_str),where_vals)
+		list(self.scan(mode='delete',k=k,c=c,**kw)) # list() required as scan is an iterator
 
 	def drop(self,tab=None):
 		self.conn.execute('drop table if exists {0}'.format(tab or self.tab))
@@ -83,15 +86,13 @@ class KCV:
 		if select_cnt>1:
 			for row in self.conn.execute(sql, where_vals+[limit]):
 				yield row
-		elif select_cnt==1:
+		else:
 			for [row] in self.conn.execute(sql, where_vals+[limit]):
 				yield row
-		else:
-			self.conn.execute(sql, where_vals+[limit])
-	
-	def join(self): pass # TODO (LATER x2) JOIN left,inner sum,min,max,mul,?prod
 
-	def agg(self): pass # TODO (LATER x3) AGG sum,max,min,count,count distinct,count null,count range
+	def join(self): pass # TODO (LATER: x2) JOIN left,inner sum,min,max,mul,?prod
+
+	def agg(self): pass # TODO (LATER: x3) AGG sum,max,min,count,count distinct,count null,count range
 	
 	### SQL CODE GENERATION UTILS ###
 	
@@ -153,7 +154,7 @@ class KCV:
 		if 'cge' in kw: sql.append('c>=?'); val.append(kw['cge'])
 		if 'vge' in kw: sql.append('v>=?'); val.append(kw['vge'])
 
-		# LIMIT - sqlite3 limits queries to 999 variables
+		# LIMIT - sqlite3 limits queries to 999 variables ('?' placeholders)
 		if 'kin' in kw: sql.append('k in ({0})'.format((',?'*len(kw['kin']))[1:])); val.extend(kw['kin'])
 		if 'cin' in kw: sql.append('c in ({0})'.format((',?'*len(kw['cin']))[1:])); val.extend(kw['cin'])
 		if 'vin' in kw: sql.append('v in ({0})'.format((',?'*len(kw['vin']))[1:])); val.extend(kw['vin'])
@@ -244,12 +245,15 @@ if __name__=="__main__":
 		for c in range(C):
 			data2[k][c] = k*c
 	t0=time()
-	if 0:
+	if 1:
 		db.store('u1',dict(name='maciej',eyes='blue',nick='kerbal').items())
 		db.store('u2',dict(name='agnieszka',eyes='green',nick='felia').items())
 		db.store('u3',dict(name='mikolaj',eyes='blue',nick='miki').items())
 		db.store('u4',dict(name='jan',eyes='blue',nick='roszek').items())
-		print(db.items('u1'))
+		print('BEFORE',db.items('u1'))
+		db.delete('u1')
+		db.sync()
+		print('AFTER',db.items('u1'))
 		print(list(db.scan(order='')))
 		db.incr('kx','cx',30)
 		db.incr('kx','cx',10)
@@ -258,7 +262,7 @@ if __name__=="__main__":
 	if 0: # 177k/s
 		for k,c,v in data:
 			db.set(k,c,v)
-	if 1: # 334k/s
+	if 0: # 334k/s
 		for k in data2:
 			items = data2[k].items()
 			db.store(k,items)
@@ -275,7 +279,7 @@ if __name__=="__main__":
 	if 0: # eval:200k/s marshal:500k/s zlib+marshal:300k/s
 		t0=time()
 		db.from_col_store('arch.db')
-	if 1:
+	if 0:
 		x = list(db.scan(k=3))
 		print(len(x))
 	print(N/(time()-t0+0.0001))
