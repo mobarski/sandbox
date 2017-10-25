@@ -5,6 +5,7 @@
 # licence: MIT
 # version: x1m3 (x-experimental, p-preview, r-release, m-modification)
 
+# x1m5 - tests, limit_str, some comments, set_items<-store, scan_items(cast=
 # x1m4 - delete as scan(), __enter__
 # x1m3 - col_store in external file, col_store order, ser/de as args, where_str, scan_col_store
 # x1m2 - incr_many,benchmark,limit,delete,sync,to_col_store(x2),from_col_store(x2)
@@ -49,7 +50,7 @@ class KCV:
 	def set(self,k,c,v):
 		self.conn.execute('insert or replace into {0} values (?,?,?)'.format(self.tab),(k,c,v))
 		
-	def store(self,k,items):
+	def set_items(self,k,items):
 		self.conn.executemany('insert or replace into {0} values (?,?,?)'.format(self.tab),((k,c,v) for c,v in items))
 		
 	def incr(self,k,c,v=1):
@@ -73,21 +74,22 @@ class KCV:
 	def items(self,k):
 		return {c:v for k,c,v in self.scan(k=k)}
 	
-	def scan_items(self,k='*',c='*',order='',**kw):
+	def scan_items(self,k='*',c='*',order='',cast=list,**kw):
 		it = self.scan(k=k,c=c,order=order,**kw)
 		for k,g in groupby(it,key=lambda x:x[0]):
-			yield k,[(x[1],x[2]) for x in g] # or dict/ordered???
+			yield k,cast(((x[1],x[2]) for x in g))
 	
-	def scan(self,k='*',c='*',order='',limit=-1,mode='kcv',**kw):
+	def scan(self,k='*',c='*',order='',limit=None,mode='kcv',**kw):
 		select_str,select_cnt = self.get_select_str(mode)
 		where_str,where_vals = self.get_where_str(k,c,kw)
 		order_str = self.get_order_str(order)
-		sql = '{0} from {1} {2} {3} limit ?'.format(select_str, self.tab, where_str, order_str)
+		limit_str,limit_vals = self.get_limit_str(limit)
+		sql = '{0} from {1} {2} {3} {4}'.format(select_str, self.tab, where_str, order_str, limit_str)
 		if select_cnt>1:
-			for row in self.conn.execute(sql, where_vals+[limit]):
+			for row in self.conn.execute(sql, where_vals+limit_vals):
 				yield row
 		else:
-			for [row] in self.conn.execute(sql, where_vals+[limit]):
+			for [row] in self.conn.execute(sql, where_vals+limit_vals):
 				yield row
 
 	def join(self): pass # TODO (LATER: x2) JOIN left,inner sum,min,max,mul,?prod
@@ -95,6 +97,10 @@ class KCV:
 	def agg(self): pass # TODO (LATER: x3) AGG sum,max,min,count,count distinct,count null,count range
 	
 	### SQL CODE GENERATION UTILS ###
+	
+	def get_limit_str(self,limit):
+		if limit is None: return '',[]
+		else: return 'limit ?',[limit]
 	
 	def get_order_str(self,order):
 		out = []
@@ -246,10 +252,10 @@ if __name__=="__main__":
 			data2[k][c] = k*c
 	t0=time()
 	if 1:
-		db.store('u1',dict(name='maciej',eyes='blue',nick='kerbal').items())
-		db.store('u2',dict(name='agnieszka',eyes='green',nick='felia').items())
-		db.store('u3',dict(name='mikolaj',eyes='blue',nick='miki').items())
-		db.store('u4',dict(name='jan',eyes='blue',nick='roszek').items())
+		db.set_items('u1',dict(name='maciej',eyes='blue',nick='kerbal').items())
+		db.set_items('u2',dict(name='agnieszka',eyes='green',nick='felia').items())
+		db.set_items('u3',dict(name='mikolaj',eyes='blue',nick='miki').items())
+		db.set_items('u4',dict(name='jan',eyes='blue',nick='roszek').items())
 		print('BEFORE',db.items('u1'))
 		db.delete('u1')
 		db.sync()
@@ -265,7 +271,7 @@ if __name__=="__main__":
 	if 0: # 334k/s
 		for k in data2:
 			items = data2[k].items()
-			db.store(k,items)
+			db.set_items(k,items)
 	if 0: # 139k/s
 		for k,c,v in data:
 			db.incr(k,c,v)
