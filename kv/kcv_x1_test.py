@@ -20,10 +20,14 @@ class test_memory_kcv(unittest.TestCase):
 		db.set('k1','c1',42)
 		db.set('k1','c2',4.2)
 		db.set('k1','c3','fourty two')
+		db.set('k1',1,'one')
+		db.set(2,'c2','two')
 		self.assertEqual(db.get('k1','c1'),42)
 		self.assertEqual(db.get('k1','c2'),4.2)
 		self.assertEqual(db.get('k1','c3'),'fourty two')
 		self.assertEqual(db.get('k1','c4'),None)
+		self.assertEqual(db.get('k1',1),'one')
+		self.assertEqual(db.get(2,'c2'),'two')
 	
 	def test_set_items(self):
 		db = KCV()
@@ -136,7 +140,67 @@ class test_memory_kcv(unittest.TestCase):
 		self.assertEqual(len(k),2)
 		self.assertEqual(k[0],'k11')
 		self.assertEqual(k[1],'k12')
+
+	def test_scan_int(self):
+		db = KCV()
+		db.set(1,11,111)
+		db.set(1,12,123)
+		db.set(2,22,222)
+		db.set(2,11,234)
+		db.set(3,11,345)
 		
+		kcv = list(db.scan(k=1,order='kaca'))
+		self.assertEqual(len(kcv),2)
+		self.assertEqual(kcv[0],(1,11,111))
+		self.assertEqual(kcv[1],(1,12,123))
+
+		kcv = list(db.scan(kin=[1,3],cin=[11,12],order='kaca'))
+		self.assertEqual(len(kcv),3)
+		self.assertEqual(kcv[0],(1,11,111))
+		self.assertEqual(kcv[1],(1,12,123))
+		self.assertEqual(kcv[2],(3,11,345))
+		
+
+	def test_col_store(self):
+		db = KCV()
+		db.set_items('k1',pairs('a:aa b:bb c:cc'))
+		db.set_items('k2',pairs('d:dd e:ee f:ff'))
+		db.set_items('k3',pairs('g:gg h:hh i:ii'))
+		db.to_col_store('kcv_x1_test.db',batch=4)
+		self.assertEqual(db.get('k1','a'),'aa')
+		self.assertEqual(db.get('k2','e'),'ee')
+		self.assertEqual(db.get('k3','i'),'ii')
+		db.drop()
+		db.create()
+		self.assertEqual(db.items('k1'), {})
+		self.assertEqual(db.items('k2'), {})
+		self.assertEqual(db.items('k3'), {})
+		db.from_col_store('kcv_x1_test.db')
+		self.assertEqual(db.get('k1','a'),'aa')
+		self.assertEqual(db.get('k2','e'),'ee')
+		self.assertEqual(db.get('k3','i'),'ii')
+
+	def test_block(self):
+		with KCV('kcv_x1_test.db') as db:
+			db.set('k1','c1',42)
+		db2=KCV('kcv_x1_test.db')
+		self.assertEqual(db2.get('k1','c1'),42)
+	
+	def test_compact(self):
+		import os
+		path = 'kcv_x1_test.db'
+		db=KCV(path)
+		for i in range(1000):
+			db.set(i,i,i)
+		db.sync()
+		size1 = os.stat(path)[6]
+		db.drop()
+		db.sync()
+		size2 = os.stat(path)[6]
+		db.sync(compact=True)
+		size3 = os.stat(path)[6]
+		self.assertTrue(size3 < size2 <= size1)
+
 
 if __name__=="__main__":
 	unittest.main()

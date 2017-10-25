@@ -5,6 +5,7 @@
 # licence: MIT
 # version: x1m3 (x-experimental, p-preview, r-release, m-modification)
 
+# x1m6 - better test coverage
 # x1m5 - tests, limit_str, some comments, set_items<-store, scan_items(cast=
 # x1m4 - delete as scan(), __enter__
 # x1m3 - col_store in external file, col_store order, ser/de as args, where_str, scan_col_store
@@ -235,62 +236,3 @@ class KCV:
 			for k,c,v in zip(keys,cols,vals):
 				yield k,c,v
 
-# ------------------------------------------------------------------------------
-if __name__=="__main__":
-	db = KCV()
-	from time import time
-	N = 100000
-	C = 100
-	data = []
-	for k in range(N//C):
-		for c in range(C):
-			data.append([k,c,k*c])
-	data2 = {}
-	for k in range(N//C):
-		data2[k] = {}
-		for c in range(C):
-			data2[k][c] = k*c
-	t0=time()
-	if 1:
-		db.set_items('u1',dict(name='maciej',eyes='blue',nick='kerbal').items())
-		db.set_items('u2',dict(name='agnieszka',eyes='green',nick='felia').items())
-		db.set_items('u3',dict(name='mikolaj',eyes='blue',nick='miki').items())
-		db.set_items('u4',dict(name='jan',eyes='blue',nick='roszek').items())
-		print('BEFORE',db.items('u1'))
-		db.delete('u1')
-		db.sync()
-		print('AFTER',db.items('u1'))
-		print(list(db.scan(order='')))
-		db.incr('kx','cx',30)
-		db.incr('kx','cx',10)
-		db.incr('kx','cx',2.5)
-		print(db.get('kx','cx'))
-	if 0: # 177k/s
-		for k,c,v in data:
-			db.set(k,c,v)
-	if 0: # 334k/s
-		for k in data2:
-			items = data2[k].items()
-			db.set_items(k,items)
-	if 0: # 139k/s
-		for k,c,v in data:
-			db.incr(k,c,v)
-	if 0: # 245k/s
-		for k in data2:
-			items = data2[k].items()
-			db.incr_many(k,items)
-	if 0: # unicode:500k/s marshal:640k/s zlib+marshal:300k/s
-		t0=time()
-		db.to_col_store('arch.db',batch=1000,move=False)
-	if 0: # eval:200k/s marshal:500k/s zlib+marshal:300k/s
-		t0=time()
-		db.from_col_store('arch.db')
-	if 0:
-		x = list(db.scan(k=3))
-		print(len(x))
-	print(N/(time()-t0+0.0001))
-	## for x in db.conn.execute('select * from arch limit 10'):
-		## print(x)
-	#db.drop('main')
-	#db.sync(compact=True)
-	#print(db.get_range_str(dict(kle=10,kgt=5)))
