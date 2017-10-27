@@ -17,7 +17,7 @@ class KVM:
 	def __delitem__(self,k):
 		if k in self.data: del self.data[k]
 
-	def update(self,k,items):
+	def update(self,items):
 		self.data.update(items)
 	
 	def incr(self,k,v=1):
