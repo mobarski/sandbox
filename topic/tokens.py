@@ -9,9 +9,11 @@ def tokenize(text):
 	# TODO remove stopwords
 	return u' '.join(tokens)
 
-text = KV('data/text.db',5)
-tokens = KV('data/tokens.db',5)
+## text = KV('data/text.db',5)
+## tokens = KV('data/tokens.db',5)
+text = PDM().load('data/text.pd')
+tokens = PDM().load('data/tokens.pd')
 for k,v in text.items():
 	print(k)
 	tokens[k] = tokenize(v.decode('utf8'))
-tokens.sync()
+tokens.save('data/tokens.pd')

@@ -19,24 +19,24 @@ class VK:
 			yield k,self.kv[k]
 
 
-class VK2:
-	def __init__(self,data=None):
-		self.kv = {}
-		self.kvl = []
+## class VK2:
+	## def __init__(self,data=None):
+		## self.kv = {}
+		## self.kvl = []
 	
-	def update(self, d):
-		self.kv.update(d)
-		self.kvl.extend(d.)
+	## def update(self, d):
+		## self.kv.update(d)
+		## self.kvl.extend(d)
 		
-	def sort(self):
-		self.vk.sort()
+	## def sort(self):
+		## self.vk.sort()
 	
-	def top(self, n):
-		for k in self.k[:n]:
-			yield k,self.kv[k]
+	## def top(self, n):
+		## for k in self.k[:n]:
+			## yield k,self.kv[k]
 
 
-N=100000
+N=1000000
 v = range(N)
 shuffle(v)
 data1 = [(i,0.1+v[i]) for i in range(N)]

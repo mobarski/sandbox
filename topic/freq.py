@@ -30,15 +30,16 @@ from context import get_context1
 
 from contrib import *
 from time import time
-tokens = KV('data/tokens.db',5)
-freq = KV('data/freq.db',5)
+## tokens = KV('data/tokens.db',5)
+## freq = KV('data/freq.db',5)
+tokens = PDM().load('data/tokens.pd')
+freq = PDM().load('data/freq.pd')
 t0=time()
 i = 0
 for k,v in tokens.items():
 	print(k)
-	#if k not in freq:
-	freq[k] = get_context1(v.split(' '))
-	i += 1
+	if k not in freq:
+		freq[k] = get_context1(v.split(' '))
+		i += 1
 print(i/(time()-t0))
-freq.sync()
-freq.compact()
+freq.save('data/freq.pd')

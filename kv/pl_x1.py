@@ -4,6 +4,7 @@ from time import time
 from random import shuffle
 
 class PL(UserList):
+	"Persistent List"
 	def push(self, x):
 		insort_left(self.data, x)
 

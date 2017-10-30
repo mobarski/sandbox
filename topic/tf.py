@@ -30,21 +30,34 @@ from context import get_context1
 
 from contrib import *
 from time import time
-tokens = KV('data/tokens.db',5)
+freq = PDM().load('data/freq.pd')
 t0=time()
 tf_agg = Counter()
-tfb_agg = {}
-tfa_agg = {}
+b_agg = {}
+a_agg = {}
 i = 0
-for k,v in tokens.items():
-	print(k)
-	tf,tfb,tfa = get_context1(v.split(' '))
+for urlid,(tf,before,after) in freq.items():
 	tf_agg.update(tf)
-	for t,tfx in tfb.items():
-		if t not in tfb_agg: tfb_agg[t] = Counter()
-		tfb_agg[t].update(tfx)
-	for t,tfx in tfa.items():
-		if t not in tfa_agg: tfa_agg[t] = Counter()
-		tfa_agg[t].update(tfx)
+	for t,tf2 in before.items():
+		if t not in b_agg: b_agg[t] = Counter()
+		b_agg[t].update(tf2)
+	for t,tf2 in after.items():
+		if t not in a_agg: a_agg[t] = Counter()
+		a_agg[t].update(tf2)
 	i += 1
-print(i/(time()-t0)) # 33/s
+
+## for k,v in tokens.items():
+	## print(k)
+	## tf,tfb,tfa = get_context1(v.split(' '))
+	## tf_agg.update(tf)
+	## for t,tfx in tfb.items():
+		## if t not in tfb_agg: tfb_agg[t] = Counter()
+		## tfb_agg[t].update(tfx)
+	## for t,tfx in tfa.items():
+		## if t not in tfa_agg: tfa_agg[t] = Counter()
+		## tfa_agg[t].update(tfx)
+	## i += 1
+PDM().update(tf_agg).save('data/tf.pd')
+PDM().update({t:dict(tfx) for t,tfx in b_agg.items()}).save('data/tfb.pd')
+PDM().update({t:dict(tfx) for t,tfx in a_agg.items()}).save('data/tfa.pd')
+print(i/(time()-t0)) # tf_agg-only:302/s +before:41/s +after:23/s
