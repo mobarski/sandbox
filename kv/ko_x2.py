@@ -3,7 +3,8 @@ from marshal import dump,load,dumps,loads
 from multiprocessing import Lock
 import os
 
-# TODO - baza KVM (PDM?) z identycznym interfejsem
+# TODO - opcja noload do KV
+# TODO - setup/config/meta() do ustawiania kompresji i serde, osobny plik z ustawieniami
 
 from time import time
 
@@ -133,10 +134,44 @@ class KO:
 		self.reopen_if_dirty()
 		return self
 
+from UserDict import UserDict
+class KV(UserDict):
+	def __init__(self,name):
+		self.name = name
+		UserDict.__init__(self)
+		if os.path.exists(name+'.kv'):
+			with open(name+'.kv','rb') as f:
+				self.data = load(f)
+	def __getitem__(self,k):
+		return self.data.get(k)
+	
+	def incr(self,k,v=1):
+		d = self.data
+		d[k] = d.get(k,0)+v
+
+	def incr_items(self,items):
+		for k,v in as_pairs(items):
+			self.incr(k,v)
+		return self
+	
+	def sync(self):
+		with open(self.name+'.kv','wb') as f:
+			dump(self.data,f,2)
+		return self
+	
+	def update(self,items):
+		self.data.update(items)
+		return self
+	
+	def clear(self):
+		self.data.clear()
+		return self
+
+
 if __name__=="__main__":
 	M = 100
 	N = 1000*M
-	db = KO('ko_x2')
+	db = KV('ko_x2')
 
 	t0=time()
 	if 1:

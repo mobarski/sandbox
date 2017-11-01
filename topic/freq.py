@@ -26,20 +26,27 @@ from collections import Counter
 	
 	## return dict(tf), {t:dict(b) for t,b in before.items()}, {t:dict(a) for t,a in after.items()}
 
-from context import get_context1
+from context import get_context1 as get_context
 
 from contrib import *
 from time import time
 ## tokens = KV('data/tokens.db',5)
 ## freq = KV('data/freq.db',5)
 tokens = KO('data/tokens')
-freq = KO('data/freq')
+freq = KV('data/freq')
+freqa = KV('data/freqa')
+freqb = KV('data/freqb')
 t0=time()
 i = 0
-for k,v in tokens.items():
+for k,v in tokens.items(): # k->urlid
 	print(k)
-	if k not in freq:
-		freq[k] = get_context1(v.split(' '))
+	if True or k not in freq:
+		tf,tfb,tfa = get_context(v.split(' '))
+		freq[k] = tf
+		freqa[k] = tfa
+		freqb[k] = tfb
 		i += 1
 freq.sync()
+freqa.sync()
+freqb.sync()
 print(i/(time()-t0))

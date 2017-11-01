@@ -26,7 +26,7 @@ from collections import Counter
 	
 	## return dict(tf), {t:dict(b) for t,b in before.items()}, {t:dict(a) for t,a in after.items()}
 
-# 55/s
+# 92s
 def get_context1(tokens):
 	before = {}
 	after = {}
@@ -39,4 +39,20 @@ def get_context1(tokens):
 		tf[t] += 1
 		if b: before[t][b] = before[t].get(b,0)+1
 		if a: after[t][a] = after[t].get(a,0)+1
+	return tf,before,after
+
+
+# 71/s
+from collections import defaultdict
+def get_context2(tokens):
+	before = defaultdict(lambda:defaultdict(int))
+	after = defaultdict(lambda:defaultdict(int))
+	tf = defaultdict(int)
+	t=b=''
+	for a in tokens+['']:
+		tf[t] += 1
+		before[t][b] += 1
+		after[t][a] += 1
+		b=t
+		t=a
 	return tf,before,after

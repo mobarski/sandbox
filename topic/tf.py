@@ -30,7 +30,7 @@ from context import get_context1
 
 from contrib import *
 from time import time
-freq = KO('data/freq')
+freq = KV('data/freq')
 t0=time()
 tf_agg = Counter()
 df_agg = Counter()
@@ -59,8 +59,8 @@ for urlid,(tf,before,after) in freq.items():
 		## if t not in tfa_agg: tfa_agg[t] = Counter()
 		## tfa_agg[t].update(tfx)
 	## i += 1
-KO('data/tf').clear().update(tf_agg).sync()
-KO('data/df').clear().update(df_agg).sync()
+KV('data/tf').clear().update(tf_agg).sync()
+KV('data/df').clear().update(df_agg).sync()
 ## KO('data/tfb').update({t:dict(tfx) for t,tfx in b_agg.items()}).sync()
 ## KO('data/tfa').update({t:dict(tfx) for t,tfx in a_agg.items()}).sync()
 print(i/(time()-t0)) # tf_agg-only:302/s +before:41/s +after:23/s
