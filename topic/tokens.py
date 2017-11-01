@@ -11,9 +11,9 @@ def tokenize(text):
 
 ## text = KV('data/text.db',5)
 ## tokens = KV('data/tokens.db',5)
-text = PDM().load('data/text.pd')
-tokens = PDM().load('data/tokens.pd')
+text = KO('data/text')
+tokens = KO('data/tokens')
 for k,v in text.items():
 	print(k)
 	tokens[k] = tokenize(v.decode('utf8'))
-tokens.save('data/tokens.pd')
+tokens.sync()

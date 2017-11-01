@@ -6,7 +6,7 @@ from time import time
 
 http = urllib3.PoolManager()
 #text_db = text_db('data/text.db',5)
-text_db = PDM().load('data/text.pd')
+text_db = KO('data/text')
 ## url_db = text_db('data/url.db',5)
 
 def fetch_text(url):
@@ -30,6 +30,6 @@ if __name__=="__main__":
 				if urlid in text_db: continue
 				text = fetch_text(url)
 				text_db[urlid] = text
-		text_db.save('data/text.pd')
+		text_db.sync()
 	print(list(text_db.keys())[:5])
 	print(time()-t0)

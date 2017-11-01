@@ -30,20 +30,22 @@ from context import get_context1
 
 from contrib import *
 from time import time
-freq = PDM().load('data/freq.pd')
+freq = KO('data/freq')
 t0=time()
 tf_agg = Counter()
+df_agg = Counter()
 b_agg = {}
 a_agg = {}
 i = 0
 for urlid,(tf,before,after) in freq.items():
 	tf_agg.update(tf)
-	for t,tf2 in before.items():
-		if t not in b_agg: b_agg[t] = Counter()
-		b_agg[t].update(tf2)
-	for t,tf2 in after.items():
-		if t not in a_agg: a_agg[t] = Counter()
-		a_agg[t].update(tf2)
+	df_agg.update(tf.keys())
+	## for t,tf2 in before.items():
+		## if t not in b_agg: b_agg[t] = Counter()
+		## b_agg[t].update(tf2)
+	## for t,tf2 in after.items():
+		## if t not in a_agg: a_agg[t] = Counter()
+		## a_agg[t].update(tf2)
 	i += 1
 
 ## for k,v in tokens.items():
@@ -57,7 +59,8 @@ for urlid,(tf,before,after) in freq.items():
 		## if t not in tfa_agg: tfa_agg[t] = Counter()
 		## tfa_agg[t].update(tfx)
 	## i += 1
-PDM().update(tf_agg).save('data/tf.pd')
-PDM().update({t:dict(tfx) for t,tfx in b_agg.items()}).save('data/tfb.pd')
-PDM().update({t:dict(tfx) for t,tfx in a_agg.items()}).save('data/tfa.pd')
+KO('data/tf').clear().update(tf_agg).sync()
+KO('data/df').clear().update(df_agg).sync()
+## KO('data/tfb').update({t:dict(tfx) for t,tfx in b_agg.items()}).sync()
+## KO('data/tfa').update({t:dict(tfx) for t,tfx in a_agg.items()}).sync()
 print(i/(time()-t0)) # tf_agg-only:302/s +before:41/s +after:23/s

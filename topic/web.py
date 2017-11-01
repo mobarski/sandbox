@@ -1,12 +1,13 @@
 from bottle import route, run, template
 
 from contrib import *
-text = PDM().load('data/text.pd')
-tokens = PDM().load('data/tokens.pd')
-freq = PDM().load('data/freq.pd')
-tf = PDM().load('data/tf.pd')
-tfa = PDM().load('data/tfa.pd')
-tfb = PDM().load('data/tfb.pd')
+text = KO('data/text')
+tokens = KO('data/tokens')
+freq = KO('data/freq')
+tf = KO('data/tf')
+df = KO('data/df')
+tfa = KO('data/tfa')
+tfb = KO('data/tfb')
 
 @route('/keys')
 def get_keys():
@@ -37,8 +38,20 @@ def get_tf():
 	out = []
 	for t,f in desc(tf):
 		if f>=2:
-			a = u'<a href="/tfa/{0}">after</a>'.format(t)
-			b = u'<a href="/tfb/{0}">after</a>'.format(t)
+			#a = u'<a href="/tfa/{0}">after</a>'.format(t)
+			#b = u'<a href="/tfb/{0}">after</a>'.format(t)
+			a=b=''
+			out.append(u'{0} {1} {2} {3}'.format(t,f,b,a))
+	return u'<br>'.join(out)
+
+@route('/df')
+def get_df():
+	out = []
+	for t,f in desc(df):
+		if f>=2:
+			#a = u'<a href="/tfa/{0}">after</a>'.format(t)
+			#b = u'<a href="/tfb/{0}">after</a>'.format(t)
+			a=b=''
 			out.append(u'{0} {1} {2} {3}'.format(t,f,b,a))
 	return u'<br>'.join(out)
 

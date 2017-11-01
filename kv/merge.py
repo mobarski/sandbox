@@ -2,63 +2,63 @@ from UserDict import UserDict
 from time import time
 from random import shuffle
 
-def merge(aa,bb,key=None):
-	"merge (no optimization)" # 300/s
-	out = []
-	ia = 0
-	ib = 0
-	while True:
-		if ia==len(aa):
-			out.extend(bb[ib:])
-			break
-		if ib==len(bb):
-			out.extend(aa[ia:])
-			break
+## def merge(aa,bb,key=None):
+	## "merge (no optimization)" # 300/s
+	## out = []
+	## ia = 0
+	## ib = 0
+	## while True:
+		## if ia==len(aa):
+			## out.extend(bb[ib:])
+			## break
+		## if ib==len(bb):
+			## out.extend(aa[ia:])
+			## break
 
-		if key:
-			va = key(aa[ia])
-			vb = key(bb[ib])
-		else:
-			va = aa[ia] 
-			vb = bb[ib]
+		## if key:
+			## va = key(aa[ia])
+			## vb = key(bb[ib])
+		## else:
+			## va = aa[ia] 
+			## vb = bb[ib]
 
-		if va <= vb:
-			out.append(aa[ia])
-			ia += 1
-		else:
-			out.append(bb[ib])
-			ib += 1
-	return out
+		## if va <= vb:
+			## out.append(aa[ia])
+			## ia += 1
+		## else:
+			## out.append(bb[ib])
+			## ib += 1
+	## return out
 
-def merge(aa,bb,key=None):
-	"optimized merge" # 457/s
-	out = []
-	ia = 0
-	ib = 0
-	len_aa=len(aa)
-	len_bb=len(bb)
+## def merge(aa,bb,key=None):
+	## "optimized merge" # 457/s
+	## out = []
+	## ia = 0
+	## ib = 0
+	## len_aa=len(aa)
+	## len_bb=len(bb)
 
-	if len_aa>0: va=key(aa[0]) if key else aa[0]
-	if len_bb>0: vb=key(bb[0]) if key else bb[0]
-	while True:
-		if ia==len_aa:
-			out.extend(bb[ib:])
-			break
-		if ib==len_bb:
-			out.extend(aa[ia:])
-			break
+	## if len_aa>0: va=key(aa[0]) if key else aa[0]
+	## if len_bb>0: vb=key(bb[0]) if key else bb[0]
+	## while True:
+		## if ia==len_aa:
+			## out.extend(bb[ib:])
+			## break
+		## if ib==len_bb:
+			## out.extend(aa[ia:])
+			## break
 
-		try:
-			if va <= vb:
-				out.append(aa[ia])
-				ia += 1
-				va=key(aa[0]) if key else aa[0]
-			else:
-				out.append(bb[ib])
-				ib += 1
-				vb=key(bb[0]) if key else bb[0]
-		except IndexError: pass
-	return out
+		## try:
+			## if va <= vb:
+				## out.append(aa[ia])
+				## ia += 1
+				## va=key(aa[0]) if key else aa[0]
+			## else:
+				## out.append(bb[ib])
+				## ib += 1
+				## vb=key(bb[0]) if key else bb[0]
+		## except IndexError: pass
+	## return out
 
 def merge(aa,bb,key=None):
 	"optimized merge x2" # 465k/s
@@ -171,7 +171,7 @@ x = d.top(6)
 print(N/(time()-t0))
 print(list(x))
 
-if 0:
+if 1:
 	t0=time()
 	data1.update(data2)
 	list(sorted(data1.items(),key=lambda x:x[1]))

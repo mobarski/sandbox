@@ -3,7 +3,15 @@ from marshal import dump,load,dumps,loads
 from multiprocessing import Lock
 import os
 
+# TODO - baza KVM (PDM?) z identycznym interfejsem
+
 from time import time
+
+def as_pairs(items):
+	try:
+		return items.items()
+	except:
+		return items
 
 class no_lock:
 	def __enter__(self): pass
@@ -13,8 +21,8 @@ class KO:
 	"KV database where keys are in memory and values are stored in separate file"
 	def __init__(self,name,lock=None):
 		self.name = name
-		if os.path.exists(name+'.k'):
-			with open(name+'.k','rb') as kf:
+		if os.path.exists(name+'.ko'):
+			with open(name+'.ko','rb') as kf:
 				self.offset = load(kf)
 		else:
 			self.offset = {}
@@ -51,8 +59,13 @@ class KO:
 		if k in self.offset: del self.offset[k]
 		self.dirty = True
 
-	## def update(self,k,items):
-		## self.data.update(items)
+	def update(self,items):
+		f = self.wf
+		for k,v in as_pairs(items):
+			self.offset[k] = f.tell()
+			dump(v,f,2)
+		self.dirty = True
+		return self
 	
 	def incr(self,k,v=1): # 100k/s
 		#with self.lock:
@@ -72,12 +85,15 @@ class KO:
 				self.dirty = True
 
 	def incr_items(self,items):
-		try:
-			kv = items.items()
-		except:
-			kv = items
-		for k,v in kv:
+		for k,v in as_pairs(items):
 			self.incr(k,v)
+		return self
+
+	def clear(self):
+		self.offset.clear()
+		open(self.name+'.v','w').close()
+		self.dirty = True
+		return self
 
 	### READ ###
 
@@ -111,26 +127,27 @@ class KO:
 	### OTHER ###
 
 	def sync(self):
-		with open(self.name+'.k','wb') as kf:
+		with open(self.name+'.ko','wb') as kf:
 			dump(self.offset,kf,2)
 		#import pdb; pdb.set_trace()
 		self.reopen_if_dirty()
+		return self
 
+if __name__=="__main__":
+	M = 100
+	N = 1000*M
+	db = KO('ko_x2')
 
-M = 100
-N = 1000*M
-db = KO('ko_x2')
-
-t0=time()
-if 1:
-	for i in range(N):
-		db[i] = i
-	db.sync()
-	## for k in range(M):
-		## for i in range(N):
-			## db.incr(i,1.2)
-	## db.sync()
-if 1:
-	for i in range(N):
-		db[i]
-print(N/(time()-t0))
+	t0=time()
+	if 1:
+		for i in range(N):
+			db[i] = i
+		db.sync()
+		## for k in range(M):
+			## for i in range(N):
+				## db.incr(i,1.2)
+		## db.sync()
+	if 1:
+		for i in range(N):
+			db[i]
+	print(N/(time()-t0))

@@ -32,8 +32,8 @@ from contrib import *
 from time import time
 ## tokens = KV('data/tokens.db',5)
 ## freq = KV('data/freq.db',5)
-tokens = PDM().load('data/tokens.pd')
-freq = PDM().load('data/freq.pd')
+tokens = KO('data/tokens')
+freq = KO('data/freq')
 t0=time()
 i = 0
 for k,v in tokens.items():
@@ -41,5 +41,5 @@ for k,v in tokens.items():
 	if k not in freq:
 		freq[k] = get_context1(v.split(' '))
 		i += 1
+freq.sync()
 print(i/(time()-t0))
-freq.save('data/freq.pd')
