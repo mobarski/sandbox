@@ -3,7 +3,7 @@ from marshal import dump,load,dumps,loads
 from multiprocessing import Lock
 import os
 
-# TODO - opcja noload do KV
+# TODO - pelna obsluga mode
 # TODO - setup/config/meta() do ustawiania kompresji i serde, osobny plik z ustawieniami
 
 from time import time
@@ -20,9 +20,10 @@ class no_lock:
 
 class KO:
 	"KV database where keys are in memory and values are stored in separate file"
-	def __init__(self,name,lock=None):
+	def __init__(self,name,mode='c',lock=None):
 		self.name = name
-		if os.path.exists(name+'.ko'):
+		self.mode = mode
+		if os.path.exists(name+'.ko') and mode!='n':
 			with open(name+'.ko','rb') as kf:
 				self.offset = load(kf)
 		else:
@@ -136,10 +137,10 @@ class KO:
 
 from UserDict import UserDict
 class KV(UserDict):
-	def __init__(self,name):
+	def __init__(self,name,mode='c'):
 		self.name = name
 		UserDict.__init__(self)
-		if os.path.exists(name+'.kv'):
+		if os.path.exists(name+'.kv') and mode!='n':
 			with open(name+'.kv','rb') as f:
 				self.data = load(f)
 	def __getitem__(self,k):
