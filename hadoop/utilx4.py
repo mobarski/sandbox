@@ -62,7 +62,7 @@ class host:
 		# TODO random/dynamic script path
 		script = dedent(code).strip()
 		self.write(script_path, script)
-		self.os("spark2-submit {0} {1}", script_path, spark_args)
+		self.os("spark2-submit {1} {0}", script_path, spark_args)
 		if remove:
 			self.os('rm -f '+script_path)
 	
