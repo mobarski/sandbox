@@ -1,8 +1,9 @@
 import subprocess
 from textwrap import dedent
 from hashlib import sha1
+import re
 
-# version x4m1 - sha(sql+host)
+# version x5 - py3, config, sep, remove output before run, multiline sql
 # version x4 - header, app_name, echo
 
 def pipe(*cmds, **kw):
@@ -57,8 +58,6 @@ class host:
 
 	# scripts
 
-	def spark_load(self): pass # TODO
-	
 	def spark_run(self, code, script_path, spark_args='', remove=True):
 		# TODO random/dynamic script path
 		script = dedent(code).strip()
@@ -67,19 +66,23 @@ class host:
 		if remove:
 			self.os('rm -f '+script_path)
 	
+	def load_csv(self): pass # TODO
 
-	def extract_csv(self, path, sql, output_dir='', script_path='', app_name='utilx4', header=False, spark_args='', options='', remove='all'):
-		tmp_name = sha1(sql+self.prefix).hexdigest()[:16]
+	def extract_csv(self, path, sql, output_dir='', script_path='', config={}, spark_args='', sep=',', header=False, remove='all'):
+		# TODO other csv options: quote, escape, escapeQuotes, quoteAll, nullValue
+		tmp_name = sha1(sql.encode()).hexdigest()[:16]
 		output_dir = output_dir or tmp_name
 		script_path = script_path or '/tmp/{0}.py'.format(tmp_name)
-		csv_options = '' if not options else ','+options
+		app_config_str = ''.join([".config('{0}','{1}')".format(k,v) for k,v in config.items()])
 		code = """
 			from pyspark.sql import SparkSession
-			spark = SparkSession.builder.appName('{3}').getOrCreate()
-			df = spark.sql("{0}")
-			df.write.csv('{1}'{2},mode='overwrite',header={4})
-			""".format(sql, output_dir, csv_options, app_name, header)
+			spark = SparkSession.builder.appName('utilx5 {1}'){6}.getOrCreate()
+			df = spark.sql('''{0}''')
+			df.write.csv('{1}',mode='overwrite',header={4},sep='{5}')
+			""".format(sql, output_dir, '#RECYCLE', '#RECYCLE', header, sep, app_config_str)
+		code = re.sub('(?m)^\s+','',code) #UGLY FIX for multiline indented sql code
 		
+		self.dfs('rm -r -f {0}',output_dir)
 		self.spark_run(code, script_path, spark_args=spark_args, remove=remove in ['all','script'])
 		
 		# TODO pipe into ???
@@ -89,4 +92,5 @@ class host:
 
 if __name__=="__main__":
 	h=host('ssh userxxx@aaa.bbb.ccc.ddd.pl',run=False)
-	h.extract_csv('test.csv','select * from testdb.example_table limit 100',options="sep='|'")
+	h.extract_csv('test.csv','select * from testdb.example_table limit 100',header=True,config={'spark.driver.memory':'1g','spark.executor.memory':'1g'})
+	
