@@ -139,7 +139,7 @@ class host:
 if __name__=="__main__":
 	#h=host('ssh userxxx@aaa.bbb.ccc.ddd.pl',run=False)
 	#h.extract_csv('test.csv','testdb.example_table',limit=100,select=['a','b','c','string(d)'],drop=['a','b'],where='a < 10',header=True,config={'spark.driver.memory':'1g','spark.executor.memory':'1g'})
-	h=host(r'C:\maciek\apps\putty\plink -i C:\maciek\apps\putty\id_rsa.ppk mobarski@hdpjob.online.pl.grupa.iti')
+	h=host(r'C:\xxx\apps\putty\plink -i C:\xxx\apps\putty\id_rsa.ppk userxxx@aaa.bbb.ccc.ddd.pl')
 	h.os('cat /proc/version')
 	h.write('~/test_util.txt','to jest test')
 	
