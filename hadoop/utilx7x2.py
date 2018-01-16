@@ -21,7 +21,7 @@ class host:
 	
 	def set(self,name,value):
 		"set variable that will be available in other steps"
-		self.variable[name] = value
+		self.variable[name] = value.format(**self.variable)
 		return self
 	
 	def tmp(self,name,text='',eof='EOF',remove=True):
@@ -38,13 +38,13 @@ class host:
 	
 	def cmd(self,text):
 		"execute command"
-		self.main += [text]
+		self.main += [text.format(**self.variable)]
 		return self
 	
 	def get_full_script(self):
-		before = '\n'.join(self.before).format(**self.variable)
-		main = '\n'.join(self.main).format(**self.variable)
-		after = '\n'.join(self.after).format(**self.variable)
+		before = '\n'.join(self.before)
+		main = '\n'.join(self.main)
+		after = '\n'.join(self.after)
 		return '\n'.join([before,main,after]) + '\n'
 	
 	def run(self):
