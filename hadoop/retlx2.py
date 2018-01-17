@@ -2,7 +2,9 @@ import subprocess
 import tempfile
 import textwrap
 
-# TODO NAME: RETL/REETL/REMETL (Remote ETL)
+# NAME: RETL/REETL/REMETL (remote ETL)
+# NAME: HOSH (Hadoop over SSH)
+# NAME: REHAT (remote Hadoop utils/tools)
 
 class host:	
 	def __init__(self, host='', ssh='ssh', scp='scp'):
@@ -56,6 +58,7 @@ class host:
 
 	def download(self, local_path, remote_path): # czy odwrotnie argumenty?
 		"download file from host"
+		self.run()
 		cmd = '{0} {1}:{2} {3}'.format(self.scp, self.host, remote_path.format(**self.var), local_path.format(**self.var))
 		print(cmd)
 		out = subprocess.check_call(cmd, shell=True) # TODO check_call czy check_output
@@ -94,10 +97,10 @@ class host:
 			out = subprocess.check_call(cmd, stdin=f, shell=True) # TODO check_call czy check_output
 		return out
 
-	def execute(self, cmd):
+	def execute(self, cmd, stdin=None, before=''):
 		"immediate execution of command passed via args to ssh"
-		full_cmd = self.ssh+' '+self.host+' '+cmd
-		out = subprocess.check_call(full_cmd, shell=True)
+		full_cmd = before + self.ssh +' '+ self.host +' '+ cmd
+		out = subprocess.check_call(full_cmd, stdin=stdin, shell=True)
 		return out
 
 # ------------------------------------------------------------------------------
@@ -106,12 +109,6 @@ import hashlib
 import re
 
 class hadoop_host(host):
-	def spark_run(self, code, spark_args='', log=None):
-		path = self.tmp(text=code, suffix='.py')
-		log_str = ">{0}".format(log) if log else ''
-		self.cmd("spark2-submit {1} {0} {2}".format(path, spark_args, log_str))
-		self.run()
-
 	def extract_csv(self, path, table, output_dir='', config={}, spark_args='', aux='',
 			sep=',', header=False, quote=None, escape=None, escape_quotes=None, quote_all=None, null_value=None, mode=None,
 			select=None, drop=None, where=None, limit=None,
@@ -150,19 +147,25 @@ class hadoop_host(host):
 		code = re.sub('(?m)^\s+','',code) #UGLY FIX for multiline indented sql code
 		
 		self.cmd('hdfs dfs -rm -r -f {0}'.format(output_dir))
-		if 0:
-			self.spark_run(code, spark_args=spark_args) #, log=path+'.log')
-		else:
-			script_path = self.tmp(text=code, suffix='.py')
-			self.cmd("spark2-submit {1} {0}".format(script_path, spark_args))
-			self.run()
+		script_path = self.tmp(text=code, suffix='.py')
+		self.cmd("spark2-submit {} {}".format(spark_args, script_path))
+		self.run()
 		
-		# TODO pipe into
-		self.execute('"hdfs dfs -text {0}/part*" >{1}'.format(output_dir,path)) # getmerge? # TODO > zapisuje na hoscie
-		#self.dfs('getmerge {0}/part* {1}',output_dir,path)
+		self.download_from_hdfs(path, output_dir)
 		if remove.lower() in ['output','all']:
 			self.after += ['hdfs dfs -rm -r -f {0}'.format(output_dir)]
 
+	def download_from_hdfs(self, local_path, hdfs_path):
+		self.execute('"hdfs dfs -text {0}/part*" >{1}'.format(hdfs_path, local_path))
+		
+	def upload_into_hdfs(self, local_path, hdfs_path):
+		self.execute('hdfs dfs -put - {0}'.format(hdfs_path), stdin=open(local_path,'r'))
+
+	def pipe_from_hdfs(self, pipe_cmd, hdfs_path):
+		self.execute('"hdfs dfs -text {0}/part*" | {1}'.format(hdfs_path, pipe_cmd))
+		
+	def pipe_into_hdfs(self, pipe_cmd, hdfs_path):
+		self.execute('hdfs dfs -put - {0}'.format(hdfs_path), before=pipe_cmd+' | ')
 
 # --- helpers
 
