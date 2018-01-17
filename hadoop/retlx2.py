@@ -8,7 +8,7 @@ class host:
 		self.host = host
 		self.ssh = ssh
 		self.scp = scp
-		self.variable = {'host':host}
+		self.var = {'host':host}
 		self.script = []
 		self.after  = []
 	
@@ -26,33 +26,31 @@ class host:
 	
 	def set(self, var_name, value):
 		"set variable value"
-		self.variable[var_name] = value.format(**self.variable)
+		self.var[var_name] = value.format(**self.var)
 		return self
 	
 	def tmp(self, var_name, text='', eof='EOF'):
 		"create temporary file and store its path in a variable"
 		path = '/tmp/'+random_name(self.host, text, var_name) # TODO
-		self.variable[var_name] = path
+		self.var[var_name] = path
 		if text:
-			self.script += ['cat >{0} <<{2}\n{1}\n{2}'.format(path,text.format(**self.variable),eof)]
+			self.script += ['cat >{0} <<{2}\n{1}\n{2}'.format(path,text.format(**self.var),eof)]
 		else:
 			self.script += ['touch {0}'.format(path)]
 		return self
 	
 	def cmd(self, text):
 		"execute command"
-		self.script += [text.format(**self.variable)]
+		self.script += [text.format(**self.var)]
 		return self
 
 	def download(self, local_path, remote_path): # czy odwrotnie argumenty?
-		v = self.variable
-		cmd = '{0} {1}:{2} {3}'.format(self.scp, self.host, remote_path.format(**v), local_path.format(**v))
+		cmd = '{0} {1}:{2} {3}'.format(self.scp, self.host, remote_path.format(**self.var), local_path.format(**self.var))
 		out = subprocess.check_output(cmd, shell=True) # TODO czy check_call stdout na stdout?
 		return out
 	
 	def upload(self, local_path, remote_path): # czy odwrotnie argumenty?
-		v = self.variable
-		cmd = '{0} {3} {1}:{2}'.format(self.scp, self.host, remote_path.format(**v), local_path.format(**v))
+		cmd = '{0} {3} {1}:{2}'.format(self.scp, self.host, remote_path.format(**self.var), local_path.format(**self.var))
 		out = subprocess.check_output(cmd, shell=True) # TODO czy check_call stdout na stdout?
 		return out
 
