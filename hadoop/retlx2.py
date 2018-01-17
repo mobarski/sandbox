@@ -46,16 +46,20 @@ class host:
 
 	def download(self, local_path, remote_path): # czy odwrotnie argumenty?
 		cmd = '{0} {1}:{2} {3}'.format(self.scp, self.host, remote_path.format(**self.var), local_path.format(**self.var))
-		out = subprocess.check_output(cmd, shell=True) # TODO czy check_call stdout na stdout?
+		print(cmd)
+		out = subprocess.check_call(cmd, shell=True) # TODO check_call czy check_output
 		return out
 	
 	def upload(self, local_path, remote_path): # czy odwrotnie argumenty?
 		cmd = '{0} {3} {1}:{2}'.format(self.scp, self.host, remote_path.format(**self.var), local_path.format(**self.var))
-		out = subprocess.check_output(cmd, shell=True) # TODO czy check_call stdout na stdout?
+		print(cmd)
+		out = subprocess.check_call(cmd, shell=True) # TODO check_call czy check_output
 		return out
 
 	def run(self):
-		out = self.run_text(self.get_script())
+		script = self.get_script()
+		print(script)
+		out = self.run_text(script)
 		self.script = []
 		return out
 
@@ -70,7 +74,7 @@ class host:
 		with tempfile.TemporaryFile() as f:
 			f.write(text)
 			f.seek(0)
-			out = subprocess.check_output(cmd, stdin=f, shell=True) # TODO czy check_call stdout na stdout?
+			out = subprocess.check_output(cmd, stdin=f, shell=True) # TODO check_call czy check_output
 		return out
 
 class hadoop_host(host): pass
