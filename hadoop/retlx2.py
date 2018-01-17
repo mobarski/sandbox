@@ -20,9 +20,9 @@ class host:
 	
 	def clean(self):
 		"remove temporary files"
-		out = self.run_text(self.get_after())
-		self.after = []
-		return out
+		if self.after:
+			out = self.run_text(self.get_after())
+			self.after = []
 	
 	def set(self, var_name, value):
 		"set variable value"
