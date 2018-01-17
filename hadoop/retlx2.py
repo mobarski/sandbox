@@ -20,7 +20,9 @@ class host:
 	
 	def clean(self):
 		"remove temporary files"
-		return self.run_text(self.get_after())
+		out = self.run_text(self.get_after())
+		self.after = []
+		return out
 	
 	def set(self, var_name, value):
 		"set variable value"
@@ -55,7 +57,9 @@ class host:
 		return out
 
 	def run(self):
-		return self.run_text(self.get_script())
+		out = self.run_text(self.get_script())
+		self.script = []
+		return out
 
 	def get_script(self):
 		return '\n'.join(self.script) + '\n'
