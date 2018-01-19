@@ -172,12 +172,13 @@ class KV(UserDict):
 if __name__=="__main__":
 	M = 100
 	N = 1000*M
-	db = KV('ko_x2')
+	#db = KV('data/kv_x2')
+	db = KO('data/ko_x2')
 
 	t0=time()
 	if 1:
 		for i in range(N):
-			db[i] = i
+			db[str(i)*5] = i
 		db.sync()
 		## for k in range(M):
 			## for i in range(N):
@@ -185,5 +186,5 @@ if __name__=="__main__":
 		## db.sync()
 	if 1:
 		for i in range(N):
-			db[i]
+			db[str(i)*5]
 	print(N/(time()-t0))
