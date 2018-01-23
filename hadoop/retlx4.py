@@ -2,13 +2,16 @@ import subprocess
 import tempfile
 import textwrap
 
-# NAME? FARAWAY
+# NAME PART: REMOTE / DISTANT / FAR / FARAWAY
+# NAME PART: DATA / HADOOP / ETL / WAREHOUSE
+# NAME PART: INTEGRATION / UTILS / OPS / UTILITIES / OPERATIONS
 
 # NAME: RETL/REETL/REMETL/REMEL (remote ETL)
 # NAME: HOSH (Hadoop over SSH)
 # NAME: REHAT (remote Hadoop utils/tools)
 # NAME: CHAOS (Claudera HAdoop Over Ssh)
-# NAME PART: FAR / FARAWAY / DISTANT / REMOTE
+
+# NAME? FARAWAY
 
 # NAME: https://www.articulatemarketing.com/blog/project-names
 # NAME: https://www.igorinternational.com/process/naming-guide-product-company-names.php
