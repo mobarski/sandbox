@@ -19,7 +19,7 @@ class host:
 		return self
 	
 	def __exit__(self,et,ev,tb):
-		# TODO czy tutaj run() ???
+		#self.run() # ?????
 		self.clean()
 	
 	def clean(self):
@@ -118,70 +118,31 @@ class hadoop_host(host):
 	def __init__(self, addr='', ssh='ssh', scp='scp'):
 		host.__init__(self, addr, ssh, scp)
 		self.var['hive'] = 'hive'
+		self.var['load_dir'] = '/tmp'
 
 	def download_from_hdfs(self, local_path, hdfs_path):
-		#self.execute('"hdfs dfs -text {0}/part*" >{1}'.format(hdfs_path, local_path))
+		self.run()
 		self.execute('"hdfs dfs -text {0}/[^.]*" >{1}'.format(hdfs_path, local_path))
 		
 	def upload_into_hdfs(self, local_path, hdfs_path):
+		self.run()
 		self.execute('hdfs dfs -put - {0}'.format(hdfs_path), stdin=open(local_path,'r'))
 
 	def pipe_from_hdfs(self, pipe_cmd, hdfs_path):
-		self.execute('"hdfs dfs -text {0}/part*" | {1}'.format(hdfs_path, pipe_cmd))
-		# TODO obsluga * jakw w download
+		self.run()
+		self.execute('"hdfs dfs -text {0}/[^.]*" | {1}'.format(hdfs_path, pipe_cmd))
 		
 	def pipe_into_hdfs(self, pipe_cmd, hdfs_path):
+		self.run()
 		self.execute('hdfs dfs -put - {0}'.format(hdfs_path), before=pipe_cmd+' | ')
 
-	def extract_csv(self, path, table, output_dir='', config={}, spark_args='', aux='',
-			sep=',', header=False, quote=None, escape=None, escape_quotes=None, quote_all=None, null_value=None, mode=None,
-			select=None, drop=None, where=None, limit=None,
-			remove='all'):
-		# TODO column names
-		
-		tmp_name = hashlib.sha1(table.encode()+self.host).hexdigest()[:16]
-		output_dir = output_dir or tmp_name
-		app_config_str = ''.join([".config('{0}','{1}')".format(k,v) for k,v in config.items()])
-		
-		# csv options
-		csv_aux = ""
-		if quote		is not None: csv_aux += ''',quote="""{0}"""'''.format(quote)
-		if escape		is not None: csv_aux += ''',escape="""{0}"""'''.format(escape)
-		if null_value 		is not None: csv_aux += ''',nullValue="""{0}"""'''.format(null_value)
-		if escape_quotes	is not None: csv_aux += ''',escapeQuotes={0}'''.format(escape_quotes)
-		if quote_all 		is not None: csv_aux += ''',quoteAll={0}'''.format(quote_all)
-		
-		# df options 
-		df_aux = aux
-		if select:
-			df_aux += '''.selectExpr({0})'''.format(','.join(["'''{0}'''".format(x) for x in select]))
-		if where:
-			df_aux += """.where('''{0}''')""".format(where)
-		if drop:
-			df_aux += """.drop({0})""".format(','.join(["'''{0}'''".format(x) for x in drop]))
-		if limit:
-			df_aux += '.limit({0})'.format(limit)
-		
-		code = """
-			from pyspark.sql import SparkSession
-			spark = SparkSession.builder.appName('RemoteETL {1}'){6}.getOrCreate()
-			df = spark.table('''{0}'''){2}
-			df.write.csv('{1}',mode='overwrite',header={4},sep='''{5}'''{3})
-			""".format(table, output_dir, df_aux, csv_aux, header, sep, app_config_str)
-		code = re.sub('(?m)^\s+','',code) #UGLY FIX for multiline indented sql code
-		
-		self.cmd('hdfs dfs -rm -r -f {0}'.format(output_dir))
-		script_path = self.tmp(text=code, suffix='.py')
-		self.cmd("spark2-submit {} {}".format(spark_args, script_path))
-		self.run()
-		
-		self.download_from_hdfs(path, output_dir)
-		if remove.lower() in ['output','all']:
-			self.after += ['hdfs dfs -rm -r -f {0}'.format(output_dir)]
-
-	def import_csv(self, path, table, hdfs_path, columns, sep=','):
+	def import_csv(self, path, table, columns, sep=','):
 		# TODO zalozenie tabeli w konkretnym miejsu i upload partycji???
-		# TODO table comment
+		# TODO elegancka obsluga columns!!!
+		# TODO table comment???
+		name = random_name(self.host, path+' '+table, 'import')
+		hdfs_path = '{}/{}'.format(self.var['load_dir'],name)
+		
 		self.cmd('hdfs dfs -rm -r -f '+hdfs_path).run() # TODO jako opcja
 		self.upload_into_hdfs(path, hdfs_path)
 		script = """
@@ -198,9 +159,13 @@ class hadoop_host(host):
 		""".format(**locals())
 		path = self.tmp(text=script, suffix='.sql')
 		self.cmd('{hive} -f '+path)
-		#self.cmd('hdfs dfs -rm -r -f '+hdfs_path) # TODO jako opcja?
+		self.after += ['hdfs dfs -rm -r -f '+hdfs_path] # TODO jako opcja?
+		self.run()
 	
-	def extract_csv2(self, path, sql, hdfs_path, sep=','):
+	def extract_csv(self, path, sql, sep=','):
+		name = random_name(self.host,sql,'extract')
+		hdfs_path = '{}/{}'.format(self.var['load_dir'],name)
+		
 		self.cmd('hdfs dfs -rm -r -f '+hdfs_path) # TODO jako opcja?
 		script = """
 		insert overwrite directory '{hdfs_path}'
@@ -210,11 +175,10 @@ class hadoop_host(host):
 			{sql}
 			;
 		""".format(**locals())
-		path = self.tmp(text=script, suffix='.sql')
-		self.cmd('{hive} -f '+path)
-		self.run()
+		sql_path = self.tmp(text=script, suffix='.sql')
+		self.cmd('{hive} -f '+sql_path)
+		self.after += ['hdfs dfs -rm -r -f '+hdfs_path] # TODO jako opcja?
 		self.download_from_hdfs(path,hdfs_path)
-		#self.cmd('hdfs dfs -rm -r -f '+hdfs_path) # TODO jako opcja?
 
 # --- helpers
 
@@ -223,7 +187,7 @@ def random_name(text='',text2='',label='',length=6):
 	out = hashlib.sha1(text).hexdigest()[:length]
 	out += '-'+hashlib.sha1(text2).hexdigest()[:length]
 	for i in range(length):
-		out += random.choice('3')
+		out += random.choice('qwertyuiopasdfghjklzxcvbnm1234567890')
 	if label:
 		out += '-'+label
 	return out
