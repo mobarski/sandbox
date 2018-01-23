@@ -2,17 +2,24 @@ import subprocess
 import tempfile
 import textwrap
 
+# NAME? FARAWAY
+
 # NAME: RETL/REETL/REMETL/REMEL (remote ETL)
 # NAME: HOSH (Hadoop over SSH)
 # NAME: REHAT (remote Hadoop utils/tools)
-# NAMEL CHAOS (Claudera HAdoop Over Ssh)
+# NAME: CHAOS (Claudera HAdoop Over Ssh)
+# NAME PART: FAR / FARAWAY / DISTANT / REMOTE
 
-class host:	
+# NAME: https://www.articulatemarketing.com/blog/project-names
+# NAME: https://www.igorinternational.com/process/naming-guide-product-company-names.php
+# NAME: https://blog.codinghorror.com/whats-in-a-project-name/
+
+class raw_host:	
 	def __init__(self, host='', ssh='ssh', scp='scp'):
 		self.host = host
 		self.ssh = ssh
 		self.scp = scp
-		self.var = {'host':host}
+		self.var = {'host':host,'tmp_dir':'/tmp'}
 		self.script = []
 		self.after  = []
 	
@@ -40,14 +47,14 @@ class host:
 		"get variable value or None if var doesnt exists"
 		return self.var.get(var_name)
 	
-	# TODO kolejnosc argumentow - najpiers text potem var
-	def tmp(self, var_name='', text='', eof='EOF', prefix='/tmp/', suffix='', dedent=True):
+	def tmp(self, text='', var='', eof='EOF', prefix='{tmp_dir}', suffix='', dedent=True):
 		"create temporary file and store its path in a variable"
 		if dedent:
 			text = textwrap.dedent(text).strip()
-		path = prefix + random_name(self.host, text, var_name) + suffix
-		if var_name:
-			self.var[var_name] = path
+		path = prefix +'/'+ random_name(self.host, text, var) + suffix
+		path = path.format(**self.var)
+		if var:
+			self.var[var] = path
 		if text:
 			self.script += ['cat >{0} <<{2}\n{1}\n{2}'.format(path,text.format(**self.var),eof)]
 		else:
@@ -111,15 +118,13 @@ class host:
 
 # ------------------------------------------------------------------------------
 
-import hashlib
-import re
-
-class hadoop_host(host):
+class host(raw_host):
+	"hadoop host"
 	
-	def __init__(self, addr='', ssh='ssh', scp='scp'):
-		host.__init__(self, addr, ssh, scp)
+	def __init__(self, host='', ssh='ssh', scp='scp'):
+		raw_host.__init__(self, host, ssh, scp)
 		self.var['hive'] = 'hive'
-		self.var['load_dir'] = '/tmp'
+		self.var['hdfs_tmp_dir'] = '/tmp'
 
 	def download_from_hdfs(self, local_path, hdfs_path):
 		self.run()
@@ -133,18 +138,18 @@ class hadoop_host(host):
 		self.run()
 		self.execute('"hdfs dfs -text {0}/[^.]*" | {1}'.format(hdfs_path, pipe_cmd))
 		
-	def pipe_into_hdfs(self, pipe_cmd, hdfs_path):
+	def pipe_into_hdfs(self, pipe_cmd, hdfs_path, stdin=None):
 		self.run()
-		self.execute('hdfs dfs -put - {0}'.format(hdfs_path), before=pipe_cmd+' | ')
+		self.execute('hdfs dfs -put - {0}'.format(hdfs_path), before=pipe_cmd+' | ', stdin=stdin)
 
 	def import_csv(self, path, table, columns, sep=','):
 		# TODO zalozenie tabeli w konkretnym miejsu i upload partycji???
-		# TODO elegancka obsluga columns!!!
+		# TODO elegancka obsluga columns???
 		# TODO table comment???
 		name = random_name(self.host, path+' '+table, 'import')
-		hdfs_path = '{}/{}'.format(self.var['load_dir'],name)
+		hdfs_path = '{}/{}'.format(self.var['hdfs_tmp_dir'],name)
 		
-		self.cmd('hdfs dfs -rm -r -f '+hdfs_path).run() # TODO jako opcja
+		self.cmd('hdfs dfs -rm -r -f '+hdfs_path).run() # TODO jako opcja?
 		self.upload_into_hdfs(path, hdfs_path)
 		script = """
 			DROP TABLE if exists {table};
@@ -158,45 +163,59 @@ class hadoop_host(host):
 				;
 			
 		""".format(**locals())
-		path = self.tmp(text=script, suffix='.sql')
+		path = self.tmp(script, suffix='.sql')
 		self.cmd('{hive} -f '+path)
 		self.after += ['hdfs dfs -rm -r -f '+hdfs_path] # TODO jako opcja?
 		self.run()
 	
-	def extract_csv(self, path, sql, sep=','):
+	def extract_csv(self, path, sql, sep=r'\t', csep=',', ksep=':'):
 		name = random_name(self.host,sql,'extract')
-		hdfs_path = '{}/{}'.format(self.var['load_dir'],name)
+		hdfs_path = '{}/{}'.format(self.var['hdfs_tmp_dir'],name)
 		
 		self.cmd('hdfs dfs -rm -r -f '+hdfs_path) # TODO jako opcja?
 		script = """
 		insert overwrite directory '{hdfs_path}'
-			row format delimited fields terminated by '{sep}'
+			row format delimited
+			fields terminated by '{sep}'
+			collection items terminated by '{csep}'
+			map keys terminated by '{ksep}'
 			stored as textfile
 			
 			{sql}
 			;
 		""".format(**locals())
-		sql_path = self.tmp(text=script, suffix='.sql')
+		sql_path = self.tmp(script, suffix='.sql')
 		self.cmd('{hive} -f '+sql_path)
 		self.after += ['hdfs dfs -rm -r -f '+hdfs_path] # TODO jako opcja?
 		self.download_from_hdfs(path,hdfs_path)
 
-# --- helpers
+	# TODO import partition
+	# TODO hadoop streaming
+
+# --- helpers ------------------------------------------------------------------
+
+import hashlib
+import re
 
 def random_name(text='',text2='',label='',length=6):
 	import random
 	out = hashlib.sha1(text).hexdigest()[:length]
 	out += '-'+hashlib.sha1(text2).hexdigest()[:length]
+	out += '-'
 	for i in range(length):
 		out += random.choice('qwertyuiopasdfghjklzxcvbnm1234567890')
 	if label:
 		out += '-'+label
 	return out
 
-def columns(col_str,types={},sep1=' ',sep2=':',default='string'):
-	# TODO comments
+def columns(col_str,default='string',types_str='',sep1='\s+',sep2=':'):
 	out = []
-	for name_type in col_str.split(sep1):
+	types = {}
+	for ts in re.split(sep1,types_str):
+		if not ts: continue
+		t,s = ts.split(sep2)[:2]
+		types[t]=s
+	for name_type in re.split(sep1,col_str):
 		name,t = (name_type+sep2).split(sep2)[:2]
 		t = types.get(t,default)
 		out += [(name,t)]
@@ -205,14 +224,14 @@ def columns(col_str,types={},sep1=' ',sep2=':',default='string'):
 # ------------------------------------------------------------------------------
 
 def test1():
-	with host('','cat','echo') as h:
+	with host('','cat','cat') as h:
 		h.set('hive','beeline -u "jdbc:hive2://xxx.aaa.bbb.ccc:10000/;principal=hive/xxx.aaa.bbb@zzz.vvv.bbb?mapreduce.job.queuename=abcd" --showHeader=false')
 		h.set('x','abc')
 		h.set('y','test {x} ok')
-		h.tmp('f1','xxx')
-		h.tmp('f2','yyy')
-		h.tmp('f3','{y}')
-		h.tmp('f4')
+		h.tmp('xxx','f1')
+		h.tmp('yyy','f2')
+		h.tmp('{y}','f3')
+		h.tmp(var='f4')
 		h.cmd('{hive} -f {f1} >{f4}')
 		s = h.get_script()
 		print(s)
@@ -221,14 +240,14 @@ def test1():
 
 
 def test2():
-	print(columns('a b c d:i e:i f:ai',types={'i':'int','ai':'array<int>'}))
+	print(columns('a b c d:i e:i f:ai','string','i:bigint ai:array<int>'))
 
 def test3():
-	with hadoop_host('','cat','cat') as h:
+	with host('','cat','cat') as h:
 		h.set('hive','beeline')
 		cols = columns('a b c d')
 		h.import_csv('ppp','ttt','idir',cols)
 		print(h.get_script())
 
 if __name__=="__main__":
-	test3()
+	test1()
