@@ -1,10 +1,11 @@
+# encoding: utf8
 import re
 from random import *
 from collections import Counter
 from pprint import pprint
 
 # http://blog.echen.me/2011/08/22/introduction-to-latent-dirichlet-allocation/
-# https://tedunderwood.com/2012/04/07/topic-modeling-made-just-simple-enough/
+# -> https://tedunderwood.com/2012/04/07/topic-modeling-made-just-simple-enough/
 
 documents = [
 # space
@@ -54,10 +55,15 @@ for d,doc in enumerate(docs):
 
 # ITER
 for d,doc in enumerate(docs):
+	p_by_w_t = {}
 	for t in range(1,K+1):
 		total_t = sum(cnt_by_t_w[t].values())
 		cnt_in_t = sum([doc[w] for w in doc if topic_by_d_w[d][w]==t])
-		for w in doc:
-			p = cnt_by_t_w[t].get(w,0) / total_t * cnt_in_t
-			print(d,t,w,p)
-		
+		for w in sorted(doc):
+			p = 1. * cnt_by_t_w[t].get(w,0) / total_t * cnt_in_t
+			if w not in p_by_w_t: p_by_w_t[w] = {t:0 for t in range(1,K+1)}
+			p_by_w_t[w][t] = p
+	for w in p_by_w_t:
+		print(d,w,p_by_w_t[w])
+
+

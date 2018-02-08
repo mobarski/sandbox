@@ -1,3 +1,7 @@
 http://blog.echen.me/2011/08/22/introduction-to-latent-dirichlet-allocation/
-
-
+https://www.kdnuggets.com/2016/07/text-mining-101-topic-modeling.html
+http://obphio.us/pdfs/lda_tutorial.pdf
+https://tedunderwood.com/2012/04/07/topic-modeling-made-just-simple-enough/
+https://www.quora.com/What-is-a-good-explanation-of-Latent-Dirichlet-Allocation
+https://github.com/lda-project/lda/blob/develop/lda/lda.py
+https://github.com/lda-project/lda/blob/develop/lda/_lda.pyx

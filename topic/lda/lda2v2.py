@@ -4,6 +4,7 @@ import re
 from random import *
 from collections import Counter
 from pprint import pprint
+from heapq import nlargest
 
 # -> http://blog.echen.me/2011/08/22/introduction-to-latent-dirichlet-allocation/
 # https://tedunderwood.com/2012/04/07/topic-modeling-made-just-simple-enough/
@@ -31,47 +32,105 @@ documents = [
 "We're seeing a lot of feedback coming in from people playing the 10 month old Alpha demo. We love your feedback, but we'd love it even more if you were trying the new Alpha 2. Trailmakers should look like this in your Steam List if you're on the right build!"
 ]
 
-
 def get_tf(text):
 	terms = re.findall('(?u)\w+',text.lower())
 	tf = Counter(terms)
 	return dict(tf)
 
+def weighted_choice1(seq,weights):
+	cum_weights = [0]*len(weights)
+	cum_weights[0] = weights[0]
+	for i,w in enumerate(weights):
+		if i==0: continue
+		cum_weights[i] = cum_weights[i-1]+w
+	total = cum_weights[-1]
+	r = random() * total
+	for i,c in enumerate(cum_weights):
+		if r<c: return seq[i]
+
+def weighted_choice(w_map):
+	items = w_map.items()
+	cum_weights = [0]*len(items)
+	cum_weights[0] = items[0][1]
+	for i,item in enumerate(items):
+		if i==0: continue
+		w = item[1]
+		cum_weights[i] = cum_weights[i-1]+w
+	total = cum_weights[-1]
+	r = random() * total
+	for i,c in enumerate(cum_weights):
+		if r<c: return items[i][0]
+
+#print(weighted_choice2({11:.1,22:.1,33:.1}))
+
+
+
+
+
+
 docs = list(map(get_tf,documents))
 
 K = 3
+topics = list(range(1,K+1))
 
-#topic_by_d_w = {}
-topic_by_w_d = {}
-ndoc_by_w_t = {}
+topic_by_d_w = {}
+total_by_w_t = {}
+total_by_d_t = {}
+total_by_d = {}
+total_by_w = {}
+p_by_d_t = {}
+p_by_w_t = {}
+
+alpha = 0.1
+beta_w = 0.0
+beta = 0.0
 
 # INIT
 for d,doc in enumerate(docs):
-	#topic_by_d_w[d] = {}
-	for w in doc:
+	topic_by_d_w[d] = {}
+	total_by_d_t[d] = {t:0 for t in topics}
+	for w,tf in doc.items():
+		if w not in total_by_w_t: total_by_w_t[w] = {t:0 for t in topics}
 		t = randint(1,K)
-		#topic_by_d_w[d][w] = t
-		if w not in topic_by_w_d: topic_by_w_d[w] = {}
-		topic_by_w_d[w][d] = t
-		
-		if w not in ndoc_by_w_t: ndoc_by_w_t[w] = {}
-		if t not in ndoc_by_w_t[w]: ndoc_by_w_t[w][t] = 0
-		tf = doc[w]
-		ndoc_by_w_t[w][t] += tf
+		topic_by_d_w[d][w] = t
+		total_by_w_t[w][t] += tf
+		total_by_d_t[d][t] += tf
+
+# CALC
+for d,doc in enumerate(docs):
+	total_by_d[d] = sum(total_by_d_t[d].values())
+	p_by_d_t[d] = {t:1.* (total_by_d_t[d][t]+beta_w) / total_by_d[d] for t in topics}
+
+for w in total_by_w_t:
+	total_by_w[w] = sum(total_by_w_t[w].values())
+	p_by_w_t[w] = {t:1.* (total_by_w_t[w][t]+alpha) / total_by_w[w] for t in topics}
 
 # ITER
-for d,doc in enumerate(docs):
-	by_t = {t:0 for t in range(1,K+1)}
-	for w in doc:
-		t = topic_by_w_d[w][d]
-		tf = doc[w]
-		by_t[t] += tf
-		
-	w_cnt = sum(by_t.values())
-	p1 = {t:by_t[t]/w_cnt for t in range(1,K+1)}
-	print(d,p1)
-	for w in doc:
-		p2 = {t:1.*ndoc_by_w_t[w].get(t,0)/len(docs) for t in range(1,K+1)}
-		print(d,p2)
+for iter in range(100):
+	for d,doc in enumerate(docs):
+		for w,tf in doc.items():
+			p_by_t = {}
+			for t in topics:
+				p_by_t[t] = p_by_d_t[d][t] * p_by_w_t[w][t]
+			old_t = topic_by_d_w[d][w]
+			new_t = weighted_choice(p_by_t)
+			if old_t==new_t: continue
+			topic_by_d_w[d][w] = new_t
+			total_by_w_t[w][old_t] -= tf
+			total_by_w_t[w][new_t] += tf
+			total_by_d_t[d][old_t] -= tf
+			total_by_d_t[d][new_t] += tf
+			p_by_d_t[d] = {t:1.* (total_by_d_t[d][t]+beta_w) / total_by_d[d] for t in topics}
+			p_by_w_t[w] = {t:1.* (total_by_w_t[w][t]+alpha)  / total_by_w[w] for t in topics}
 
-pprint(topic_by_d_w)
+
+#pprint(p_by_d_t)
+#pprint(p_by_w_t)
+
+p_by_t_w = {t:{} for t in topics}
+for t in topics:
+	for w in p_by_w_t:
+		p_by_t_w[t][w] = p_by_w_t[w][t]
+	print(nlargest(5,p_by_t_w[t].items(),key=lambda x:x[1]))
+
+
