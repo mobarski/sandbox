@@ -30,8 +30,7 @@ documents = [
 "samoloty szturmowe leca nisko",
 "krowy jedza trawe",
 "kury jedza ziarno",
-"krowy pija wode",
-"ciagnik wiezie ziarno na przyczepie",
+"krowy pija wode"
 ]
 
 def get_tf(text):

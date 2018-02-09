@@ -12,8 +12,8 @@ from time import time
 # http://obphio.us/pdfs/lda_tutorial.pdf
 # -> https://www.kdnuggets.com/2016/07/text-mining-101-topic-modeling.html
 
-K = 4
-ITERATIONS = 10000
+K = 3
+ITERATIONS = 1000
 N = 6
 a1 = 0.2 # document alpha factor
 a2 = 0.01 # word eta factor
@@ -22,16 +22,18 @@ SIMPLE = False
 documents = [
 "reksio szczeka na koty",
 "pies glosno szczeka",
-#"koty cicho mrucza",
+"koty cicho mrucza",
+"reksio to madry pies",
 "kerbale buduja rakiety",
 "rakiety wynosza satelity",
 "satelity sa na orbicie",
-#"rakiety glosno startuja",
+"rakiety glosno startuja",
 "szybowce leca cicho",
 "szybowce startuja z wyciagarki",
+"samoloty szturmowe leca nisko",
 "krowy jedza trawe",
 "kury jedza ziarno",
-"ciagnik wiezie ziarno na przyczepie",
+"krowy pija wode"
 ]
 
 ## documents = [

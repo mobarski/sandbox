@@ -10,30 +10,32 @@ from time import time
 # -> http://obphio.us/pdfs/lda_tutorial.pdf
 # -> http://brooksandrew.github.io/simpleblog/articles/latent-dirichlet-allocation-under-the-hood/
 
-K = 6
+K = 4
 ITERATIONS = 1000
-N = 6
 alpha = 0.1 # document alpha factor
 eta = 0.1 # word eta factor
-RANDOMIZE = False
+RANDOMIZE = True
+MULTIPLICATION = 10
+
+TOP_N = 6
 
 documents = [
-"reksio czesto szczeka na koty",
-"pies czasem glosno szczeka",
-"koty czestp cicho mrucza",
+"reksio szczeka na koty",
+"pies glosno szczeka",
+"koty cicho mrucza",
 "reksio to madry pies",
-"kerbale czesto buduja rakiety",
-"rakiety czasem wynosza satelity",
-"satelity zawsze sa na orbicie",
-"rakiety zawsze glosno startuja",
-"szybowce zawsze leca cicho",
-"szybowce czasem startuja z wyciagarki",
-"samoloty szturmowe czesto leca nisko",
-"krowy czesto jedza trawe",
-"kury czesto jedza ziarno",
-"krowy czesto pija wode",
-"ciagnik czasem wiezie ziarno na przyczepie",
+"kerbale buduja rakiety",
+"rakiety wynosza satelity",
+"satelity sa na orbicie",
+"rakiety glosno startuja",
+"szybowce leca cicho",
+"szybowce startuja z wyciagarki",
+"samoloty szturmowe leca nisko",
+"krowy jedza trawe",
+"kury jedza ziarno",
+"krowy pija wode"
 ]
+documents *= MULTIPLICATION
 
 def get_tf(text):
 	terms = re.findall('(?u)\w+',text.lower())
@@ -123,7 +125,7 @@ for _ in range(ITERATIONS):
 			total_w_in_t[w][t] += 1
 
 if 1:
-	pprint(total_d_in_t)
+	#pprint(total_d_in_t)
 	pprint(total_w_in_t)
 	pprint(total_in_t)
 
@@ -134,7 +136,8 @@ for d,doc in enumerate(docs):
 	denom_a = 1.* len(doc) + K*alpha
 	for t in topics:
 		p_d_in_t[d][t] = 1.* (total_d_in_t[d][t] + alpha) / denom_a
-pprint(p_d_in_t)
+
+#pprint(p_d_in_t)
 
 # phi - topic probabilities per word
 p_w_in_t = {w:{} for w in corpus} # phi
@@ -156,5 +159,5 @@ for t in by_t:
 	total = sum(by_t[t].values())
 	for w in by_t[t]:
 		by_t[t][w] /= total 
-	pprint((t,nlargest(N,by_t[t].items(),key=lambda x:x[1])))
+	pprint((t,nlargest(TOP_N,by_t[t].items(),key=lambda x:x[1])))
 	#print(t,by_t[t])
