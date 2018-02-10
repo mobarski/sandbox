@@ -5,11 +5,11 @@ from heapq import nlargest
 from time import time
 from random import randint
 
-K = 4
+K = 3
 ITERS = 1000
 alpha = 0.1 # document alpha factor
 eta = 0.1 # word eta factor
-MULTIPLICATION = 1
+MULTIPLICATION = 10
 
 documents = get_documents(MULTIPLICATION)
 corpus = get_corpus(documents)
@@ -27,12 +27,12 @@ n_t = {t:0 for t in topics}
 for d in docs:
 	for w in docs[d]:
 		t = randint(1,K)
-		print(d,w,t)
 		t_wd[w][d] = t
 		n_dt[d][t] += 1
 		n_wt[w][t] += 1
 		n_t[t] += 1
 
+# MAIN LOOP
 t0=time()
 for _ in range(ITERS):
 	for d in docs:
@@ -58,5 +58,12 @@ for _ in range(ITERS):
 			n_wt[w][t] += 1
 			n_t[t] += 1
 t1=time()
-print(ITERS/(t1-t0),'iters per second')
+
+# RESULTS
+
+for t in topics:
+	top = nlargest(7,((w,n_wt[w][t]) for w in n_wt),key=lambda x:x[1])
+	print('topic #{}  {}'.format(t,' '.join([x[0] for x in top if x[1]>0])))
+
+print('{0:.2f} iters per second'.format(ITERS/(t1-t0)))
 
