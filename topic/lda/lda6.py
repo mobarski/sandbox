@@ -22,6 +22,7 @@ t_wd = {w:{} for w in corpus}
 n_dt = {d:{t:0 for t in topics} for d in docs}
 n_wt = {w:{t:0 for t in topics} for w in corpus}
 n_t = {t:0 for t in topics}
+n_w = {w:0 for w in corpus} # DF
 
 # randomly select topic for each word in each document
 for d in docs:
@@ -31,13 +32,16 @@ for d in docs:
 		n_dt[d][t] += 1
 		n_wt[w][t] += 1
 		n_t[t] += 1
+		n_w[w] += 1
 
 # MAIN LOOP
 t0=time()
 for _ in range(ITERS):
 	for d in docs:
-		denom_dt = len(docs[d])-1 + K*alpha # TODO check
+		denom_dt = len(docs[d])-1 + K*alpha
 		for w in docs[d]:
+			denom_wt = n_w[w]-1 + K*eta
+			
 			# decr current w/d/t
 			t = t_wd[w][d]
 			n_dt[d][t] -= 1
@@ -46,7 +50,6 @@ for _ in range(ITERS):
 			
 			p_t = {}
 			for t in topics:
-				denom_wt = n_t[t] + len(corpus)*eta # TODO check len(corpus)???
 				p_wt = 1.* (n_wt[w][t] + eta)   / denom_wt
 				p_dt = 1.* (n_dt[d][t] + alpha) / denom_dt
 				p_t[t] = p_wt * p_dt
