@@ -8,3 +8,4 @@ https://github.com/lda-project/lda/blob/develop/lda/_lda.pyx
 http://brooksandrew.github.io/simpleblog/articles/latent-dirichlet-allocation-under-the-hood/
 https://medium.com/mlreview/topic-modeling-with-scikit-learn-e80d33668730
 http://psiexp.ss.uci.edu/research/papers/SteyversGriffithsLSABookFormatted.pdf
+https://datascience.stackexchange.com/questions/199/what-does-the-alpha-and-beta-hyperparameters-contribute-to-in-latent-dirichlet-a
