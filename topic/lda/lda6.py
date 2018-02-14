@@ -5,12 +5,12 @@ from heapq import nlargest
 from time import time
 from random import randint
 
-K = 6
-ITERS = 1000
+K = 10
+ITERS = 10
 alpha = 0.1 # document alpha factor
 eta = 0.1 # word eta factor
 eta = 0.1 # word eta factor
-MULTIPLICATION = 10
+MULTIPLICATION = 1
 
 documents = get_documents(MULTIPLICATION)
 words = get_words(documents)
