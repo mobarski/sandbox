@@ -23,12 +23,11 @@ def get_documents(multi=1):
 	docs = list(map(get_tf,documents))
 	return docs*multi
 
-def get_corpus(docs):
-	corpus = Counter()
+def get_words(docs):
+	words = set()
 	for doc in docs:
-		corpus.update(doc)
-	corpus = dict(corpus)
-	return corpus
+		words.update(doc)
+	return words
 
 def get_tf(text):
 	terms = re.findall('(?u)\w+',text.lower())
