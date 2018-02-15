@@ -5,8 +5,8 @@ from heapq import nlargest
 from time import time
 from random import randint
 
-K = 10
-ITERS = 10
+K = 4
+ITERS = 40
 alpha = 0.1 # document alpha factor
 eta = 0.1 # word eta factor
 eta = 0.1 # word eta factor

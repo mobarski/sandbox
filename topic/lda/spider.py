@@ -64,14 +64,15 @@ def spider(url,depth=1,allow='',omit=None):
 	return out
 
 if __name__=="__main__":
-	if 0:
-		url = "https://pl.wikipedia.org/wiki/Nikola_Tesla"
+	if 1:
+		url = "http://onet.pl"
 		#urlid = sha1(url.lower()).hexdigest()[:16]
 		raw = fetch(url)
 		text = get_text(raw)
 		urls = get_urls(raw)
 		#print(text.encode('utf8'))
 		print(len([u for u in urls if not re.findall('(?i)jpg|jpeg|gif|png|svg|ico',u)]))
+		print(text.lower())
 	if 0:
 		url = "https://pl.wikipedia.org/wiki/Nikola_Tesla"
 		spider(url,allow='(?i)//(pl|en|simple).wiki(pedia|quote).org',omit='oldid')
