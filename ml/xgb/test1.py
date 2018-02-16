@@ -12,4 +12,4 @@ for x in ['weight','gain','cover']:
 	print(x,bst.get_score('',x))
 
 bst.save_model('test1.model')
-bst.dump_model('test1.model.txt')
+bst.dump_model('test1.model.txt',with_stats=True)
