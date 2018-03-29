@@ -1,6 +1,7 @@
 from collections import Counter,defaultdict
+from itertools import islice
 
-def get_stats(X,Y,base='df',stats='',agg='sum',norm='sum'):
+def get_stats(X, Y, base='df', stats='', agg='sum', norm='sum'):
 	model = {}
 	_stats = set(stats.split(' ')+[base,base+'_y'])
 	_y = set(Y)
@@ -47,7 +48,8 @@ def get_stats(X,Y,base='df',stats='',agg='sum',norm='sum'):
 		for t,f in model[base].items():
 			for y in _y:
 				f_y = model[base+'_y'][y].get(t,0)
-				model['dia_y'][y][t] = 1.0 * f_y / f
+				p_ct = 1.0 * f_y / f
+				model['dia_y'][y][t] = p_ct
 
 	if 'gini_y' in _stats:
 		cnt_y = {}
@@ -89,6 +91,12 @@ def get_stats(X,Y,base='df',stats='',agg='sum',norm='sum'):
 	
 	return model
 
+
+def get_ngrams(tokens, n, sep=' '):
+    iters = [islice(tokens,i,None) for i in range(n)]
+    return [sep.join(x) for x in zip(*iters)]
+
+
 if __name__=="__main__":
 	X = ['ala ma kota','to jest test work ma','go go power ala ma','go work work kota ma']
 	X = [x.split(' ') for x in X]
@@ -97,3 +105,4 @@ if __name__=="__main__":
 	#print(m['dia_y'][0])
 	#print(m['dia'])
 	print(m['gini'])
+	print(get_ngrams('ala ma kota',2,''))
