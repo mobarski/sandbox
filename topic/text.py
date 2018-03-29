@@ -1,7 +1,9 @@
 from collections import Counter,defaultdict
 from itertools import islice
 
-def get_stats(X, Y, base='df', stats='', agg='sum', norm='sum'):
+# ==============================================================================
+
+def get_stats(X, Y, base='df', stats='', agg='sum', norm='sum', alpha=0.5):
 	model = {}
 	_stats = set(stats.split(' ')+[base,base+'_y'])
 	_y = set(Y)
@@ -28,10 +30,32 @@ def get_stats(X, Y, base='df', stats='', agg='sum', norm='sum'):
 	pass # TODO drop terms below treshold
 
 
-	# ==[ stats ]===========================================================
+	# ==[ local ]===========================================================
 	
 	if 'chi_y' in _stats:
-		pass # TODO
+		# TODO sum_f* vs base
+		sum_f_y = {}
+		for y in _y:
+			sum_f_y[y] = sum(model[base+'_y'][y].values())
+		sum_f = sum(sum_f_y.values())
+		for t,f in model[base].items():
+			for y in _y:
+				# observed
+				o_c1_t1 = model[base+'_y'][y][t]
+				o_c1_t0 = sum_f_y[y] - o_c1_t1
+				o_c0_t1 = model[base][t] - o_c1_t1
+				o_c0_t0 = sum_f-sum_f_y[y] - o_c0_t1
+				# expected
+				e_c1_t1 = 1.0 * o_c0_t1 / (sum_f-sum_f_y[y]) * sum_f_y[y]
+				e_c1_t0 = 1.0 * o_c0_t0 / (sum_f-sum_f_y[y]) * sum_f_y[y] # ???
+				e_c0_t1 = 1.0 * o_c1_t1 / sum_f_y[y] * (sum_f-sum_f_y[y])
+				e_c0_t0 = 1.0 * o_c1_t0 / sum_f_y[y] * (sum_f-sum_f_y[y]) # ???
+				# components
+				c1_t1 = (o_c1_t1 - e_c1_t1)**2 / (e_c1_t1 + alpha)
+				c1_t0 = (o_c1_t0 - e_c1_t0)**2 / (e_c1_t0 + alpha)
+				c0_t1 = (o_c0_t1 - e_c0_t1)**2 / (e_c0_t1 + alpha)
+				c0_t0 = (o_c0_t0 - e_c0_t0)**2 / (e_c0_t0 + alpha)
+				model['chi_y'][y][t] = c0_t0+c1_t0+c0_t1+c1_t1
 	
 	if 'cmfs_y' in _stats:
 		cnt_y = {}
@@ -71,7 +95,12 @@ def get_stats(X, Y, base='df', stats='', agg='sum', norm='sum'):
 	# TODO *x_y - ballanced variants
 
 
-	# ==[ aggregates ]======================================================
+	# ==[ global ]==========================================================
+
+	if 'chi' in _stats:
+		for t in model[base]:
+			scores = [model['chi_y'][y][t] for y in _y]
+			model['chi'][t] = max(scores) # TODO agg
 		
 	if 'cmfs' in _stats:
 		for t in model[base]:
@@ -91,6 +120,7 @@ def get_stats(X, Y, base='df', stats='', agg='sum', norm='sum'):
 	
 	return model
 
+# ==============================================================================
 
 def get_ngrams(tokens, n, sep=' '):
     iters = [islice(tokens,i,None) for i in range(n)]
@@ -98,11 +128,12 @@ def get_ngrams(tokens, n, sep=' '):
 
 
 if __name__=="__main__":
-	X = ['ala ma kota','to jest test work ma','go go power ala ma','go work work kota ma']
+	X = ['xxx xxx ala ma kota','to jest test work ma','go go power ala ma','xxx xxx go work work kota ma']
 	X = [x.split(' ') for x in X]
 	Y = [0,1,1,0]
-	m = get_stats(X,Y,'tf','gini_y gini')
+	m = get_stats(X,Y,'df','chi_y chi')
 	#print(m['dia_y'][0])
 	#print(m['dia'])
-	print(m['gini'])
-	print(get_ngrams('ala ma kota',2,''))
+	#print(m['gini'])
+	print(m['chi'])
+	#print(get_ngrams('ala ma kota',2,''))
