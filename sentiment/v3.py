@@ -1067,7 +1067,7 @@ zgroza			.		zgroz				# 77
 zgryzota		.		zgry(zo[tc]|[źz]l)		# 3 TODO zgryzota zgryzliwy rozgryzac
 zl*			.		\b[źz][lł][eyoiaąu]\b			# TODO 9488 zly zle zlo zlymi zla
 zlamac			a		\b(|po|od|z|roz)łama		# 1891
-zlamas			a		z[łl]amas\w+			# 21
+zlamas			i		z[łl]amas\w+			# 21
 zlodziej		i		złodziej\w*			# 1920
 zlom			.		z[łl]om				# 162
 zlosc			a		\bz[łl]o[śs]			# 693
@@ -1102,7 +1102,9 @@ analny			xx		\banal(\b|n)			# 63
 pornografia		xx		porno				# 1312
 kuska			x		\bku[śs][ck](?!us)\w		# 6
 biegunka		o		biegunk				# 14
-scierwo			s		[śs]cierw			#
+scierwo			s		[śs]cierw			# 458
+pener			i		(?<!o)pener			# 5
+x			i		\bluj				# 72
 """
 
 # dreczyc zbrodnia goj wściekły
@@ -1130,26 +1132,7 @@ for line in kind.strip().split('\n'):
 	tags[rec[0]] = rec[1]
 	pattern[rec[0]] = re.sub('[(](?![?])','(?:',rec[2])
 
-def get_words_by_tags(*args):
-	selected = []
-	for w in pattern:
-		for tag in args:
-			if tag.lower()==tag and tag not in tags[w]: # no positive pattern
-				break
-		else:
-			selected.append(w)
-	to_remove = set()
-	for w in selected:
-		for tag in args:
-			if tag.upper()==tag and tag.lower() in tags[w]: # negative pattern (uppercase)
-				to_remove.add(w)
-	return [w for w in selected if w not in to_remove]
-
-def get_pattern_by_tags(*args):
-	selected = get_words_by_tags(*args)[:99] # TODO
-	return '('+')|('.join([pattern[w] for w in selected])+')'
-
-def get_patterns(n=100):
+def get_patterns(n=99):
 	for words in grouper(pattern,n):
 		words = filter(bool,words)
 		#yield [(p,pattern[p]) for p in grp if p]
@@ -1163,27 +1146,15 @@ if __name__ == "__main__":
 	from time import time
 	t0 = time()
 	
-	## pprint(list(get_patterns(5)))
-	## exit()
-	selected_patterns = list(get_patterns(99))
+	selected_patterns = list(get_patterns())
 	
-	compiled = {}
-	for p in pattern:
-		compiled[p] = re.compile(p,re.U)
-	
-	#p = pattern[key]
-	query = ['i','W']
-	p = get_pattern_by_tags(*query)
-	selected = get_words_by_tags(*query)
-	
+	p = pattern[key]
 	print(p.encode('utf8'),'\n')
 	test_re = re.compile(p,re.U)
 	#exit()
 	
 
 	all = []
-	tf = Counter()
-	p_tf = defaultdict(Counter)
 	#f = open(r'C:\repo\twitter\reference_7d.tsv')
 	f = open(r'C:\repo\war_room\data\reference_7d.tsv')
 	for i,line in enumerate(f):
@@ -1191,34 +1162,13 @@ if __name__ == "__main__":
 		text = tag_re.sub('#TAG',text)
 		text = url_re.sub('#URL',text)
 		text = usr_re.sub('#USER',text)
-		if 0:
+		if 1:
 			m = test_re.findall(text)
 			if m:
-				v = [x[0] for x in [filter(bool,x) for x in m] if x]
-				print(len(v),v,text.encode('utf8'))
+				#v = [x for x in [filter(bool,x) for x in m] if x]
+				print(text.encode('utf8'))
 				all.extend(m)
 		if 0:
-			tokens = re.findall('(?u)[\w-]+\w',text)
-			tokens = [t for t in tokens if re.findall('^(nie|bez)',t)]
-			tf.update(tokens)
-		if 0:
-			tokens = re.findall('(?u)[\w-]+\w',text)
-			for t in tokens:
-				for p in compiled:
-					m = compiled[p].findall(t)
-					if m:
-						p_tf[p][t] += 1
-			if i>20000:
-				break
-		if 0:
-			matches = test_re.findall(text)
-			if matches:
-				v = []
-				for m in matches:
-					v.extend([w for w,t in zip(selected,m) if t])
-				print(len(v),v,text.encode('utf8'))
-				#all.extend(m)
-		if 1:
 			v = []
 			for words,compiled,_ in selected_patterns:
 				matches = compiled.findall(text)
