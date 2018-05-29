@@ -26,65 +26,23 @@ url_re = re.compile(u'(?u)http[s]?://[\w/.-]+[\w]')
 usr_re = re.compile(u'(?u)@\w+')
 tag_re = re.compile(u'(?u)#\w+')
 
+# GRUPA:
+# [h]istoria
+# [p]olityka/spoleczne
+# [z]wierzeta -> [b]iologia
+# [s]mierc -> [n]nekro
+# [a]gresja/przemoc
+# se[x]ualnosc
+# [o]dchody/[o]draza/nieczystosci/rozklad/zepsucie/choroby/brud
+# [i]nwektywa
+# [d]yskryminacja
+# [w]ulgarne
+#
+# smute[k]
+# [r]eligia
+# bol, cierpienie, strach
+# wymiar sprawiedliwosci / kodeks karny / prawo
 
-positive = ur"""	
-usmiech		u[śs]miech			# 4788
-relaks		relaks				# 160
-szczescie	szcz[eę][śs]			# 10204 nieszczesliwy
-rozesmiane	roz[e]?[śs]mi			# 119
-przyjemny	przyjemn			# 1568 nieprzyjemny
-radosc		rado[śs]			# 1722
-super		super				# 8208
-pozytywnie	pozytywn			# 1082
-wesolo		weso[łl]			# 756 niewesolo
-sjesta		sjest				# 5
-optymista	optymi[sz]			# 451
-komfort		komfort				# 207 niekomfortowo
-jedwab		jedwab				# 302
-oaza		\boaz				# 13
-talent		talent				# 1136
-toast		toast				# 55
-prezent		prezent(?!er)				# TODO
-kochac		kocha				# 39757
-maliny		malin				# 455
-sliczny		[śs]liczn			# 2354
-wypoczynek	wypocz				# 143
-krajobraz	krajobraz			# 56
-deser		deser(?![tv])			# 176
-medal		medal				# 357
-wspanialy	wspania[łl]			# 2820
-udany		udan[yeai]			# 897
-zdrowy		zdrow[yeo]			# 1836
-wakacje		wakac				# 5743
-humor		humor				# 3073
-x		puchar				# 1884
-x		kakao				# 709
-x		lizak				# 21
-x		czekolada			# 423
-x		perfum				# 238
-x		[śs]wi[ęeąa][tc](?!okr)		# TODO świętokradztwo świat
-x		tort				# TODO torturowac
-x		szampa[nń]			# 575
-x		uro(cz|kl)			# 4593
-x		laur				# 923
-x		pochwa[łl]			# 1225
-x		subtel				# 72
-x		\b[łl]adn			# 6611
-x		wygodn				# 726 niewygodny
-x		zachwy[tc]			# 1116
-x		wykwint				# 3
-x		pomocn(?!i[kc])			# 85
-x		dobrodusz			# 7
-x		genial				# 1185
-x		awans				# 1226
-x		rozkosz				# 80
-x		eufor				# 46
-x		podnie[ct]			# 344
-"""
-
-
-
-#grupy ([h]istoryczny, [p]olityczne/spoleczne, [z]wierzeta, [s]mierc, [a]gresja, se[x]ualnosc, [o]dchody/[o]draza/nieczystosci/rozklad/zepsucie/choroby, [i]nwektywa, [d]yskryminacja, [w]ulgarne, cierpienie, religia, przemoc)
 # klucz  wulgarnosc  grupa  nietolerancja  wzorzec  notatki
 negative = ur"""	
 _			.		\bk(|u|ur)([*]+|[.][.]+)([aęeiy]|w[aęeiy])	# 206 k*rwa
@@ -107,7 +65,7 @@ anormalny		i		\banormal			#
 antypolskie		pp		antypol				# 1152
 antysemita		pp		antysemi			# 1090
 aparatczyk		pp		aparatczyk\w*			# 36
-apatia			.		\bapat				# 15
+apatia			k		\bapat				# 15
 areszt			.		\b(za|)areszt			# 1865
 arogancki		i		arogan				# 753
 atak			aa		(\b|za)atak			# 5108
@@ -138,24 +96,24 @@ bekart			i		b[ęe]kar[tc]			# 22
 belkot			.		be[łl]ko[tc]			# 291
 bestialski		aa		bestial\w*			# 111
 besztac			.		beszt				# 5
-bezbronny		.		bezbron				# 55
+bezbronny		k		bezbron				# 55
 bezcelowy		.		bezcel				# 6
 bezczelny		.		bezczel				# 605
 bezczescic		.		bezcze[śs]			# 31
 bezczynny		.		bezczyn				# 239
 bezdenny		.		bezd[e]?n			# 16
 bezdomny		.		bezdom				# 125
-bezduszny		i		bezdusz				# 24
+bezduszny		ir		bezdusz				# 24
 bezkarny		.		bezkar				# 357
 bezmiar			.		bezmiar				# 44
 bezmozg			.		bezm[óo]zg\w*			# 75
 bezmyslny		i		bezmy[śs]ln			# 84
 beznadzieja		.		beznadz\w+			# 791
 bezprawie		.		bezpraw				# 368
-bezradny		.		bezrad				# 84
+bezradny		k		bezrad				# 84
 bezrobotny		.		bezrobo				# 181
 bezsensowny		.		bezsens				# 379
-bezsilny		.		bezsil				# 97
+bezsilny		k		bezsil				# 97
 beztalencie		.		beztalen			# 12
 bezwartosciowy		.		bezwarto			# 110
 biadolic		.		\bbiado				# 60
@@ -177,7 +135,6 @@ brednie			.		\bbred[zn]			# 632
 brodawki		o		brodaw[e]?k			# 0
 brud			o		brud(\b|[neo]\w*)		# 1041
 brutalny		a		brutaln				# 259
-brzydki			i		brzyd\w*			# 7237 +obrzyd +brzydzic
 bufon			i		bufon				# 30
 bunt			a		(\b|z)bunt			# 343
 burak			i		bura\w+				# 397
@@ -190,7 +147,7 @@ bzdury			.		bzdur\w+			# 808
 cebula			.		cebul				# 345
 cenzura			pp		cenz[uo]r			# 2339
 chala			.		\bcha[łl]a			# 41
-cham			i		\bcham[^p]\w+			# 2750
+cham			i		\bcham([^p]|\b)				# TODO 
 chaos			.		chao[st]			# 310
 cherlawy		i		herlaw				# 3
 chlac			.		\w*hlej|hla[cć]\w*		# 103
@@ -202,7 +159,6 @@ chuligan		a		chulig				# 47
 chwast			.		hwast				# 58
 ciamajda		i		ciamajd				# 31
 ciapaty			idd		ciapat\w+			# 22
-ciemnota		.		ciemno[tg]			# 123 ciemnogrod
 cierpiec		.		cierpi				# 1410
 ciolek			i		\bcio[łl][e]?k			# 37
 ciota			xdd		\bciot\w+			# 290 ciotka ciotecz
@@ -213,7 +169,7 @@ cpun			i		\b[ćc]pun\w*			# 31
 cuchnie			oo		cuchn\w+			# 75
 cwaniak			i		cwania				# 491
 cwel			i		cwel\w*				# 131
-cycki			xx		cyc(?![hl])			# 992
+cycki			x		cyc(?![hl])			# 992
 cymbal			i		cymba[łl]			# 216
 cynik			i		\bcyni\w+			# 182
 cynik			i		cyni(k|cz|zm)			# 181
@@ -228,7 +184,7 @@ defetysta		i		defety[sz]			# 16
 deficyt			.		deficyt				# 100
 degeneracja		.		degener\w+			# 646
 dekiel			.		dek(iel|lem|la|lu|le)\b		# 96
-demagog			.		demagog\w*			# 87
+demagog			r		demagog\w*			# 87
 demaskowac		.		demask\w+			# 155
 demolowac		aa		demol				# 140 demoludy
 demotywowac		.		demotyw				# 2425
@@ -236,7 +192,7 @@ denerwowac		.		denerw				# 2513
 dewastowac		aa		dewast				# 78
 dezerter		p		dezer[tc]			# 58
 dezinformacja		p		dezinfo				# 185
-diabel			.		\bdiab[e]?[łl]			# 859
+diabel			r		\bdiab[e]?[łl]			# 859
 dluznik			i		(?<!po)d[łl]u[żz]n[iy](\b|[kc])	# 16
 dno			.		\bdno\w*			# 703
 dokuczac		.		dokucz				# 145
@@ -266,11 +222,11 @@ elyta			.		elyt\w*				# 65
 embargo			p		embarg				# 21
 endek			h		ende[ck]\w*			# 62 czy moze byc obrazliwe?
 esbek			h		\besbe\w*			# 80
-eunuch			x		eunuch				# 6
+eunuch			xx		eunuch				# 6
 eutanazja		s		\beutan				# 326
 facjata			.		facja\w+			# 24
 falsz			.		fa[łl]sz			# 2893
-fanatyk			?		\bfanat				# 126
+fanatyk			r		\bfanat				# 126
 faszyzm			h		faszy[sz]			# 751
 fatalny			.		fataln				# 445
 fejk			.		fejk\w*				# 1178
@@ -291,7 +247,7 @@ gadula			i		\bgadu[lł]\w*			# 4
 garb			.		garb\w+				# 111 garbarnia
 gbur			i		gbur\w+				# 5
 geba			.		g[ęe]b[eayio]\w*		# 467 spongebob
-gej			x		\bgej([eóoia]|\b)		# 757
+gej			xx		\bgej([eóoia]|\b)		# 757
 gestapo			h		gestap				# 236
 getto			h		\bg[h]?ett(|o|a|cie|ach|om)\b	# 97
 gimby			.		gimb\w+				# 280
@@ -324,13 +280,13 @@ hanba			.		ha[ńn]b\w*			# 624
 haniebny		.		hanieb				# 264
 hazard			.		hazard				# 108
 hejt			.		hejt				# 2844
-herezja			.		here[zt]			# 50
+herezja			r		here[zt]			# 50
 hipokryta		i		hipokry\w+			# 668
 hipster			i		hipster				# 241
 histeria		.		hister				# 190
 hitler			h		hitler\w*			# 390
 hochsztapler		i		hochsztapl\w+			# 2211
-holocaust		h		holo[ck]a			# 989
+holocaust		hs		holo[ck]a			# 989
 holota			.		ho[łl]o[tc]			# 1521
 horda			.		\bhord				# 35
 horror			.		horror				# 247
@@ -351,11 +307,10 @@ jadrowy			.		j[ąa]drow			# 94
 jaja			.		\bjaj				# 3302
 japa			.		\bjap[aąeęyi](\b|[^n]|[^n]\w+)		# TODO japonia japierdole
 jatka			a		\bjatk[ai]			# 3
-jebac			wwaa		jeba\w+				# 12359 -> jeb,zjeb,jebi itp
 jelen			i		jele[ńn]\w*			# FP
 jelop			i		je[łl]op\w*			# 86
 jeniec			.		\bje([ńn]c|nie)\w		# 61
-judasz			i		judasz				# 93
+judasz			ir		judasz				# 93
 judzic			.		judz[ia][ćc]			# 14
 kablowac		.		(?<!o)kabl(uj|owa[ćcłl])	# 13
 kaftan			.		kaftan(?!ik)			# 48
@@ -403,7 +358,7 @@ komornik		.		komornik			# 165
 komplikacje		.		komplik				# 293
 kompost			o		kompost				# 7
 kompromitacja		.		kompromit			# 1206
-komuch			h		komuch\w+			# 397
+komuch			h		komu(ch|sz)				#
 komunizm		h		komuni[sz]			# 1816
 koncentracyjny		h		koncentracy			# 153
 kondolencje		.		kondolenc			# 22 FP
@@ -424,7 +379,7 @@ krytyczny		.		krytycz				# 269
 krytyk			.		krytyk				# 2153
 kryzys			.		kryzys				# 580
 krzyk			.		krzy(k|cz)			# 4328
-krzywda			.		\w*krzywd\w+			# 1297
+krzywda			k		\w*krzywd\w+			# 1297
 kuglarz			i		kuglar\w+			# 47
 kukla			.		kuk[łl]				# 53
 kulawy			i		\bkul(aw|ej)\w+			# 86
@@ -434,7 +389,7 @@ kuper			x		\bkup[e]?r\w*			# 43
 kurator			.		\bkurato			# 29
 kurde			.		kurd[eę]			# 2093
 kurupcja		p		korupc\w+			# 203
-kurwa			ww		(ku|q)r(w\w+|ew)		# 43737
+kurwa			ww		(k[u]+|q)[r]+(w\w+|ew)		# 43737
 kustykac		.		(?<!a)ku[śs]ty			# 19
 kutas			ww		kuta\w+				# 749
 kwiczec			.		kwi(k|cz)			# 195
@@ -496,7 +451,7 @@ mocz			o		mocz(|u|em)\b			# 79
 mogila			s		mogi[łl]			# 29
 monotonia		.		monoton(?!icz)			# 40
 monstrualny		.		\bmonstru			# 18
-morda			.		mord\w*					# TODO 5372 morda i morderca
+morda			.		mord(?!er)				# TODO >5000 morda
 morderca		s		\bmorder			# 448
 morderstwo		s		mord(er|ow)			# 2256
 mordowac		s		\b(za|)mordow			# 1630
@@ -508,7 +463,6 @@ nadmiar			.		nadmiar				# 73
 nagana			.		nagan(?!ia)			# 56
 naiwny			i		naiwn\w+			# 534
 napad			a		napad				# 301
-napasc			a		napa(st|[śs][ćc])		# 1010
 narazic			.		nara(zi\b|zi[ćcłl]|[żz][oa])	# 173
 narkotyki		.		narko[tm]			# 337
 nauczka			a		nauczk				# 103
@@ -521,7 +475,7 @@ nekrolog		s		nekrolog			# 11
 nicosc			.		nico[śs][ćc]			# 19
 nieaktywny		.		nieaktyw			# 70
 niebezpieczny		a		niebezp				# 703
-niebyt			.		niebyt\w*			# 33
+niebyt			k		niebyt\w*			# 33
 niechlubny		.		niechlub			# 45
 nieciekawy		.		nieciekaw			# 1044
 niecny			.		niecn				# 9
@@ -544,7 +498,7 @@ niedozywiony		.		niedożyw			# 43
 niedrozny		.		niedro(żz)			# 0
 niedzialajacy		.		\bniedzia			# 22
 niedzorzeczny		.		niedorze			# 45
-niefajny		.		niefajn				# 66
+niefajny		k		niefajn				# 66
 niegodziwy		.		niegodziw			# 71
 niekomfortowy		.		niekomfort			# 55
 niekompetentny		i		niekompet			# 126
@@ -597,7 +551,7 @@ niestabilny		.		niestabil			# 32
 niestrawnosc		o		niestrawn			# 142
 nieszczegolny		.		nieszczeg			# 6
 nieszczery		.		nieszczer			# 53
-nieszczescie		.		nieszcz[ęe][śs]			# 606
+nieszczescie		k		nieszcz[ęe][śs]			# 606
 nietakt			.		nietakt				# 8
 nietolerancja		.		nietoler			# 36
 nietrzezwy		.		nietrze[źz]			# 17
@@ -614,7 +568,7 @@ nieurodzaj		.		nieurodz			# 37
 nieuzasadniony		.		nieuzasa			# 107
 niewazny		.		niewa[żz]n			# 599
 niewdzieczny		.		niewdzi				# 57
-niewesoly		.		nieweso[łl]			# 7
+niewesoly		k		nieweso[łl]			# 7
 niewiele		.		niewiele			# 815
 niewierny		.		niewiern			# 46
 niewolnik		.		niewolni			# 166
@@ -676,7 +630,6 @@ opozniony		.		(o|za)p[óo][źz]nion\w		# 75
 oprawca			a		oprawc				# 158
 oprych			i		opry(ch|szk)\w*			# 4
 ordynardny		.		ordynar\w*			# 154
-osiol			z		osio[łl]|osł[aeo]\w*		# TODO posła XD
 oslizgly		o		o[śs]liz[g]?[łl]y		# 27
 ostry			.		ostr[yoe]\b			# 2122
 ostrzezenie		.		\bostrze[gżz]			# 633
@@ -713,7 +666,7 @@ perfidny		i		perfid				# 153
 persona			i		person(a|y|ie|om)\b		# 107
 perwers			xx		perwer\w*			# 163
 picz			xx		picz				# 197
-pieklo			.		(\b|[^u])piek(ie)?[łl]		# 682
+pieklo			r		(\b|[^u])piek(ie)?[łl]		# 682
 pieprzyc		.		piepr\w+			# 3183
 pionek			i		\bpion[e]?k			# 26
 pipidowo		.		pipid				# 7
@@ -749,13 +702,13 @@ pomagier		i		pomagier			# 5
 pomowienie		.		pom[óo]wi			# 97
 pomylic			.		pomyl[ioe]			# 525
 pomylka			.		pomy[łl]k			# 214
-ponury			i		ponur				# 170
+ponury			ik		ponur				# 170
 popelnic		.		\bpope[łl]			# 1692
 popiol			.		popi[óo][łl]			# 34
 populizm		p		populi[sz]			# 466
 porazka			.		pora[zż][e]?k			# 1068
 poronic			s		poroni				# 22 poronin
-posepny			i		pos[ęe]p			# 16
+posepny			ik		pos[ęe]p			# 16
 potepiac		.		pot[ęe]p			# 342
 potknac			.		potkn				# 595
 potwor			.		potw[óo]r			# 452 potwornie
@@ -763,7 +716,7 @@ pozar			.		po[żz]ar(\b|[^tlł])		# 503
 pozegnac		.		po[żz]egna			# 728 żegnać
 prawak			p		prawa[kc]\w*			#
 precz			.		precz				# 1033
-pregierz		.		pr[ęe]gierz			# 10
+pregierz		a		pr[ęe]gierz			# 10
 presja			a		presj				# 975
 prl			h		peerel|\bprl			# 1345
 problem			.		problem				# 11258
@@ -789,9 +742,9 @@ przepasc		.		przepa[śs][ćc]			# 220
 przerazenie		.		\bprzera[zż]			# 1333
 przestepca		.		przest[ęe]p[^oni]		# 1732
 przeszkoda		.		przeszk[óoa]d			# 1939
-przygnebiony		.		przygn[ęe]b			# 52
-przykrosc		.		przykro[śs][ćc]			# 52
-przykry			.		przykr(y|ym|ych|ymi|o|e|ego)\b	# 2523
+przygnebiony		k		przygn[ęe]b			# 52
+przykrosc		k		przykro[śs][ćc]			# 52
+przykry			k		przykr(y|ym|ych|ymi|o|e|ego)\b	# 2523
 przymus			.		przymus				# 392
 przypal			.		przypa[lł]			# 228
 pseudo			.		\bpseudo(?!ni)			# 733
@@ -801,7 +754,7 @@ psychiatra		i		psychiatr				# ???
 pucz			p		pucz				# 172
 pudlo			.		[s]?pud[łl][ao]			# 610
 pulapka			a		pu[łl]apk			# 107
-pustka			.		\bpustk				# 893
+pustka			k		\bpustk				# 893
 puszczalski		xx		puszczals\w+			# 7
 pysk			.		pysk\w*				# 758 FP	
 pyskowac		a		pysk(at|[oó]w|uj)		# 60
@@ -819,12 +772,12 @@ rezygnacja		.		rezygn				# 1058
 robactwo		z		(\b|za|z)roba(k|ct|cz)		# 252
 robak			z		roba(k|cz)			# 258
 roszczenia		p		\broszcz[ye]			# 1342
-rozczarowac		.		rozczarow\w+			# 721
+rozczarowac		k		rozczarow\w+			# 721
 rozdarty		.		rozdar				# 71
 rozdzierac		a		rozdzier			# 2424
 rozgardiasz		.		rozgardiasz			# 11
 rozjechac		a		rozjech				# 95
-rozpacz			.		rozpacz\w*			# 607
+rozpacz			k		rozpacz\w*			# 607
 rozpadac		.		\brozpad			# 921
 rozstroj		.		rozstr[oó]			# 0
 rozwiazly		xx		rozwi[ąa]z[łl]\w+		# 11
@@ -835,18 +788,17 @@ rusek			?		\brus(ek|cy|ki|ka|ko)		# 2192
 ryczec			.		(?<!p)rycz[ęeaąy]		# 2312
 ryj			.		\bryj\w*			# 3871
 rzez			s		\brze[źz](\b|n|i)		# 191
-rzygac			o		rzyg\w*				# 9158 przygladac przygotowac
 sabotowac		p		sabot				# 174
 sadlo			.		\bsad[łl][oae]\w*		# 20 sadlok
 sadysta			a		sady[sz]			# 41 sado maso
 samobojca		s		samob[óo]j			# 698
-samotny			.		samotn				# 648
+samotny			k		samotn				# 648
 sarkazm			.		sarka[sm]			# 61
 sb			h		\bsb(\b|-)			# 7031 slang:siebie
 schizofrenia		.		schiz				# 128
 sciek			o		\b[śs]ciek(\b|[^a])		# 70
 scierwo			s		[śs]cierw\w*			# 454
-sekta			.		\bsek(t(?!or)|ci)		# 239 sektor sekciarski sekcja insekt
+sekta			r		\bsek(t(?!or)|ci)		# 239 sektor sekciarski sekcja insekt
 sep			z		sęp				# 40 posępny zasępić
 separacja		.		separ				# 32
 sidla			.		(?<!roman)sid[e]?[łl]			# 22 TODO
@@ -873,7 +825,7 @@ smierc			s		[śs]mier[ćct]			# 5727
 smierdzi		o		[śs]mierd\w+			# 652
 smietnik		o		[śs]mietni\w+			# 183
 smrod			o		smr[óo]d\w*			# 201
-smutek			.		smut\w+				# 7207
+smutek			k		smut\w+				# 7207
 snob			i		snob				# 15
 socjalizm		h		socjali				# 607
 sodomia			xx		sodom[ia]			# 16
@@ -885,9 +837,9 @@ sprawca			.		\bsprawc[^i]			# 333
 sprzeciw		.		sprzeciw			# 333
 sprzeczny		.		sprzecz				# 462
 srac			o		sra[^cłlłnmj]\w+			# TODO 1444 -> sra
-srom			x		srom\w*					# TODO 41
+srom			xx		srom\w*					# TODO 41
 ssman			h		\b[e]?s[e]?sman\w*		# 5
-stagnacja		.		stagn				# 18
+stagnacja		k		stagn				# 18
 stalin			h		stalin\w*			# 459
 starcie			a		star(cia|[ćc]\b)		# 103
 stechly			o		(s|za)t[ęe]ch			# 11
@@ -897,7 +849,7 @@ strata			.		\b(u|s)tra[tc]			# 7577
 strup			o		\bstrup				# 7
 sucz			z		sucz[yoeęaą]?\b			# 27
 suka			z		\bsuk(|i|ą|om|ami|in\w+)\b	# 308
-swietokradztwo		.		[śs]wi[ęe]tokrad		# 15
+swietokradztwo		r		[śs]wi[ęe]tokrad		# 15
 swinia			z		[śs]wi[ńn]\w*			# 1808 -> swinoujscie
 swir			i		[śs]wir\w+			# 505
 swolocz			h		swo[łl]oc\w+			# 71
@@ -948,7 +900,6 @@ totalny			.		totaln				# 3351 totalnie
 tragiczny		.		tragi[cz]			# 787
 trauma			.		traum				# 258
 troglodyta		i		troglod				# 9
-troll			i		\w*trol\w*				# 3384 TODO kontrola patrol controll
 truc			a		tru(ci[zce]|[łlt][ayoi])		# TODO 157 truly(ANG) trucizna vs truc
 truchlo			s		truch[lł]			# 33
 trudno			.		\btrudn[oiay]			# 3151
@@ -968,10 +919,10 @@ umarly			s		umar[łl]			# 1191
 umierac			s		umier				# 2536
 unicestwic		a		unicest				# 23
 upadac			.		\bupad				# 1480
-upokorzenie		.		upokorz				# 584
+upokorzenie		k		upokorz				# 584
 uraz			.		\b(|po)uraz			# 227
 urojenia		.		\buro[ji]			# 151
-ustawka			.		ustawk				# 2331
+ustawka			a		ustawk				# 2331
 utytlany		.		\w*tyt[łl]a\w*			# 2
 uzurpator		?		uzurp\w+			# 25
 wulgarny		.		wulgar				# 517
@@ -1010,7 +961,7 @@ wyludzic		a		wy[łl]udz			# 1705
 wymiotowac		o		wymio[ct][^lł]			# 337
 wynaturzenie		.		wynaturz			# 1
 wynocha			.		\bwyno(ch|ś\b|[śs]cie)		# 18
-wypadek			c		wypad[e]?k			# 2556
+wypadek			.		wypad[e]?k			# 2556
 wypalony		i		wypal(on|e[ńn])			# 18
 wypraszac		.		wypr(asz|osz|osi)		# 57
 wyrok			.		wyrok				# 1166
@@ -1023,7 +974,7 @@ zabor			h		zab[óo]r			# 67
 zachlanny		i		zach[łl]ann			# 59
 zadluzony		i		zad[łl]u[żz]			# 140
 zadufany		i		zaduf				# 22
-zagazowac		h		zagazo				# 11
+zagazowac		s		zagazo				# 11
 zaglada			s		zagład				# 93 zagladalem
 zagrozenie		.		\bzagro[żz]			# 2330
 zajumac			a		juma[ćclł]			# 27
@@ -1065,7 +1016,6 @@ zgon			s		(\b|ze)zgon			# 118
 zgraja			.		\bzgraj[iao]			# 10
 zgroza			.		zgroz				# 77
 zgryzota		.		zgry(zo[tc]|[źz]l)		# 3 TODO zgryzota zgryzliwy rozgryzac
-zl*			.		\b[źz][lł][eyoiaąu]\b			# TODO 9488 zly zle zlo zlymi zla
 zlamac			a		\b(|po|od|z|roz)łama		# 1891
 zlamas			i		z[łl]amas\w+			# 21
 zlodziej		i		złodziej\w*			# 1920
@@ -1083,7 +1033,8 @@ zoofil			xx		zoofil				# 8
 zostawic		.		\b(po|)zostaw			# 3898
 zuchwaly		i		zuchwa				# 71
 zul			i		żul\w*				# 167
-zwalic			a		zwa[lł]\w*				# 4167 TODO rozwalic zwalic rozwalka walic
+zwalic			a		(?<!ro)zwa[lł]\w*			# TODO walic
+rozwalic		a		rozwa[lł]				# TODO walic
 zwiac			.		\b(z|na)wi[ae][ćcłl]		# 63
 zwloki			s		zw[łl]ok(?![lłęe])		# 128
 zwyrodnialy		i		zwyro[ld]			# 599
@@ -1094,18 +1045,68 @@ pierdolic		ww		pierd([oae]l|[.*]+)		# 17151
 masoneria		h		maso[nń]			# 181
 iluminaci		h		il[l]?umina			# 37
 denat			s		\bdenat(?!u)			# 3
-grzech			.		grze(ch|sz)			# 701
+grzech			r		grze(ch|sz)			# 701
 ekskrementy		o		ekskremen			# 1
 ekstremalny		.		ekstrema			# 95
 wagina			xx		wagin				# 17
 analny			xx		\banal(\b|n)			# 63
-pornografia		xx		porno				# 1312
+porno			xx		porno				# 1312
 kuska			x		\bku[śs][ck](?!us)\w		# 6
 biegunka		o		biegunk				# 14
 scierwo			s		[śs]cierw			# 458
 pener			i		(?<!o)pener			# 5
-x			i		\bluj				# 72
+luj			i		\bluj				# 72
+bojowka			a		boj[óo]w[e]?k			# 30
+palowac			a		pa[łl]owa			# 97
+armata			a		\barmat(?!or)			#
+zastrzelic		as		(za|roz|powy)strzel		# 203
+postrzelic		a		postrz[ea][lł]			# 287
+brzydki			i		brzyd[kc]			# 3056
+brzydzic		o		brzyd[zl]			# 4366
+dymisja			p		dymis				# 1106
+eksmisja		.		\b(wy|)eksmi[st]		# 10
+zadyma			a		\bzadym				# 257
+rozroba			a		rozr[aóo]b([^i]|\b)		# 20
+:(			k		([:;][-]?[(])|(😞)		# 11387 >:(
+zajebisty		ww		jebi[śs]			# 4889 ????????????????????????????????????
+rzygac			o		rzyg(?!l[ąa]d|oto)		# 4236 przygladac przygotowac
+przesyt			.		przesy[tc]			# 125
+zly			.		\b[źz][lł][eyoiaąu]\b		# 9488 zly zle zlo zlymi zla
+jebac			wwaa		jeb([^i]|i[^śs]|\b)		# 18362
+rynsztok		.		rynszto				# 64
+ameba			z		\bameb				# 106
+uposledzony		.		upo[śs]led			# 127
+amok			a		\bamok(\b|u|iem)		# 159
+pech			.		pe(ch\b|cha\b|ch[oe]\w|sz[yao])	# 456
+troll			i		(?<!pa|on|en)tro[l]?l(?!ogi)	# 1838  kontrola patrol controll astrologia centrolew
+prozaiczne		.		prozaicz			# 16
+ciemnosc		.		ciemn				# 1499
+deptac			a		\b(za|z|roz|po|)dep(t|cz)(?!ak)	# 168 adept deptak
+zatuszowac		p		(\b|za)tuszowa			# 16
+banowac			a		\b(z|po|)ban(\b|y\b|ow)		# 868
+bac			.		\b(boj[ęe]|boisz|boi|boimy|boicie|boj[ąa]|b[óo]j|b[óo]jcie|ba[łl]em|ba[łl]am|ba[łl]o|bali[śs]my|ba[łl]y[śs]my|ba[łl]|ba[łl]a|ba[łl]o)\b		# 8402 TODO uproscic
+bagnet			a		bagnet				# 379
+wbijac			a		wbi[ćcj]			# 652
+siekiera		a		siekier[^k]			# 88
+bejsbol			a		bej[sz]bol			# 9
+nozownik		a		no[żz]owni			# 6
+pistolet		a		pistolet			# 58
+karabin			a		karabin				# 55
+napasc			a		napa(st|[śs][ćc])		# 1010
+osiol			z		\b(osio[łl]|os[łl][aeo]m|o[sś][łl][ae](?!p|b))	# TODO 616 oślepnę osłonić osławić osłabic posła jarosław XD
+zydzic			dd		(?<![rs])[żz]ydzi[łlćc]		# 18
+wyrzucic		.		wyrzuc				# 1264
+jedza			r		\bjędz				# 98
+czarownica		r		czarownic			# 96
+demon			r		demon(?![st])			# 223
+demonstracja		p		demonst				# 1029
+belzebub		r		belzeb				# 24
+egzorcyzmy		r		egzorcy				# 113
 """
+KEY = ''
+TAG = 'a'
+SORT = 2
+# przy pomocy różnych żalków, trolli, pisowskiej telewizji usiłuje się skompromitować, ośmieszyć, zadeptać protestujących…
 
 # dreczyc zbrodnia goj wściekły
 # łby wina drzeć złudzenia kulfon ograniczony groza zgryzota tyrać ból cierpieć
@@ -1114,13 +1115,11 @@ x			i		\bluj				# 72
 # paniusia panisko typ persona
 # locha loszka wyrodny
 # okropny naciagac trzoda błagam? kleska goguś przypa
-# przewrót wywrotowy odwołać sztywniak karierow
-
-key = 'x'
+# przewrót wywrotowy odwołać sztywniak karierow dziki zdziczaly
+# EMOTKI !!!
 
 
 #key = 'x'
-#kind = positive
 kind = negative
 
 
@@ -1130,10 +1129,14 @@ tags = {}
 for line in kind.strip().split('\n'):
 	rec = re.split('\t+',line.rstrip())
 	tags[rec[0]] = rec[1]
-	pattern[rec[0]] = re.sub('[(](?![?])','(?:',rec[2])
+	pattern[rec[0]] = re.sub('[(](?![?\]])','(?:',rec[2])
 
-def get_patterns(n=99):
-	for words in grouper(pattern,n):
+def get_patterns(tag='',n=99):
+	if tag:
+		selected = [w for w in pattern if tag in tags[w]]
+	else:
+		selected = pattern.keys()
+	for words in grouper(selected,n):
 		words = filter(bool,words)
 		#yield [(p,pattern[p]) for p in grp if p]
 		re_text = '('+')|('.join([pattern[w] for w in words])+')'
@@ -1146,29 +1149,56 @@ if __name__ == "__main__":
 	from time import time
 	t0 = time()
 	
-	selected_patterns = list(get_patterns())
+	if SORT:
+		lines = kind.strip().split('\n')
+		if SORT==4:
+			def k(x):
+				comment = re.split('\t+',x)[3]
+				m = re.findall('\d+',comment)
+				return -int(m[0]) if m else 0
+			lines.sort(key=k)
+		else:
+			lines.sort(key=lambda x:(re.split('\t+',x)[SORT-1],re.split('\t+',x)[0]))
+		for line in lines:
+			print(line.rstrip().encode('utf8'))
+		exit()
 	
-	p = pattern[key]
-	print(p.encode('utf8'),'\n')
-	test_re = re.compile(p,re.U)
-	#exit()
+	selected_patterns = list(get_patterns(TAG))
+	if KEY:
+		p = pattern[KEY]
+		print(p.encode('utf8'),'\n')
+		test_re = re.compile(p,re.U)
+		#exit()
 	
-
+	tf = defaultdict(Counter)
 	all = []
 	#f = open(r'C:\repo\twitter\reference_7d.tsv')
+	#f = open(r'C:\repo\war_room\data\reference_7d_v2.tsv')
 	f = open(r'C:\repo\war_room\data\reference_7d.tsv')
 	for i,line in enumerate(f):
 		text = html.unescape(line.rstrip().split('\t')[-1].decode('utf8')).lower()
 		text = tag_re.sub('#TAG',text)
 		text = url_re.sub('#URL',text)
 		text = usr_re.sub('#USER',text)
-		if 1:
+		if KEY:
 			m = test_re.findall(text)
 			if m:
 				#v = [x for x in [filter(bool,x) for x in m] if x]
 				print(text.encode('utf8'))
 				all.extend(m)
-		if 0:
+		elif 1:
+			v = []
+			tokens = re.findall('(?u)\w+',text)
+			for words,compiled,_ in selected_patterns:
+				for t in tokens:
+					matches = compiled.findall(t)
+					for m in matches:
+						v.extend([(w,t) for w,x in zip(words,m) if x])
+			for w,t in v:
+				tf[w][t] += 1
+			if 0 and v:
+				print(len(v),v,text.encode('utf8'))
+		else:
 			v = []
 			for words,compiled,_ in selected_patterns:
 				matches = compiled.findall(text)
@@ -1183,7 +1213,8 @@ if __name__ == "__main__":
 		fo = open('tf_nie_bez_top10k.tsv','w')
 		for i,(k,v) in enumerate(tf.most_common(10000)):
 			print(i+1,k.encode('utf8'),v,sep='\t',file=fo)
-	if 0:
-		pprint(p_tf.items())
-	print(time()-t0) # 50s
-
+	if 1:
+		for w in sorted(tf):
+			for t,f in tf[w].most_common(1000):
+				print(w,len(tf[w]),t.encode('utf8'),f)
+	print(time()-t0) # 50s / tf=480s
