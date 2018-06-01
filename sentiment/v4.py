@@ -44,7 +44,7 @@ tag_re = re.compile(u'(?u)#\w+')
 # [r]eligia
 # [m]medycyna
 #
-# inwektywa odnosnie cech: [f]izycznych/wygladu, [u]myslowe, spolecznych, zachowania/bechawioralnych
+# odnosnie cech: [f]izycznych/wygladu, [u]myslowe, spolecznych/zachowania/behawioralnych
 # bol, [c]ierpienie, strach
 # wymiar sprawiedliwosci / [k]odeks karny / prawo
 
@@ -567,8 +567,8 @@ wojna			a		(?<!pod)woj[e]?n		# 9524 -podwojnie
 wojownik		a		woj[oó]w			# 251
 wrogi			a		wr[óo]g				# 2535
 wrzeczec		a		wrzeszcz			# 138
-wsciekly		au		w[śs]ciek			# 482
-wsciekly		au		w[śs]ciek\w+			# 481
+wsciekly		a		w[śs]ciek			# 482
+wsciekly		a		w[śs]ciek\w+			# 481
 wtargnac		a		\bwtarg				# 31
 wybuch			a		wybuch				# 811
 wyludzic		a		wy[łl]udz			# 1705
@@ -651,9 +651,9 @@ bolszewia		hh		bolszew\w*			# 791
 holocaust		hs		holo[ck]a			# 989
 alkoholik		im		alkoholik\w*			# 97
 amator			i		amator				# 330
-amoralny		iu		amoraln				# 14
+amoralny		i		amoraln				# 14
 analfabeta		iu		analfab				# 82
-arogancki		iu		arogan				# 753
+arogancki		i		arogan				# 753
 babsztyl		i		babszt\w+			# 52
 balwan			i		ba[łl]wan			# 29
 bankrut			ik		bankru[tc]			# 249
@@ -664,36 +664,36 @@ bekart			i		b[ęe]kar[tc]			# 22
 bezmyslny		iu		bezmy[śs]ln			# 84
 blazen			i		b[łl]a[zź][e]?n			# 147
 brzydki			if		brzyd[kc]			# 3056
-bufon			iu		bufon				# 30
+bufon			i		bufon				# 30
 burak			i		bura\w+				# 397
 cherlawy		if		herlaw				# 3
 ciamajda		i		ciamajd				# 31
 ciolek			i		\bcio[łl][e]?k			# 37
 ciul			i		ciul\w*				# 193
 cpun			i		\b[ćc]pun\w*			# 31
-cwaniak			iu		cwania				# 491
+cwaniak			i		cwania				# 491
 cwel			i		cwel\w*				# 131
 cymbal			iu		cymba[łl]			# 216
-cynik			iu		\bcyni\w+			# 182
-cynik			iu		cyni(k|cz|zm)			# 181
+cynik			i		\bcyni\w+			# 182
+cynik			i		cyni(k|cz|zm)			# 181
 debil			iu		debil\w*			# 3172
-defetysta		iu		defety[sz]			# 16
+defetysta		i		defety[sz]			# 16
 dluznik			ik		(?<!po)d[łl]u[żz]n[iy](\b|[kc])	# 16
 donosiciel		ik		donosicie			# 177
 dran			i		\bdra[ńn]			# 98
 durny			i		dur(n\w+|e[ńn])				# TODO durny vs duren
 dyletant		i		dyleta				# 9
 dziad			i		dziad(|[^ek]|[^ek]\w+)\b		# 1244 TODO dziadek dziadkowie
-egoista			iu		egoi				# 105
+egoista			i		egoi				# 105
 fircyk			i		fircyk\w*			# 12
 frajer			iu		frajer\w*			# 522
 gach			i		\bgach\w*			# 45
-gadula			iu		\bgadu[lł]\w*			# 4
-gbur			iu		gbur\w+				# 5
+gadula			i		\bgadu[lł]\w*			# 4
+gbur			i		gbur\w+				# 5
 glab			iu		\bg[łl][ąa]b			# 123
 gluchy			i		g[łl]uch\w+			# 410
 glupi			i		g[łl]up\w+			# 7826
-hipokryta		iu		hipokry\w+			# 668
+hipokryta		i		hipokry\w+			# 668
 hipster			i		hipster				# 241
 hochsztapler		i		hochsztapl\w+			# 2211
 idiota			iu		\bidio\w+			# 3147
@@ -708,7 +708,7 @@ klakier			i		klakier				# 21
 kmiot			i		\bkmi[eo]			# 100
 koles			i		\bkole[śs]			# 1591
 konus			if		konus\w*			# 946
-kretacz			iu		kr[ęe]tac\w+			# 103
+kretacz			i		kr[ęe]tac\w+			# 103
 kretyn			imu		\bkrety\w+			# 817
 kuglarz			i		kuglar\w+			# 47
 kulawy			im		\bkul(aw|ej)\w+			# 86
@@ -725,7 +725,7 @@ nachalny		i		nachaln\w*			# 32
 naiwny			i		naiwn\w+			# 534
 niedojda		i		niedojd				# 45
 niedorajda		i		niedorajd			# 4
-niedorozwiniety		im		niedoroz			# 27
+niedorozwiniety		imu		niedoroz			# 27
 niedowartosciowany	i		niedowart			# 274
 niekompetentny		i		niekompet			# 126
 nierob			i		nier[óo]b			# 84
@@ -735,7 +735,7 @@ nieudacznik		i		nieudan				# 158
 nieuk			i		nie(do|)u[kc]			# 264
 niezrownowazony		i		niezr[óo]wno			# 30
 nikczemny		i		nikcz				# 60
-oblakany		im		ob[łl][ąa]kan			# 40
+oblakany		imu		ob[łl][ąa]kan			# 40
 oprych			i		opry(ch|szk)\w*			# 4
 oszolom			i		oszo[łl]om\w*			# 146
 oszust			ik		\boszu(st|k)\w*			# 2417
@@ -753,17 +753,17 @@ pirat			i		\b(anty|)pira[ct]		# 198
 podzegacz		i		pod[żz]eg			# 19
 podly			i		pod[łl][ay]\w+				# TODO 174 podlasie podlany podlacasz
 pokurcz			if		pokurcz				# 42
-polglowek		i		p[óo][łl]g[łl][óo]		# 12
+polglowek		iu		p[óo][łl]g[łl][óo]		# 12
 pomagier		i		pomagier			# 5
 prostak			i		\bprosta\w+			# 388
 prymityw		i		prymityw\w*			# 485
 psychiatra		im		psychiatr				# TODO ???
-psychiczny		im		psychicz				# TODO ??? psycholog psychika
-psychol			im		psychol(?!og)				# TODO psycholog psychika
+psychiczny		imu		psychicz				# TODO ??? psycholog psychika
+psychol			imu		psychol(?!og)				# TODO psycholog psychika
 sierota			i		siero[tc]			# 412
 skurczybyk		i		kurczyb				# 12
 snob			i		snob				# 15
-swir			im		[śs]wir\w+			# 505
+swir			imu		[śs]wir\w+			# 505
 szelma			i		szelm				# 0
 szmata			i		szma[ct]\w*			# 2139
 szpetny			if		szpet				# 15
@@ -772,18 +772,18 @@ tluk			i		\bt[łl]uk(?!li)			# 411
 tlumok			i		t[łl]umok			# 20
 troglodyta		i		troglod				# 9
 troll			i		(?<!pa|on|en)tro[l]?l(?!ogi)	# 1838 -kontrola -patrol -controll -astrologia -centrolew
-tuman			i		\btuman				# 63
+tuman			iu		\btuman				# 63
 wampir			i		wampir				# 674
 warchol			i		warcho\w+			# 46
-wariat			im		wari(a[ct]|owa)\w*		# 614
-wariat			im		wari(at|ow|uj)			# 628
+wariat			imu		wari(a[ct]|owa)\w*		# 614
+wariat			imu		wari(at|ow|uj)			# 628
 wazniak			i		wa[żz]nia			# 211
 wscibski		i		w[śs]cib			# 9
-wypalony		i		wypal(on|e[ńn])			# 18
+wypalony		iu		wypal(on|e[ńn])			# 18
 wyrzutek		i		wyrzut[e]?k			# 6
-zachlanny		i		zach[łl]ann			# 59
+zachlanny		iu		zach[łl]ann			# 59
 zadluzony		i		zad[łl]u[żz]			# 140
-zadufany		i		zaduf				# 22
+zadufany		iu		zaduf				# 22
 zamroczony		i		(za|po)mro(cz|k)		# 27
 zamulac			i		z[a]?mul			# 488
 zlamas			i		z[łl]amas\w+			# 21
@@ -792,7 +792,7 @@ zuchwaly		i		zuchwa				# 71
 zul			if		żul\w*				# 167
 zwyrodnialy		i		zwyro[ld]			# 599
 dawn			idm		\bd[ao][łlw]n(a|em|ach|om|owi)\b	# TODO 1182 TODO dawny dawno dawni dawna
-retard			idm		retard\w*			# 40
+retard			idmu		retard\w*			# 40
 bambus			idd		bambus\w*			# FP
 ciapaty			idd		ciapat\w+			# 22
 czarnuch		idd		czarnuch\w*			# 10
@@ -848,7 +848,7 @@ makabra			o		makabr				# 28
 malaria			om		malari				# 2
 maszkara		o		maszkar				# 4
 mdlosci			o		md[łl]o[śs]			# 39
-menel			o		menel				# 99
+menel			of		menel				# 99
 mocz			o		mocz(|u|em)\b			# 79
 niesmak			o		niesma[ck]			# 117
 niestrawnosc		o		niestrawn			# 142
@@ -1009,12 +1009,12 @@ pizda			www		pi[zź]d\w+			# 1446
 zajebisty		ww		jebi[śs]			# 4889 ????????????????????????????????????
 jebac			www aa		jeb([^i]|i[^śs]|\b)		# 18362
 alfons			x		alfons				# 61
-cycki			w x		cyc(?![hl])			# 992
-fujara			x		fujar\w*			# 29
+cycki			w xf		cyc(?![hl])			# 992
+fujara			xf		fujar\w*			# 29
 kochanek		x		kochan([e]?k|ic)		# 155
-kuper			x		\bkup[e]?r\w*			# 43
-kuska			x		\bku[śs][ck](?!us)\w		# 6
-tylek			x		ty[łl](ek|ka|ecz)\w*		# 1534
+kuper			xf		\bkup[e]?r\w*			# 43
+kuska			xf		\bku[śs][ck](?!us)\w		# 6
+tylek			xf		ty[łl](ek|ka|ecz)\w*		# 1534
 wazelina		x		wazelin				# 111
 zboczenie		x		\bzbo(cz|ko)			# 173
 zdzira			x		zdzir				# 11
@@ -1026,22 +1026,22 @@ dziwka			w xx		dziw[e]?k			# 264
 eunuch			xx		eunuch				# 6
 gej			xx		\bgej([eóoia]|\b)		# 757
 impotencja		xxm		impoten				# 39
-jadra			xxm		j[ąa]d(er|ra)			# 39
+jadra			xxmf		j[ąa]d(er|ra)			# 39
 lachociag		xx		la(ch|sk)oci[ąa]g		# 12
 lubiezny		xx		lubie[żz]n\w+			# 6
 pederasta		xx		peder\w+			# 85
 pedofil			xx		pedofil				# 334
-penis			xxm		penis\w*			# 107
+penis			xxmf		penis\w*			# 107
 perwers			xx		perwer\w*			# 163
 picz			w xx		picz				# 197
-pochwa			xxm		pochw(a|y|om|[eę])\b		# 25
+pochwa			xxmf		pochw(a|y|om|[eę])\b		# 25
 poligamia		xx		poligam				# 32
 prostytucja		xx		prostytu			# 117
 puszczalski		xx		puszczals\w+			# 7
 rozwiazly		xx		rozwi[ąa]z[łl]\w+		# 11
 sodomia			xx		sodom[ia]			# 16
-srom			xxm		srom\w*					# TODO 41
-wagina			xxm		wagin				# 17
+srom			xxmf		srom\w*					# TODO 41
+wagina			xxmf		wagin				# 17
 zoofil			xx		zoofil				# 8
 ameba			z		\bameb				# 106
 glizda			z		glizd				# 10
@@ -1086,7 +1086,7 @@ mordowac		ss		\b(za|wy|po|)mordow		# 1790
 klamstwo		.		(?<!re)k[łl]am(?!k)		# 4591 -klamke -klamka
 rzygac			o		(?<!p|t)rzyg(?!l[ąa]d|oto)	# 2855 -przygladac -przygotowac -rozstrzygnie
 palic			.		(?<!na)pal(i[ćcłl]|on|[ąa]c)	# 3364 -napalony
-napalony		x		napal(?!m)			# 92
+napalony		xu		napal(?!m)			# 92
 obrazac			.		(?<!wy|ze)obraż[aoe]		# 1681 -wyobrazac -przeobrazac
 tepy			.		\bt[ęe]p[yaeioą]		# 820 -stepy -występy
 ruchac			xx		(?<![uebd])rucha\w*		# 1390 -zawierucha -uruchamia -udobruchac -odruchami
@@ -1099,7 +1099,7 @@ ostry			.		\b(za|wy|)ostr[z]?([aą]\b|am|y\b|y[młl]|[eę]\b|[eę][jm])	# 769 -o
 zapomniec		.		(?<!nie)zapomni[ae]		# 3004 -niezapomniany
 siniak			?		(?<!ko)siniak			# 1763 -kosiniakowe
 presja			a		(?<!de|ks|im)presj		# 583 -depresja -ekspresja -impresja
-depresja		sm		depres				# 461
+depresja		smu		depres				# 461
 lesbijka		xx		\ble[sz]bi			# 422 -lesba
 lesba			xxdd		\ble[sz]b(\b|[^i])		# TODO 49 ?lesbos
 prawak			p		prawa[kc](?!h)			# 406 -oprawach -sprawach
@@ -1123,10 +1123,11 @@ anormalny		im		\banormal			# 9
 _			o		odby(t|ci)\w*			# TODO 139 odbycia odbycie odbyty
 kara			.		\bkar([aąy]\b|ze\b|z[ąa]|om|am(?!b))		# 1297 -karykato -karzel -karambol
 karny			.		\bkarn(?!ac|e[tc]|is|aw)	# 1478 TODO -karnacja -karnet -karnister -karnawal
+spasly			f		spa[śs](i|[łl])			# TODO 47
 """
+SORT = 1
 KEY = 'x'
 TAG = 'f'
-SORT = 0
 SELECT = ''
 TOKENIZE = 1
 
@@ -1184,15 +1185,17 @@ if __name__ == "__main__":
 				return -int(m[0]) if m else 0
 			lines.sort(key=k)
 		else:
+
 			lines.sort(key=lambda x:(re.split('\t+',x)[SORT-1],re.split('\t+',x)[0]))
 		for line in lines:
 			if SELECT and SELECT not in line: continue
+			if TAG and TAG not in re.split('\t+',line)[1]: continue
 			print(line.rstrip().encode('utf8'))
 		exit()
 	
 	
-	#selected_patterns = list(get_patterns(TAG))
-	selected_patterns = list(get_patterns())
+	selected_patterns = list(get_patterns(TAG))
+	#selected_patterns = list(get_patterns())
 
 	if KEY:
 		p = pattern[KEY]
@@ -1219,7 +1222,7 @@ if __name__ == "__main__":
 							tf[KEY][t] += 1
 				print(text.encode('utf8'))
 				all.extend(m)
-		elif 1: # TF
+		elif 0: # TF
 			v = []
 			tokens = re.findall('(?u)\w+',text)
 			for words,compiled,_ in selected_patterns:
