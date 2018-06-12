@@ -215,7 +215,6 @@ monotonia		.		monoton(?!icz)			# 40
 monstrualny		.		\bmonstru			# 18
 motloch			.		mot[łl]och\w*			# 100
 mroczny			.		\bmro(cz|k)			# 379
-nadmiar			.		nadmiar				# 73
 nagana			.		nagan(?!ia)			# 56
 narazic			.		nara(zi\b|zi[ćcłl]|[żz][oa])	# 173
 narkotyki		k		narko[tm]			# 337
@@ -802,7 +801,6 @@ ponury			si		ponur				# 170
 posepny			si		pos[ęe]p			# 16
 bezduszny		ir		bezdusz				# 24
 judasz			ir		judasz				# 93
-:(			s		([:;][-]?[(])|(😞)		# 11387 >:(
 apatia			s		\bapat				# 15
 bezbronny		s		bezbron				# 55
 bezradny		s		bezrad				# 84
@@ -821,7 +819,6 @@ rozpacz			s		rozpacz\w*			# 607
 samotny			s		samotn				# 648
 smutek			s		smut\w+				# 7207
 stagnacja		s		stagn				# 18
-upokorzenie		s		upokorz				# 584
 bagno			o		bag(ie)?n			# 725
 biegunka		o		biegunk				# 14
 blizna			o		blizn				# 386
@@ -1124,8 +1121,42 @@ _			o		odby(t|ci)\w*			# TODO 139 odbycia odbycie odbyty
 kara			.		\bkar([aąy]\b|ze\b|z[ąa]|om|am(?!b))		# 1297 -karykato -karzel -karambol
 karny			.		\bkarn(?!ac|e[tc]|is|aw)	# 1478 TODO -karnacja -karnet -karnister -karnawal
 spasly			f		spa[śs](i|[łl])			# TODO 47
+niezbyt			.		niezbyt				# 345
+zbytnio			.		zbytn				# 733
+zbyteczny		.		zbytecz				# 9
+niespecjalny		.		niespec				# 16
+nienajlepszy		.		nienajlep			# 7
+:|			.		([:;][-]?[|])|(😐)		# 775 >:|
+:/			.		([:;][-]?[\\/])			# 10832 >:/
+:(			s		([:;][-]?[(\[c<])|(😞)		# 13040 >:(
+niedostateczny		.		niedostat			# 6
+wygnanie		.		wyg(na|an|on)			# 118
+upokorzenie		s		upok[oa]rz			# 871
+x			.		przesadn			# 63
+nadmiar			.		nadmi[ea]r			# 133
+x			.		zb[ęe]dn			# 256
+prozny			.		\bpr[óo][żz]n			# 180
+dziura			.		dziur				# 1477
+x			.		\bnie mo(g|[żz]n)		# 11735
+x			.		\bnie lub			# 4561
+x			.		\bnie wytrz			# 999
+x			.		\bnie doczek			# 89
+x			.		\bnie dost			# 2065
+x			.		\bnie obch			# 403
+x			.		\bnie zrob			# 1437
+x			.		\bnie odp			# 
+x			.		podejrz(e[ńnw]|an)		# 1039
+x			.		\bnie polec			# 293
+sztampa			.		sztamp				# 4
+megaloman		.		megaloman			# 39
+mitoman			.		mitoman				# 39
+x			.		\bwon\b				# 568 ANG:won
+fuck			.		fuck				# 1235 mindfuck motherfucker
+damn			.		damn				# 268
+x			.		\bnie ma			# 36171
+x			.		zabr[ao]n			# 932
 """
-SORT = 1
+SORT = 0
 KEY = 'x'
 TAG = 'f'
 SELECT = ''
@@ -1143,6 +1174,7 @@ TOKENIZE = 1
 # locha loszka wyrodny
 # okropny naciagac trzoda błagam? kleska goguś przypa
 # przewrót wywrotowy odwołać sztywniak karierow dziki zdziczaly
+# wygnac
 # EMOTKI !!!
 
 

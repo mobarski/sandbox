@@ -1,0 +1,14 @@
+https://multithreaded.stitchfix.com/blog/2017/10/18/stop-using-word2vec/
+https://blog.acolyer.org/2016/04/21/the-amazing-power-of-word-vectors/
+
+https://rare-technologies.com/making-sense-of-word2vec/
+https://pdfs.semanticscholar.org/presentation/f457/9c489f914131668cbba55bd74ee50e6b8953.pdf
+https://www.niss.org/sites/default/files/tr185.pdf
+https://www.datacamp.com/community/tutorials/lda2vec-topic-model
+
+SPPMI
+
+
+https://www.gavagai.se/blog/2015/09/30/a-brief-history-of-word-embeddings/
+
+The main difference between these various models is the type of contextual information they use. LSA and topic models use documents as contexts, which is a legacy from their roots in information retrieval. Neural language models and distributional semantic models instead use words as contexts, which is arguably more natural from a linguistic and cognitive perspective. These different contextual representations capture different types of semantic similarity; the document-based models capture semantic relatedness (e.g. “boat” – “water”) while the word-based models capture semantic similarity (e.g. “boat” – “ship”). This very basic difference is too often misunderstood.
