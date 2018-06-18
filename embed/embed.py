@@ -63,15 +63,14 @@ docs = [re.findall('(?u)\w+',doc) for doc in DOCUMENTS]
 docs = map(lambda tokens:[t for t in tokens if t not in set(STOPWORDS)],docs)
 
 co_occ = Counter()
-words = set([''])
+words = Counter()
 for doc in docs:
 	for i in range(len(doc)):
 		w1 = doc[i]
 		co_occ[w1,w1] += 1 # ???
-		words.add(w1)
+		words[w1] += 1
 		for j in range(i+1,len(doc)):
 			w2 = doc[j]
-			words.add(w2)
 			co_occ[w1,w2] += 1
 			co_occ[w2,w1] += 1
 word_by_id = dict(enumerate(sorted(words)))
@@ -92,6 +91,10 @@ from sklearn.preprocessing import scale
 #co_occ_arr = scale(co_occ_arr)
 #co_occ_arr = normalize(co_occ_arr)
 #print(co_occ_arr)
+
+# ---[ PMI - pointwise mutual information ]-------------------------------------
+
+# TODO sprawdzic NPMI
 
 # ---[ word vectors ]-----------------------------------------------------------
 
