@@ -7,6 +7,7 @@ from __future__ import print_function
 # TODO regulacja -> [all]+=0.5
 # TODO KNN zamiast cosine_similarity
 
+# DONE PMI
 # DONE normalizacja,standaryzacja
 # DONE inne odleglosci zamiast cosine_similarity -> slabo dziala
 
@@ -94,6 +95,19 @@ from sklearn.preprocessing import scale
 
 # ---[ PMI - pointwise mutual information ]-------------------------------------
 
+pair_norm = sum(sum(co_occ_arr))
+word_norm = sum(words.values())
+
+pmi = np.zeros_like(co_occ_arr)
+for (w1,w2),cnt in co_occ.items():
+	i1 = id_by_word[w1]
+	i2 = id_by_word[w2]
+	w1_cnt = words[w1]
+	w2_cnt = words[w2]
+	nominator = 1.0 * cnt / pair_norm
+	denominator = (1.0 * w1_cnt / word_norm) * (1.0 * w2_cnt / word_norm) 
+	pmi[i1,i2] = nominator / denominator
+
 # TODO sprawdzic NPMI
 
 # ---[ word vectors ]-----------------------------------------------------------
@@ -111,10 +125,12 @@ from sklearn.decomposition import DictionaryLearning as DL
 from scipy.sparse.linalg   import svds as SVDS
 
 N = 20
+X = co_occ_arr
+#X = pmi
 
 if True:
 	model = PCA(N)
-	W = model.fit_transform(co_occ_arr)
+	W = model.fit_transform(X)
 	H = model.components_
 else:
 	W,s,H = SVDS(co_occ_arr,N)
@@ -125,10 +141,10 @@ if 0:
 elif 0:
 	V = H.transpose()
 else:
-	V = co_occ_arr
+	V = X
 
-#V = np.around(V,2)
-#print(V)
+V = np.around(V,1) # !!!!!!!!!!!!!!!!!!!!!!!!!!!
+# print(V)
 
 def get_word_vector(w):
 	return V[id_by_word[w]]
@@ -151,7 +167,7 @@ def _similar(v,omit=[],n=0):
 	cnt = 0
 	for i,s in similarity:
 		if n and cnt>=n: break
-		if s>0 and i and i not in omit_ids:
+		if s>0 and i not in omit_ids:
 			print(word_by_id[i],s)
 			cnt += 1
 
@@ -168,12 +184,13 @@ def similar(positive,negative=''):
 
 #similar('monarcha kobieta','mezczyzna') # -> krolowa
 #similar('mlody mezczyzna','kobieta') # -> chlopak
-#similar('krzeslo monarcha') # -> tron
+similar('krzeslo monarcha') # -> tron
 #similar('stolica polska') # -> warszawa
 #similar('stolica francja') # -> paryz
-similar('kraj') # -> francja,rosja,polska
+#similar('kraj') # -> francja,rosja,polska
 #similar('miasto','polska kraj') # -> moskwa,paryz
+#similar('miasto','polska') # -> moskwa,paryz
 #similar('stolica') # -> moskwa,paryz,warszawa,,francja,polska,rosja
 #similar('szef tesla') # elon,musk
 #similar('szef bezos') # jeff,amazon
-#similar('chlopak ubierac teraz') # TODO
+#similar('chlopak ubierac teraz') # TODO koszula,niebieski
