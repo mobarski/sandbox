@@ -1,4 +1,5 @@
 https://multithreaded.stitchfix.com/blog/2017/10/18/stop-using-word2vec/
+https://multithreaded.stitchfix.com/blog/2017/10/25/word-tensors/
 https://blog.acolyer.org/2016/04/21/the-amazing-power-of-word-vectors/
 
 https://rare-technologies.com/making-sense-of-word2vec/

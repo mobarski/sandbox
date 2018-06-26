@@ -1,17 +1,18 @@
 from __future__ import print_function
 
 import numpy as np
-from scipy.sparse.linalg import svds
+from sklearn.decomposition import PCA
 from vectorize import X,F
 
 XA = X.toarray().astype(float)
-u,s,v = svds(XA,3)
+pca = PCA(3)
+y = pca.fit_transform(XA)
+z = pca.components_
 
-print(u)
-print(s)
-print(v)
+print(y)
+print(z)
 
-for topic in v:
+for topic in z:
 	print()
 	for w,t in sorted(zip(topic,F),reverse=True):
 		if w<0.001: continue
