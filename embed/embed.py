@@ -85,7 +85,7 @@ words = Counter()
 for doc in docs:
 	for i in range(len(doc)):
 		w1 = doc[i]
-		co_occ[w1,w1] += 1 # ???
+		co_occ[w1,w1] += 1 # DIAGONAL
 		words[w1] += 1
 		for j in range(i+1,len(doc)):
 			w2 = doc[j]
@@ -116,6 +116,7 @@ pair_norm = sum(sum(co_occ_arr))
 word_norm = sum(words.values())
 
 pmi = np.zeros_like(co_occ_arr)
+chi = np.zeros_like(co_occ_arr)
 npmi = np.zeros_like(co_occ_arr)-1
 for (w1,w2),w1w2_cnt in co_occ.items():
 	i1 = id_by_word[w1]
@@ -126,9 +127,16 @@ for (w1,w2),w1w2_cnt in co_occ.items():
 	denominator = (1.0 * w1_cnt / word_norm) * (1.0 * w2_cnt / word_norm) 
 	pmi[i1,i2] = nominator / denominator
 	# https://stats.stackexchange.com/questions/140935/how-does-the-logpx-y-normalize-the-point-wise-mutual-information
-	npmi[i1,i2] = log(denominator) / log(nominator) - 1.0 
+	npmi[i1,i2] = log(denominator) / log(nominator) - 1.0
+	observed = w1w2_cnt
+	expected = 1.0 * w1_cnt/word_norm * w2_cnt/word_norm * word_norm
+	chi[i1,i2] = (observed - expected)**2 / expected
 
 log_pmi = np.log(pmi+1)
+
+np.set_printoptions(threshold='nan',linewidth=130)
+#print(co_occ_arr.astype(int))
+#print(chi.astype(int))
 
 # ---[ word vectors ]-----------------------------------------------------------
 
@@ -144,12 +152,14 @@ from sklearn.decomposition import LatentDirichletAllocation as LDA
 #from sklearn.decomposition import MiniBatchDictionaryLearning as MBDL
 #from sklearn.decomposition import DictionaryLearning as DL
 
-N = 10
+N = 20
 #X = co_occ_arr
-#X = log_pmi
-X = npmi
+X = log_pmi
+#X = chi
+#X = npmi
 #X = pmi
 METHOD = PCA
+VERBOSE = 0
 
 if METHOD==SVDS:
 	W,s,H = METHOD(X,N)
@@ -181,11 +191,12 @@ for w in []:
 
 from sklearn.metrics.pairwise import cosine_similarity
 
-def _similar(v,omit=[],n=0,verbose=False):
-	if verbose:
+def _similar(v,omit=[],n=0,verbose=0):
+	if verbose>=2:
 		#vector = ' '.join(map(lambda x:'{:5.2f}'.format(x),list(V[i])))
 		vector = ' '.join(map(lambda x:'{:2d}'.format(int(x)),list(v))).replace('0','.')
 		print('      TARGET                  '+vector)
+		print()
 	
 	omit_ids = set([id_by_word[w] for w in omit])
 	cs = cosine_similarity([v],V)
@@ -199,14 +210,16 @@ def _similar(v,omit=[],n=0,verbose=False):
 			out += [(word_by_id[i],s)]
 			if verbose:
 				#vector = ' '.join(map(lambda x:'{:5.2f}'.format(x),list(V[i])))
-				vector = ' '.join(map(lambda x:'{:2d}'.format(int(x)),list(V[i]))).replace('0','.')
+				vector = ' '.join(map(lambda x:'{:2d}'.format(int(x)),list(V[i]))).replace('0','.') if verbose>=2 else ''
 				print("      {:15} {:.3f}   {}".format(word_by_id[i],s,vector))
 			cnt += 1
 	return out
 
 ok_cnt=0
+all_cnt=0
 def similar(positive,negative='',expect=''):
 	global ok_cnt
+	global all_cnt
 	print('# +',positive)
 	if negative: print('# -',negative)
 	if expect: print('# ==>',expect)
@@ -219,7 +232,7 @@ def similar(positive,negative='',expect=''):
 		v += get_word_vector(w)
 	for w in neg:
 		v -= get_word_vector(w)
-	out = _similar(v,omit,6,verbose=False)
+	out = _similar(v,omit,6,verbose=VERBOSE)
 	if expect:
 		expected = expect.split(',')
 		expected_cnt = len(expected)
@@ -230,10 +243,12 @@ def similar(positive,negative='',expect=''):
 				ok = False
 				break
 		ok_cnt += 1 if ok else 0
+		all_cnt += 1
 		print('# OK' if ok else '# ERROR -> '+','.join([x[0] for x in out]))
 		print()
 		return ok
 
+print()
 similar('monarcha kobieta','mezczyzna','krolowa')
 similar('mlody mezczyzna','kobieta','chlopak')
 similar('monarcha siedziec','','tron')
@@ -248,4 +263,4 @@ similar('szef bezos','','jeff,amazon')
 #similar('chlopak ubierac teraz','','koszula,niebieski') # TODO koszula,niebieski ok ale rozowy za wysoko
 
 print()
-print('OK =',ok_cnt)
+print('OK -> {}/{} = {:.0f}%'.format(ok_cnt,all_cnt,100.*ok_cnt/all_cnt))
