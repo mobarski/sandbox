@@ -13,3 +13,10 @@ class xdict(dict):
 		return self[x]
 	def __setattr__(self,x,v):
 		self[x] = v
+
+class xdict2(dict):
+	__slots__ = ('__dict__','__getattr__','__setattribute__')
+	def __init__(self,*a,**kw):
+		dict.__init__(self,*a,**kw)
+		self.__getattr__ = self.__getitem__
+		self.__setattribute__ = self.__setitem__
