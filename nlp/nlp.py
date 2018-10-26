@@ -4,6 +4,11 @@ from itertools import groupby
 from math import log
 import re
 
+# TODO vectorize
+# TODO wybieranie ngramow na podstawie liftu
+
+# ---[ document frequency ]-----------------------------------------------------
+
 def get_df_part(kwargs):
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -15,11 +20,14 @@ def get_df_part(kwargs):
 	p_max_df = kwargs['p_max_df']
 	d_min_tf = kwargs['d_min_tf']
 	ngram_range = kwargs['ngram_range']
+	ngram_words = kwargs['ngram_words']
 	analyzer = kwargs['analyzer']
 	preprocessor = kwargs['preprocessor']
 	tokenizer = kwargs['tokenizer']
+	postprocessor = kwargs['postprocessor']
 	
 	stop_words_set = set(stop_words or [])
+	ngram_words_set = set(ngram_words or [])
 	re_tok = re.compile(token_pattern,re.U)
 	df = Counter()
 	for text in X:
@@ -34,6 +42,8 @@ def get_df_part(kwargs):
 			tokens = tokenizer(text)
 		else:
 			tokens = re_tok.findall(text)
+		if postprocessor:
+			tokens = postprocessor(tokens)
 		if stop_words:
 			tokens = [t for t in tokens if t not in stop_words_set]
 		
@@ -45,7 +55,9 @@ def get_df_part(kwargs):
 				for i in range(len(tokens)-lo): # TEST off-by-one
 					for n in range(lo,hi+1):
 						if i+n>len(tokens): break # TEST off-by-one
-						ngrams.append(tuple(tokens[i:i+n])) # TODO tuple vs string
+						ngram = tuple(tokens[i:i+n])
+						if not ngram_words_set&set(ngram): continue
+						ngrams.append(ngram) # TODO tuple vs string
 			elif analyzer=='char':
 				for t in tokens:
 					for n in range(lo,hi+1):
@@ -87,7 +99,7 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	   lowercase=True, min_df=0, p_min_df=0, max_df=1.0, p_max_df=1.0,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
-	   d_min_tf=0, ngram_range=None):
+	   d_min_tf=0, ngram_range=None, postprocessor=None, ngram_words=None):
 	cnt = len(X)
 	
 	data = []
@@ -110,6 +122,8 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 				,decode_error = decode_error
 				,stop_words = stop_words
 				,d_min_tf = d_min_tf
+				,postprocessor = postprocessor
+				,ngram_words = ngram_words
 			)
 		data.append(kwargs)
 		pos += n
@@ -155,7 +169,7 @@ def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
 		if min_df and df[t]<min_df: continue
 		idf[t] = log( (a1+n) / (a2+df[t]) ) + a3
 	return idf
-
+	
 def get_chi(df,n,dfy,ny,alpha=0):
 	chi = Counter()
 	all = df
@@ -220,14 +234,135 @@ def get_chi_explain(df,n,dfy,ny,alpha=0):
 		ex = {k:int(v) for k,v in ex.items()}
 		chi_explain[t] = ex
 	return chi_explain
+
+# ---[ vectorization ]----------------------------------------------------------
+	
+def vectorize_part(kwargs):
+	import numpy as np
+	features = kwargs['features']
+	dtype = kwargs['dtype']
+	binary = kwargs['binary']
+	
+	X = kwargs['X']
+	token_pattern = kwargs['token_pattern']
+	stop_words = kwargs['stop_words']
+	lowercase = kwargs['lowercase']
+	encoding = kwargs['encoding']
+	decode_error = kwargs['decode_error']
+	ngram_range = kwargs['ngram_range']
+	ngram_words = kwargs['ngram_words']
+	analyzer = kwargs['analyzer']
+	preprocessor = kwargs['preprocessor']
+	tokenizer = kwargs['tokenizer']
+	postprocessor = kwargs['postprocessor']
+	
+	features_dict = {t:it for it,t in enumerate(features)}
+	out = np.array((len(X),len(features)),dtype=dtype)
+	
+	stop_words_set = set(stop_words or [])
+	ngram_words_set = set(ngram_words or [])
+	re_tok = re.compile(token_pattern,re.U)
+	for ix,text in enumerate(X):
+		# prepare tokens
+		if encoding:
+			text = text.decode(encoding,decode_error)
+		if preprocessor:
+			text = preprocessor(text)
+		if lowercase:
+			text = text.lower()
+		if tokenizer:
+			tokens = tokenizer(text)
+		else:
+			tokens = re_tok.findall(text)
+		if postprocessor:
+			tokens = postprocessor(tokens)
+		if stop_words:
+			tokens = [t for t in tokens if t not in stop_words_set]
+		
+		# update df
+		if ngram_range:
+			lo,hi = ngram_range
+			ngrams = []
+			if analyzer=='word':
+				for i in range(len(tokens)-lo): # TEST off-by-one
+					for n in range(lo,hi+1):
+						if i+n>len(tokens): break # TEST off-by-one
+						ngram = tuple(tokens[i:i+n])
+						if not ngram_words_set&set(ngram): continue
+						ngrams.append(ngram) # TODO tuple vs string
+			elif analyzer=='char':
+				for t in tokens:
+					for n in range(lo,hi+1):
+						if len(t)<n: pass
+						elif len(t)==n:
+							ngrams.append(t)
+						else:
+							for i in range(len(t)-n+1):
+								ngrams.append(t[i:i+n])
+			tokens = ngrams
+		
+		# output vector
+		v = [0]*len(features)
+		for t in tokens:
+			if t not in features_dict: continue
+			it = features_dict[t]
+			v[it] += 1
+		if binary:
+			v = [min(f,1) for f in v]
+		# TODO limit_freq
+		out[ix][:] = v
+	return out
+
+def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8', 
+	   lowercase=True, min_df=0, p_min_df=0, max_df=1.0, p_max_df=1.0,
+	   analyzer='word', tokenizer=None, preprocessor=None,
+	   decode_error='strict', stop_words=None, mp_pool=None,
+	   d_min_tf=0, ngram_range=None, postprocessor=None, ngram_words=None,
+	   features=[], binary=False, dtype=None):
+	cnt = len(X)
+	
+	data = []
+	n = cnt/workers # TEST off-by-one
+	pos = 0
+	for i in range(workers):
+		lo = pos
+		hi = min(cnt-1,lo+n)
+		kwargs = dict(
+				X = X[lo:hi]
+				,token_pattern = token_pattern
+				,encoding = encoding
+				,lowercase = lowercase
+				,p_min_df = p_min_df
+				,p_max_df = p_max_df
+				,analyzer = analyzer
+				,ngram_range = ngram_range
+				,tokenizer = tokenizer
+				,preprocessor = preprocessor
+				,decode_error = decode_error
+				,stop_words = stop_words
+				,d_min_tf = d_min_tf
+				,postprocessor = postprocessor
+				,ngram_words = ngram_words
+				
+				,features = features
+				,binary = binary
+				,dtype = dtype
+			)
+		data.append(kwargs)
+		pos += n
+	
+	pool = mp_pool or Pool(workers)
+	v_partitions = pool.map(vectorize_part, data)
+	return v_partitions
 	
 # ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-	import pandas as pd
 	from time import time
+	import pandas as pd
 	import pickle
-
+	import marshal
+	
 	def my_preproc(text):
 		return text.lower()
 	
@@ -235,25 +370,58 @@ if __name__ == "__main__":
 	def my_tokenizer(text):
 		return test_re.findall(text)
 	
+	t0=time()
+	lem_dict = marshal.load(open('lem_dict.mrl','rb'))
+	print('lem_dict',int(time()-t0),'s')
+	def my_postproc(tokens):
+		out = []
+		for t in tokens:
+			lem = lem_dict.get(t)
+			if not lem: continue
+			out.append(lem)
+		return out
+	def my_postproc2(tokens):
+		out = []
+		for t in tokens:
+			lem = lem_dict.get(t)
+			if not lem: continue
+			out.append(t)
+		return out
+	
 	if 1:
 		frame = pd.read_csv('flat/__all__.txt',sep='\t',header=None,names=['col','id','text'])
 		t0=time()
 		#df = get_df(frame.text,12,min_df=10,max_df=0.5)
-		dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,analyzer='char',ngram_range=(3,4))
+		#dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,analyzer='char',ngram_range=(3,4))
+		dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,postprocessor=my_postproc2)
 		for y in dfy:
 			print(y,len(dfy[y]))
 		print(time()-t0)
 		
 		t0=time()
+		topic = 'automaniak'
+		
+		if 0:
+			df = get_df_from_dfy(dfy)
+			chi = get_chi(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
+			top_chi_words = [t for t,v in chi.most_common(100)]
+			dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,ngram_range=(2,2),ngram_words=top_chi_words,stop_words=['a','i','o','w','z','u','na','do','lub'])
+		
 		df = get_df_from_dfy(dfy)
-		topic = 'ogrod'
-		chi = get_chi(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
-		chi_ex = get_chi_explain(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
-		for t,v in chi.most_common(100):
-			print(t,v,df[t],chi_ex[t])
+		for topic in [topic]:
+			chi = get_chi(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
+			chi_ex = get_chi_explain(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
+			for t,v in chi.most_common(100):
+				print(topic,t,v,df[t],dfy[topic][t])#,chi_ex[t])
+		
 		print(len(df))
 		print(time()-t0)
 		
+		t0=time()
+		top_chi_words = [t for t,v in chi.most_common(100)]
+		vectorized = vectorize(frame.text,workers=12,min_df=10,postprocessor=my_postproc2,features=top_chi_words)
+		print('vectorize',time()-t0)
+		print(vectorized)
 		
 		# n = len(frame.text)
 		# print(len(df))
