@@ -1,7 +1,7 @@
 from multiprocessing import Pool
 from collections import Counter
 from itertools import groupby
-from math import log
+from math import log,ceil
 import re
 
 # TODO vectorize
@@ -103,11 +103,11 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	cnt = len(X)
 	
 	data = []
-	n = cnt/workers # TEST off-by-one
+	n = int(ceil(1.0*cnt/workers))
 	pos = 0
 	for i in range(workers):
 		lo = pos
-		hi = min(cnt-1,lo+n)
+		hi = min(cnt,lo+n)
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -146,9 +146,12 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	return df
 
 ### 24s get_dfy vs 11s get_df vs 25s get_dfy2(specialized)
-def get_dfy(X,Y,workers=4,mp_pool=None,**kwargs):
+def get_dfy(X,Y,workers=4,sort=True,mp_pool=None,**kwargs):
 	dfy = {}
-	data = sorted(zip(Y,X))
+	if sort:
+		data = sorted(zip(Y,X))
+	else:
+		data = zip(Y,X)
 	pool = mp_pool or Pool(workers)
 	for y,g in groupby(data,lambda x:x[0]):
 		x = [v[1] for v in g]
@@ -236,12 +239,19 @@ def get_chi_explain(df,n,dfy,ny,alpha=0):
 	return chi_explain
 
 # ---[ vectorization ]----------------------------------------------------------
-	
+
+# TODO freq upper limit 
 def vectorize_part(kwargs):
-	import numpy as np
+	
 	features = kwargs['features']
-	dtype = kwargs['dtype']
 	binary = kwargs['binary']
+	sparse = kwargs['sparse']
+	dtype = kwargs['dtype']
+	typecode = kwargs['typecode']
+	if dtype:
+		import numpy as np
+	if typecode:
+		from array import array
 	
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -257,7 +267,7 @@ def vectorize_part(kwargs):
 	postprocessor = kwargs['postprocessor']
 	
 	features_dict = {t:it for it,t in enumerate(features)}
-	out = np.array((len(X),len(features)),dtype=dtype)
+	out = []
 	
 	stop_words_set = set(stop_words or [])
 	ngram_words_set = set(ngram_words or [])
@@ -279,7 +289,9 @@ def vectorize_part(kwargs):
 		if stop_words:
 			tokens = [t for t in tokens if t not in stop_words_set]
 		
-		# update df
+		 # TODO filter tokens - keep only features -> here or after ngrams
+		
+		# ngrams
 		if ngram_range:
 			lo,hi = ngram_range
 			ngrams = []
@@ -301,24 +313,50 @@ def vectorize_part(kwargs):
 								ngrams.append(t[i:i+n])
 			tokens = ngrams
 		
-		# output vector
-		v = [0]*len(features)
-		for t in tokens:
-			if t not in features_dict: continue
-			it = features_dict[t]
-			v[it] += 1
-		if binary:
-			v = [min(f,1) for f in v]
-		# TODO limit_freq
-		out[ix][:] = v
+		# output
+		if sparse:
+			if binary:
+				v = [features_dict[t] for t in set(tokens) if t in features_dict]
+				if typecode:
+					v = array(typecode,v)
+				elif dtype:
+					v = np.array(v,dtype=dtype)
+			else:
+				tf = {}
+				for t in tokens:
+					if t not in features_dict: continue
+					it = features_dict[t]
+					if it not in tf: tf[it]=1
+					else: tf[it]+=1
+				v = tf
+				# TODO optional array.array or np.array output
+		else:
+			v = [0]*len(features_dict)
+			if binary:
+				for t in tokens:
+					if t not in features_dict: continue
+					it = features_dict[t]
+					v[it] = 1
+				if typecode:
+					v = array(typecode,v)
+				elif dtype:
+					v = np.array(v,dtype=dtype)
+			else:
+				for t in tokens:
+					if t not in features_dict: continue
+					it = features_dict[t]
+					v[it] += 1
+				# TODO optional array.array or np.array output
+		out.append(v)
 	return out
 
+# TODO remove dead options
 def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8', 
 	   lowercase=True, min_df=0, p_min_df=0, max_df=1.0, p_max_df=1.0,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   d_min_tf=0, ngram_range=None, postprocessor=None, ngram_words=None,
-	   features=[], binary=False, dtype=None):
+	   features=[], binary=False, dtype=None, sparse=True, typecode=None):
 	cnt = len(X)
 	
 	data = []
@@ -326,7 +364,7 @@ def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	pos = 0
 	for i in range(workers):
 		lo = pos
-		hi = min(cnt-1,lo+n)
+		hi = min(cnt,lo+n)
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -347,6 +385,8 @@ def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 				,features = features
 				,binary = binary
 				,dtype = dtype
+				,sparse = sparse
+				,typecode = typecode
 			)
 		data.append(kwargs)
 		pos += n
