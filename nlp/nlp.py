@@ -16,9 +16,9 @@ def get_df_part(kwargs):
 	lowercase = kwargs['lowercase']
 	encoding = kwargs['encoding']
 	decode_error = kwargs['decode_error']
-	p_min_df = kwargs['p_min_df']
-	p_max_df = kwargs['p_max_df']
-	d_min_tf = kwargs['d_min_tf']
+	min_df_part = kwargs['min_df_part']
+	max_df_part = kwargs['max_df_part']
+	min_tf_doc = kwargs['min_tf_doc']
 	ngram_range = kwargs['ngram_range']
 	ngram_words = kwargs['ngram_words']
 	analyzer = kwargs['analyzer']
@@ -68,38 +68,38 @@ def get_df_part(kwargs):
 							for i in range(len(t)-n+1):
 								ngrams.append(t[i:i+n])
 			tokens = ngrams
-		if d_min_tf:
-			unique_tokens = [t for t,f in Counter(tokens).items() if f>=d_min_tf]
+		if min_tf_doc:
+			unique_tokens = [t for t,f in Counter(tokens).items() if f>=min_tf_doc]
 		else:
 			unique_tokens = set(tokens)
 		df.update(unique_tokens)
 	
 	# limit within partition
-	if p_min_df:
-		below = [t for t in df if df[t]<p_min_df]
+	if min_df_part:
+		below = [t for t in df if df[t]<min_df_part]
 		for t in below:
 			del df[t]
-	if p_max_df < 1.0:
-		x = p_max_df * len(X)
+	if max_df_part < 1.0:
+		x = max_df_part * len(X)
 		above = [t for t in df if df[t]>x]
 		for t in above:
 			del df[t]
 	return df
 
-# TODO rename p_max_df->max_df_part d_min_tf->min_tf_doc
+# TODO rename max_df_part->max_df_part min_tf_doc->min_tf_doc
 # TODO rename chi variables
 # TODO option to include whole words shorter than char ngram_range 'lo' value
 # TODO option to mark word begin/end in char ngrams
 # TODO max_df float
 # TODO max_df int
-# TODO p_max_df float
+# TODO max_df_part float
 # TODO min_df float
 # TODO reorder ARGS
 def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8', 
-	   lowercase=True, min_df=0, p_min_df=0, max_df=1.0, p_max_df=1.0,
+	   lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
-	   d_min_tf=0, ngram_range=None, postprocessor=None, ngram_words=None):
+	   min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None):
 	cnt = len(X)
 	
 	data = []
@@ -113,15 +113,15 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 				,token_pattern = token_pattern
 				,encoding = encoding
 				,lowercase = lowercase
-				,p_min_df = p_min_df
-				,p_max_df = p_max_df
+				,min_df_part = min_df_part
+				,max_df_part = max_df_part
 				,analyzer = analyzer
 				,ngram_range = ngram_range
 				,tokenizer = tokenizer
 				,preprocessor = preprocessor
 				,decode_error = decode_error
 				,stop_words = stop_words
-				,d_min_tf = d_min_tf
+				,min_tf_doc = min_tf_doc
 				,postprocessor = postprocessor
 				,ngram_words = ngram_words
 			)
@@ -240,17 +240,20 @@ def get_chi_explain(df,n,dfy,ny,alpha=0):
 
 # ---[ vectorization ]----------------------------------------------------------
 
-# TODO freq upper limit 
 def vectorize_part(kwargs):
 	
-	features = kwargs['features']
+	vocabulary = kwargs['vocabulary']
 	binary = kwargs['binary']
 	sparse = kwargs['sparse']
+	upper_limit = kwargs['upper_limit']
+	
 	dtype = kwargs['dtype']
+	term_dtype = kwargs['dtype']
 	typecode = kwargs['typecode']
-	if dtype:
+	term_typecode = kwargs['typecode']
+	if dtype or term_dtype:
 		import numpy as np
-	if typecode:
+	if typecode or term_typecode:
 		from array import array
 	
 	X = kwargs['X']
@@ -266,7 +269,12 @@ def vectorize_part(kwargs):
 	tokenizer = kwargs['tokenizer']
 	postprocessor = kwargs['postprocessor']
 	
-	features_dict = {t:it for it,t in enumerate(features)}
+	if hasattr(vocabulary,'items'):
+		vocab_dict = vocabulary
+		vocab_len = max(vocab_dict.values()) + 1
+	else:
+		vocab_dict = {t:t_id for t_id,t in enumerate(vocabulary)}
+		vocab_len = len(vocabulary)
 	out = []
 	
 	stop_words_set = set(stop_words or [])
@@ -289,7 +297,7 @@ def vectorize_part(kwargs):
 		if stop_words:
 			tokens = [t for t in tokens if t not in stop_words_set]
 		
-		 # TODO filter tokens - keep only features -> here or after ngrams
+		# TODO filter tokens - keep only vocabulary -> here or after ngrams ???
 		
 		# ngrams
 		if ngram_range:
@@ -316,47 +324,66 @@ def vectorize_part(kwargs):
 		# output
 		if sparse:
 			if binary:
-				v = [features_dict[t] for t in set(tokens) if t in features_dict]
-				if typecode:
-					v = array(typecode,v)
-				elif dtype:
-					v = np.array(v,dtype=dtype)
+				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
+				if term_typecode or typecode:
+					v = array(term_typecode or typecode,v)
+				elif term_dtype or dtype:
+					v = np.array(v,dtype=term_dtype or dtype)
 			else:
 				tf = {}
 				for t in tokens:
-					if t not in features_dict: continue
-					it = features_dict[t]
-					if it not in tf: tf[it]=1
-					else: tf[it]+=1
+					if t not in vocab_dict: continue
+					t_id = vocab_dict[t]
+					if t_id not in tf: tf[t_id]=1
+					else:
+						tf[t_id]+=1
+				if upper_limit:
+					for t in tf:
+						tf[t] = min(upper_limit,tf[t])
 				v = tf
-				# TODO optional array.array or np.array output
+				if typecode:
+					v_t = array(term_typecode or typecode,v.keys())
+					v_f = array(typecode,v.values())
+					v = v_t,v_f
+				elif dtype:
+					v_t = np.array(v.keys(),dtype=term_dtype or dtype)
+					v_f = np.array(v.values(),dtype=dtype)
+					v = v_t,v_f
 		else:
-			v = [0]*len(features_dict)
+			v = [0]*vocab_len
 			if binary:
 				for t in tokens:
-					if t not in features_dict: continue
-					it = features_dict[t]
-					v[it] = 1
-				if typecode:
-					v = array(typecode,v)
-				elif dtype:
-					v = np.array(v,dtype=dtype)
+					if t not in vocab_dict: continue
+					t_id = vocab_dict[t]
+					v[t_id] = 1
 			else:
 				for t in tokens:
-					if t not in features_dict: continue
-					it = features_dict[t]
-					v[it] += 1
-				# TODO optional array.array or np.array output
+					if t not in vocab_dict: continue
+					t_id = vocab_dict[t]
+					v[t_id] += 1
+			if typecode:
+				v = array(typecode, v)
+			elif dtype:
+				v = np.array(v, dtype=dtype)
+			if upper_limit:
+				if dtype:
+					v.clip(1,upper_limit)
+				elif dtype:
+					for t_id in range(vocab_len):
+						v[t_id] = min(upper_limit,v[t_id])
+				else:
+					v = [min(upper_limit,f) for f in v]
 		out.append(v)
 	return out
 
 # TODO remove dead options
 def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8', 
-	   lowercase=True, min_df=0, p_min_df=0, max_df=1.0, p_max_df=1.0,
+	   lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
-	   d_min_tf=0, ngram_range=None, postprocessor=None, ngram_words=None,
-	   features=[], binary=False, dtype=None, sparse=True, typecode=None):
+	   min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None,
+	   vocabulary=[], binary=False, sparse=True, upper_limit=0,
+	   typecode=None, dtype=None, term_typecode=None, term_dtype=None):
 	cnt = len(X)
 	
 	data = []
@@ -370,23 +397,27 @@ def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 				,token_pattern = token_pattern
 				,encoding = encoding
 				,lowercase = lowercase
-				,p_min_df = p_min_df
-				,p_max_df = p_max_df
+				,min_df_part = min_df_part
+				,max_df_part = max_df_part
+				,min_tf_doc = min_tf_doc
 				,analyzer = analyzer
 				,ngram_range = ngram_range
 				,tokenizer = tokenizer
 				,preprocessor = preprocessor
 				,decode_error = decode_error
 				,stop_words = stop_words
-				,d_min_tf = d_min_tf
 				,postprocessor = postprocessor
 				,ngram_words = ngram_words
 				
-				,features = features
+				,vocabulary = vocabulary
 				,binary = binary
-				,dtype = dtype
 				,sparse = sparse
+				,dtype = dtype
 				,typecode = typecode
+				,term_dtype = term_dtype
+				,term_typecode = term_typecode
+				,upper_limit = upper_limit
+				
 			)
 		data.append(kwargs)
 		pos += n
@@ -459,9 +490,10 @@ if __name__ == "__main__":
 		
 		t0=time()
 		top_chi_words = [t for t,v in chi.most_common(100)]
-		vectorized = vectorize(frame.text,workers=12,min_df=10,postprocessor=my_postproc2,features=top_chi_words)
+		vectorized = vectorize(frame.text,workers=12,min_df=10,postprocessor=my_postproc2,vocabulary=top_chi_words)
 		print('vectorize',time()-t0)
 		print(vectorized)
+		print(len(marshal.dumps(vectorized)))
 		
 		# n = len(frame.text)
 		# print(len(df))

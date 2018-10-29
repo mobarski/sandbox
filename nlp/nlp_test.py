@@ -10,20 +10,27 @@ docs = [
 'zzz ciekawe co bedzie dalej ccc',
 ]
 
+N = 200000
 if __name__=="__main__":
 	import numpy as np
+	import marshal
+	import pickle
 	dfy = get_dfy(docs,[0,0,0,1,1,1])
 	print(dfy)
 	df = get_df_from_dfy(dfy)
 	print(df.most_common(100))
 	df = get_df(docs)
 	print(df.most_common(100))
-	features = sorted(df.keys())
-	print(features)
-	xdocs=docs*200000
+	vocabulary = sorted(df.keys())
+	print(vocabulary)
+	xdocs=docs*N
 	t0 = time()
-	v = vectorize(xdocs,features=features,sparse=False,binary=True,dtype=np.uint8)
-	#v = vectorize(xdocs,features=features,sparse=False,binary=True,typecode='B')
+	v = vectorize(xdocs,vocabulary=vocabulary,sparse=True,binary=False,typecode=None,dtype=None,upper_limit=1)#dtype=np.uint8)
+	#v = vectorize(xdocs,vocabulary=vocabulary,sparse=False,binary=True,typecode='B')
+	if N<=100:
+		print(v)
 	print(time()-t0)
-	#print(v) # xxx
-	
+	t0=time()
+	print('marshal',len(marshal.dumps(v)),time()-t0)
+	#t0=time()
+	#print('pickle',len(pickle.dumps(v,2)),time()-t0)
