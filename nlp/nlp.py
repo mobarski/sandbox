@@ -1,6 +1,6 @@
 from multiprocessing import Pool
 from collections import Counter
-from itertools import groupby
+from itertools import groupby,chain
 from math import log,ceil
 import re
 
@@ -254,7 +254,6 @@ def vectorize_part(kwargs):
 		import numpy as np
 	if typecode:
 		from array import array
-		from itertools import chain
 	
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -415,8 +414,84 @@ def vectorize(X, vocabulary, workers=4,
 	
 	pool = mp_pool or Pool(workers)
 	v_partitions = pool.map(vectorize_part, data)
-	return v_partitions
-	
+	return v_partitions # TODO join?
+
+# ---[ cooccurrence ]-----------------------------------------------------------
+
+# TODO Y
+def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
+		dtype=None, typecode=None,
+		output_dtype=None, upper_limit=0, output_len=None):
+	import numpy as np
+	co = Counter()
+	for x in X:
+		if sparse:
+			if binary:
+				for t1 in x:
+					for t2 in x:
+						a = min(t1,t2)
+						b = max(t1,t2)
+						if a==b and not diagonal:
+							continue
+						co[a,b] += 1
+						if a!=b and not triangular:
+							co[b,a] += 1
+			else:
+				if dtype:
+					pass # TODO
+				elif typecode:
+					pass # TODO
+				else:
+					for t1 in x:
+						for t2 in x:
+							a = min(t1,t2)
+							b = max(t1,t2)
+							if a==b and not diagonal:
+								continue
+							f = min(x[a],x[b])
+							co[a,b] += f
+							if a!=b and not triangular:
+								co[b,a] += f
+		else:
+			pass # TODO
+	if output_dtype and output_len:
+		out = np.zeros((output_len,output_len),dtype=output_dtype)
+		# for (t1,t2),f in co.items():
+			# out[t1,t2] = min(upper_limit,f) if upper_limit else f
+		if upper_limit:
+			for (t1,t2),f in co.items():
+				out[t1,t2] = min(upper_limit,f)
+		else:
+			for (t1,t2),f in co.items():
+				out[t1,t2] = f
+		return out
+	else:
+		return co
+
+def get_coy(X,Y,sort=True,**kwargs):
+	coy = {}
+	if sort:
+		data = sorted(zip(Y,X))
+	else:
+		data = zip(Y,X)
+	for y,g in groupby(data,lambda x:x[0]):
+		x = [v[1] for v in g]
+		coy[y] = get_co(x,**kwargs)
+	return coy
+
+# TODO np.array input
+def get_co_from_coy(coy,dtype=None):
+	if dtype:
+		import numpy as np
+		co = np.zeros_like(list([coy])[0])
+		for y in coy:
+			co[:] += coy[y]
+	else:
+		co = Counter()
+		for y in coy:
+			co.update(coy[y])
+	return co
+
 # ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -451,7 +526,7 @@ if __name__ == "__main__":
 			out.append(t)
 		return out
 	
-	if 0:
+	if 1:
 		frame = pd.read_csv('flat/__all__.txt',sep='\t',header=None,names=['col','id','text'])
 		t0=time()
 		#df = get_df(frame.text,12,min_df=10,max_df=0.5)
@@ -459,8 +534,11 @@ if __name__ == "__main__":
 		if 0:
 			dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,postprocessor=my_postproc2)
 			pickle.dump(dfy,open('nlp_dfy.pickle','wb'))
+			col = frame.col
+			pickle.dump(col,open('nlp_col.pickle','wb'))
 		else:
 			dfy = pickle.load(open('nlp_dfy.pickle','rb'))
+			col = pickle.load(open('nlp_col.pickle','rb'))
 		for y in dfy:
 			print(y,len(dfy[y]))
 		print('dfy',time()-t0,'s')
@@ -485,19 +563,35 @@ if __name__ == "__main__":
 		print(len(df))
 		
 		t0=time()
-		top_chi_words = [t for t,v in chi.most_common(100)]
-		vectorized = vectorize(frame.text, vocabulary=top_chi_words,
+		vocabulary = [t for t,v in chi.most_common(100)]
+		vectorized = vectorize(frame.text, vocabulary=vocabulary,
 			workers=12, postprocessor=my_postproc2,
-			sparse=True, binary=False,
-			typecode='H', dtype=None)
+			sparse=True, binary=True,
+			typecode=None, dtype=None)
 		print('vectorize',time()-t0)
 		print(len(marshal.dumps(vectorized)))
 		marshal.dump(vectorized,open('nlp_vectorized.marshal','wb'))
+		marshal.dump(vocabulary,open('nlp_vocabulary.marshal','wb'))
 	else:
 		t0=time()
 		vectorized = marshal.load(open('nlp_vectorized.marshal','rb'))
+		vocabulary = marshal.load(open('nlp_vocabulary.marshal','rb'))
 		print('vectorize',time()-t0,'s')
 	
+	vectorized = chain.from_iterable(vectorized)
+	t0 = time()
+	coy = get_coy(vectorized,col,diagonal=False,binary=True,
+		triangular=True,
+		upper_limit=0,output_dtype=np.uint16,output_len=100)
+	co = get_co_from_coy(coy,dtype=np.uint16)
+	print(co)
+	print('co',time()-t0,'s')
+	if 0:
+		for (t1,t2),f in co.most_common(100):
+			print(t1,t2,f,vocabulary[t1],vocabulary[t2])
+	print('co.pickle',len(pickle.dumps(co)))
+	#print('co.marshal',len(marshal.dumps(dict(co))))
+	print('co.marshal',len(marshal.dumps(co)))
 	# print(min(df.values()))
 	# for t,v in df.most_common(10):
 		# print(t,v)
