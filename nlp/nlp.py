@@ -4,7 +4,8 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
-# TODO vectorize
+# TODO sklearn model.fit/transform interface
+# TODO liczenie lift dla co
 # TODO wybieranie ngramow na podstawie liftu
 
 # ---[ document frequency ]-----------------------------------------------------
@@ -249,11 +250,8 @@ def vectorize_part(kwargs):
 	upper_limit = kwargs['upper_limit']
 	
 	dtype = kwargs['dtype']
-	typecode = kwargs['typecode']
 	if dtype:
 		import numpy as np
-	if typecode:
-		from array import array
 	
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -324,9 +322,7 @@ def vectorize_part(kwargs):
 		if sparse:
 			if binary:
 				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
-				if typecode:
-					v = array(typecode,v)
-				elif dtype:
+				if dtype:
 					v = np.array(v,dtype=dtype)
 			else:
 				tf = {}
@@ -340,9 +336,7 @@ def vectorize_part(kwargs):
 					for t in tf:
 						tf[t] = min(upper_limit,tf[t])
 				v = tf
-				if typecode:
-					v = array(typecode,chain.from_iterable(tf.items()))
-				elif dtype:
+				if dtype:
 					v = np.array(tf.items(),dtype=dtype)
 		else:
 			v = [0]*vocab_len
@@ -356,9 +350,7 @@ def vectorize_part(kwargs):
 					if t not in vocab_dict: continue
 					t_id = vocab_dict[t]
 					v[t_id] += 1
-			if typecode:
-				v = array(typecode, v)
-			elif dtype:
+			if dtype:
 				v = np.array(v, dtype=dtype)
 			if upper_limit:
 				if dtype:
@@ -378,7 +370,7 @@ def vectorize(X, vocabulary, workers=4,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   ngram_range=None, postprocessor=None, ngram_words=None,
 	   binary=False, sparse=True, upper_limit=0,
-	   typecode=None, dtype=None):
+	   dtype=None):
 	cnt = len(X)
 	
 	data = []
@@ -405,7 +397,6 @@ def vectorize(X, vocabulary, workers=4,
 				,binary = binary
 				,sparse = sparse
 				,dtype = dtype
-				,typecode = typecode
 				,upper_limit = upper_limit
 				
 			)
@@ -420,7 +411,7 @@ def vectorize(X, vocabulary, workers=4,
 
 # TODO Y
 def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
-		dtype=None, typecode=None,
+		dtype=None,
 		output_dtype=None, upper_limit=0, output_len=None):
 	import numpy as np
 	co = Counter()
@@ -438,8 +429,6 @@ def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
 							co[b,a] += 1
 			else:
 				if dtype:
-					pass # TODO
-				elif typecode:
 					pass # TODO
 				else:
 					for t1 in x:
@@ -483,121 +472,12 @@ def get_coy(X,Y,sort=True,**kwargs):
 def get_co_from_coy(coy,dtype=None):
 	if dtype:
 		import numpy as np
-		co = np.zeros_like(list([coy])[0])
+		co = np.zeros_like(list(coy.values())[0],dtype=dtype)
 		for y in coy:
-			co[:] += coy[y]
+			co += coy[y]
 	else:
 		co = Counter()
 		for y in coy:
 			co.update(coy[y])
 	return co
 
-# ------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-	from time import time
-	import pandas as pd
-	import numpy as np
-	import pickle
-	import marshal
-	
-	def my_preproc(text):
-		return text.lower()
-	
-	test_re = re.compile(r'\ba\w{4,6}\b',re.U)
-	def my_tokenizer(text):
-		return test_re.findall(text)
-	
-	t0=time()
-	lem_dict = marshal.load(open('lem_dict.mrl','rb'))
-	print('lem_dict',int(time()-t0),'s')
-	def my_postproc(tokens):
-		out = []
-		for t in tokens:
-			lem = lem_dict.get(t)
-			if not lem: continue
-			out.append(lem)
-		return out
-	def my_postproc2(tokens):
-		out = []
-		for t in tokens:
-			lem = lem_dict.get(t)
-			if not lem: continue
-			out.append(t)
-		return out
-	
-	if 1:
-		frame = pd.read_csv('flat/__all__.txt',sep='\t',header=None,names=['col','id','text'])
-		t0=time()
-		#df = get_df(frame.text,12,min_df=10,max_df=0.5)
-		#dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,analyzer='char',ngram_range=(3,4))
-		if 0:
-			dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,postprocessor=my_postproc2)
-			pickle.dump(dfy,open('nlp_dfy.pickle','wb'))
-			col = frame.col
-			pickle.dump(col,open('nlp_col.pickle','wb'))
-		else:
-			dfy = pickle.load(open('nlp_dfy.pickle','rb'))
-			col = pickle.load(open('nlp_col.pickle','rb'))
-		for y in dfy:
-			print(y,len(dfy[y]))
-		print('dfy',time()-t0,'s')
-		
-		t0=time()
-		topic = 'automaniak'
-		
-		if 0:
-			df = get_df_from_dfy(dfy)
-			chi = get_chi(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
-			top_chi_words = [t for t,v in chi.most_common(100)]
-			dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,ngram_range=(2,2),ngram_words=top_chi_words,stop_words=['a','i','o','w','z','u','na','do','lub'])
-		
-		df = get_df_from_dfy(dfy)
-		for topic in [topic]:
-			chi = get_chi(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
-			chi_ex = get_chi_explain(df,len(frame.text),dfy[topic],Counter(frame.col)[topic])
-			for t,v in chi.most_common(100):
-				print(topic,t,v,df[t],dfy[topic][t])#,chi_ex[t])
-		
-		print('chi',time()-t0)
-		print(len(df))
-		
-		t0=time()
-		vocabulary = [t for t,v in chi.most_common(100)]
-		vectorized = vectorize(frame.text, vocabulary=vocabulary,
-			workers=12, postprocessor=my_postproc2,
-			sparse=True, binary=True,
-			typecode=None, dtype=None)
-		print('vectorize',time()-t0)
-		print(len(marshal.dumps(vectorized)))
-		marshal.dump(vectorized,open('nlp_vectorized.marshal','wb'))
-		marshal.dump(vocabulary,open('nlp_vocabulary.marshal','wb'))
-	else:
-		t0=time()
-		vectorized = marshal.load(open('nlp_vectorized.marshal','rb'))
-		vocabulary = marshal.load(open('nlp_vocabulary.marshal','rb'))
-		print('vectorize',time()-t0,'s')
-	
-	vectorized = chain.from_iterable(vectorized)
-	t0 = time()
-	coy = get_coy(vectorized,col,diagonal=False,binary=True,
-		triangular=True,
-		upper_limit=0,output_dtype=np.uint16,output_len=100)
-	co = get_co_from_coy(coy,dtype=np.uint16)
-	print(co)
-	print('co',time()-t0,'s')
-	if 0:
-		for (t1,t2),f in co.most_common(100):
-			print(t1,t2,f,vocabulary[t1],vocabulary[t2])
-	print('co.pickle',len(pickle.dumps(co)))
-	#print('co.marshal',len(marshal.dumps(dict(co))))
-	print('co.marshal',len(marshal.dumps(co)))
-	# print(min(df.values()))
-	# for t,v in df.most_common(10):
-		# print(t,v)
-	
-	# t0=time()
-	# idf = get_idf(df,n,min_df=10)
-	# for t,v in idf.most_common(10):
-		# print(t,v,df[t])
-	# print(time()-t0)
