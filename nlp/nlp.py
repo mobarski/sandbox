@@ -9,6 +9,7 @@ import re
 
 # ---[ document frequency ]-----------------------------------------------------
 
+# TODO test replacing Coutner with dict (marshaling + performance?)
 def get_df_part(kwargs):
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -248,13 +249,12 @@ def vectorize_part(kwargs):
 	upper_limit = kwargs['upper_limit']
 	
 	dtype = kwargs['dtype']
-	term_dtype = kwargs['dtype']
 	typecode = kwargs['typecode']
-	term_typecode = kwargs['typecode']
-	if dtype or term_dtype:
+	if dtype:
 		import numpy as np
-	if typecode or term_typecode:
+	if typecode:
 		from array import array
+		from itertools import chain
 	
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -325,10 +325,10 @@ def vectorize_part(kwargs):
 		if sparse:
 			if binary:
 				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
-				if term_typecode or typecode:
-					v = array(term_typecode or typecode,v)
-				elif term_dtype or dtype:
-					v = np.array(v,dtype=term_dtype or dtype)
+				if typecode:
+					v = array(typecode,v)
+				elif dtype:
+					v = np.array(v,dtype=dtype)
 			else:
 				tf = {}
 				for t in tokens:
@@ -342,13 +342,9 @@ def vectorize_part(kwargs):
 						tf[t] = min(upper_limit,tf[t])
 				v = tf
 				if typecode:
-					v_t = array(term_typecode or typecode,v.keys())
-					v_f = array(typecode,v.values())
-					v = v_t,v_f
+					v = array(typecode,chain.from_iterable(tf.items()))
 				elif dtype:
-					v_t = np.array(v.keys(),dtype=term_dtype or dtype)
-					v_f = np.array(v.values(),dtype=dtype)
-					v = v_t,v_f
+					v = np.array(tf.items(),dtype=dtype)
 		else:
 			v = [0]*vocab_len
 			if binary:
@@ -377,13 +373,13 @@ def vectorize_part(kwargs):
 	return out
 
 # TODO remove dead options
-def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8', 
-	   lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
+def vectorize(X, vocabulary, workers=4,
+	   token_pattern='[\w][\w-]*', encoding='utf8', lowercase=True,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
-	   min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None,
-	   vocabulary=[], binary=False, sparse=True, upper_limit=0,
-	   typecode=None, dtype=None, term_typecode=None, term_dtype=None):
+	   ngram_range=None, postprocessor=None, ngram_words=None,
+	   binary=False, sparse=True, upper_limit=0,
+	   typecode=None, dtype=None):
 	cnt = len(X)
 	
 	data = []
@@ -397,9 +393,6 @@ def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 				,token_pattern = token_pattern
 				,encoding = encoding
 				,lowercase = lowercase
-				,min_df_part = min_df_part
-				,max_df_part = max_df_part
-				,min_tf_doc = min_tf_doc
 				,analyzer = analyzer
 				,ngram_range = ngram_range
 				,tokenizer = tokenizer
@@ -414,8 +407,6 @@ def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 				,sparse = sparse
 				,dtype = dtype
 				,typecode = typecode
-				,term_dtype = term_dtype
-				,term_typecode = term_typecode
 				,upper_limit = upper_limit
 				
 			)
@@ -431,6 +422,7 @@ def vectorize(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 if __name__ == "__main__":
 	from time import time
 	import pandas as pd
+	import numpy as np
 	import pickle
 	import marshal
 	
@@ -459,15 +451,19 @@ if __name__ == "__main__":
 			out.append(t)
 		return out
 	
-	if 1:
+	if 0:
 		frame = pd.read_csv('flat/__all__.txt',sep='\t',header=None,names=['col','id','text'])
 		t0=time()
 		#df = get_df(frame.text,12,min_df=10,max_df=0.5)
 		#dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,analyzer='char',ngram_range=(3,4))
-		dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,postprocessor=my_postproc2)
+		if 0:
+			dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,postprocessor=my_postproc2)
+			pickle.dump(dfy,open('nlp_dfy.pickle','wb'))
+		else:
+			dfy = pickle.load(open('nlp_dfy.pickle','rb'))
 		for y in dfy:
 			print(y,len(dfy[y]))
-		print(time()-t0)
+		print('dfy',time()-t0,'s')
 		
 		t0=time()
 		topic = 'automaniak'
@@ -485,21 +481,22 @@ if __name__ == "__main__":
 			for t,v in chi.most_common(100):
 				print(topic,t,v,df[t],dfy[topic][t])#,chi_ex[t])
 		
+		print('chi',time()-t0)
 		print(len(df))
-		print(time()-t0)
 		
 		t0=time()
 		top_chi_words = [t for t,v in chi.most_common(100)]
-		vectorized = vectorize(frame.text,workers=12,min_df=10,postprocessor=my_postproc2,vocabulary=top_chi_words)
+		vectorized = vectorize(frame.text, vocabulary=top_chi_words,
+			workers=12, postprocessor=my_postproc2,
+			sparse=True, binary=False,
+			typecode='H', dtype=None)
 		print('vectorize',time()-t0)
-		print(vectorized)
 		print(len(marshal.dumps(vectorized)))
-		
-		# n = len(frame.text)
-		# print(len(df))
-		# pickle.dump([df,n],open('df_n.pickle','wb'))
+		marshal.dump(vectorized,open('nlp_vectorized.marshal','wb'))
 	else:
-		df,n = pickle.load(open('df_n.pickle','rb'))
+		t0=time()
+		vectorized = marshal.load(open('nlp_vectorized.marshal','rb'))
+		print('vectorize',time()-t0,'s')
 	
 	# print(min(df.values()))
 	# for t,v in df.most_common(10):
