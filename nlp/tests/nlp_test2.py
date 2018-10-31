@@ -1,3 +1,5 @@
+import sys; sys.path.append('..')
+
 from nlp import *
 
 if __name__ == "__main__":
@@ -15,7 +17,7 @@ if __name__ == "__main__":
 		return test_re.findall(text)
 	
 	t0=time()
-	lem_dict = marshal.load(open('lem_dict.mrl','rb'))
+	lem_dict = marshal.load(open('../data/lem_dict.mrl','rb'))
 	print('lem_dict',int(time()-t0),'s')
 	def my_postproc(tokens):
 		out = []
@@ -33,18 +35,18 @@ if __name__ == "__main__":
 		return out
 	
 	if 1:
-		frame = pd.read_csv('flat/__all__.txt',sep='\t',header=None,names=['col','id','text'])
+		frame = pd.read_csv('../data/__all__.txt',sep='\t',header=None,names=['col','id','text'])
 		t0=time()
 		#df = get_df(frame.text,12,min_df=10,max_df=0.5)
 		#dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,analyzer='char',ngram_range=(3,4))
 		if 0:
 			dfy = get_dfy(frame.text,frame.col,workers=12,min_df=10,postprocessor=my_postproc2)
-			pickle.dump(dfy,open('nlp_dfy.pickle','wb'))
+			pickle.dump(dfy,open('../data/nlp_dfy.pickle','wb'))
 			col = frame.col
-			pickle.dump(col,open('nlp_col.pickle','wb'))
+			pickle.dump(col,open('../data/nlp_col.pickle','wb'))
 		else:
-			dfy = pickle.load(open('nlp_dfy.pickle','rb'))
-			col = pickle.load(open('nlp_col.pickle','rb'))
+			dfy = pickle.load(open('../data/nlp_dfy.pickle','rb'))
+			col = pickle.load(open('../data/nlp_col.pickle','rb'))
 		for y in dfy:
 			print(y,len(dfy[y]))
 		print('dfy',time()-t0,'s')
@@ -76,12 +78,12 @@ if __name__ == "__main__":
 			dtype=None)
 		print('vectorize',time()-t0)
 		print(len(marshal.dumps(vectorized)))
-		marshal.dump(vectorized,open('nlp_vectorized.marshal','wb'))
-		marshal.dump(vocabulary,open('nlp_vocabulary.marshal','wb'))
+		marshal.dump(vectorized,open('../data/nlp_vectorized.marshal','wb'))
+		marshal.dump(vocabulary,open('../data/nlp_vocabulary.marshal','wb'))
 	else:
 		t0=time()
-		vectorized = marshal.load(open('nlp_vectorized.marshal','rb'))
-		vocabulary = marshal.load(open('nlp_vocabulary.marshal','rb'))
+		vectorized = marshal.load(open('../data/nlp_vectorized.marshal','rb'))
+		vocabulary = marshal.load(open('../data/nlp_vocabulary.marshal','rb'))
 		print('vectorize',time()-t0,'s')
 	
 	vectorized = chain.from_iterable(vectorized)

@@ -1,3 +1,5 @@
+import sys; sys.path.append('..')
+
 from time import time
 from nlp import get_dfy,get_df_from_dfy,get_df,vectorize
 
