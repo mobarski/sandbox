@@ -102,6 +102,26 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None):
+	"""Convert a collection of text documents to a collection of token counts
+	
+	Parameters
+	----------
+	
+	X : iterable
+	
+	workers : int, default=4
+	
+	token_pattern : string, default='[\w][\w-]*'
+		Regular expression denoting what constitute a "token"
+	
+	ngram_range : tuple (lo, hi)
+		The lower and upper "n" for n-grams to be extracted
+	
+	encoding: string or None, default='utf8'
+	
+	lowercase: boolean, default=True
+
+	"""
 	cnt = len(X)
 	
 	data = []

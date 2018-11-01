@@ -1,0 +1,696 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nlp &mdash; NLP  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> NLP
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NLP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>nlp</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nlp</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pool</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">groupby</span><span class="p">,</span><span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">log</span><span class="p">,</span><span class="n">ceil</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="c1"># TODO sklearn model.fit/transform interface</span>
+<span class="c1"># TODO liczenie lift dla co</span>
+<span class="c1"># TODO wybieranie ngramow na podstawie liftu</span>
+
+<span class="c1"># ---[ document frequency ]-----------------------------------------------------</span>
+
+<span class="c1"># TODO test replacing Coutner with dict (marshaling + performance?)</span>
+<div class="viewcode-block" id="get_df_part"><a class="viewcode-back" href="../source/nlp.html#nlp.get_df_part">[docs]</a><span class="k">def</span> <span class="nf">get_df_part</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+	<span class="n">X</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">]</span>
+	<span class="n">token_pattern</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;token_pattern&#39;</span><span class="p">]</span>
+	<span class="n">stop_words</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;stop_words&#39;</span><span class="p">]</span>
+	<span class="n">lowercase</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;lowercase&#39;</span><span class="p">]</span>
+	<span class="n">encoding</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;encoding&#39;</span><span class="p">]</span>
+	<span class="n">decode_error</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;decode_error&#39;</span><span class="p">]</span>
+	<span class="n">min_df_part</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;min_df_part&#39;</span><span class="p">]</span>
+	<span class="n">max_df_part</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;max_df_part&#39;</span><span class="p">]</span>
+	<span class="n">min_tf_doc</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;min_tf_doc&#39;</span><span class="p">]</span>
+	<span class="n">ngram_range</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ngram_range&#39;</span><span class="p">]</span>
+	<span class="n">ngram_words</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ngram_words&#39;</span><span class="p">]</span>
+	<span class="n">analyzer</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;analyzer&#39;</span><span class="p">]</span>
+	<span class="n">preprocessor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;preprocessor&#39;</span><span class="p">]</span>
+	<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">]</span>
+	<span class="n">postprocessor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;postprocessor&#39;</span><span class="p">]</span>
+	
+	<span class="n">stop_words_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">stop_words</span> <span class="ow">or</span> <span class="p">[])</span>
+	<span class="n">ngram_words_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ngram_words</span> <span class="ow">or</span> <span class="p">[])</span>
+	<span class="n">re_tok</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">token_pattern</span><span class="p">,</span><span class="n">re</span><span class="o">.</span><span class="n">U</span><span class="p">)</span>
+	<span class="n">df</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+	<span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+		<span class="c1"># prepare tokens</span>
+		<span class="k">if</span> <span class="n">encoding</span><span class="p">:</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="p">,</span><span class="n">decode_error</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">preprocessor</span><span class="p">:</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">lowercase</span><span class="p">:</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+		<span class="k">if</span> <span class="n">tokenizer</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">re_tok</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">postprocessor</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">postprocessor</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">stop_words</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stop_words_set</span><span class="p">]</span>
+		
+		<span class="c1"># update df</span>
+		<span class="k">if</span> <span class="n">ngram_range</span><span class="p">:</span>
+			<span class="n">lo</span><span class="p">,</span><span class="n">hi</span> <span class="o">=</span> <span class="n">ngram_range</span>
+			<span class="n">ngrams</span> <span class="o">=</span> <span class="p">[]</span>
+			<span class="k">if</span> <span class="n">analyzer</span><span class="o">==</span><span class="s1">&#39;word&#39;</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span><span class="o">-</span><span class="n">lo</span><span class="p">):</span> <span class="c1"># TEST off-by-one</span>
+					<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span><span class="n">hi</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+						<span class="k">if</span> <span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="o">&gt;</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span> <span class="k">break</span> <span class="c1"># TEST off-by-one</span>
+						<span class="n">ngram</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="p">])</span>
+						<span class="k">if</span> <span class="ow">not</span> <span class="n">ngram_words_set</span><span class="o">&amp;</span><span class="nb">set</span><span class="p">(</span><span class="n">ngram</span><span class="p">):</span> <span class="k">continue</span>
+						<span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ngram</span><span class="p">)</span> <span class="c1"># TODO tuple vs string</span>
+			<span class="k">elif</span> <span class="n">analyzer</span><span class="o">==</span><span class="s1">&#39;char&#39;</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span><span class="n">hi</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+						<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">&lt;</span><span class="n">n</span><span class="p">:</span> <span class="k">pass</span>
+						<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">==</span><span class="n">n</span><span class="p">:</span>
+							<span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+						<span class="k">else</span><span class="p">:</span>
+							<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+								<span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="p">])</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">ngrams</span>
+		<span class="k">if</span> <span class="n">min_tf_doc</span><span class="p">:</span>
+			<span class="n">unique_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="n">Counter</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">f</span><span class="o">&gt;=</span><span class="n">min_tf_doc</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">unique_tokens</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+		<span class="n">df</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unique_tokens</span><span class="p">)</span>
+	
+	<span class="c1"># limit within partition</span>
+	<span class="k">if</span> <span class="n">min_df_part</span><span class="p">:</span>
+		<span class="n">below</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span> <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">&lt;</span><span class="n">min_df_part</span><span class="p">]</span>
+		<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">below</span><span class="p">:</span>
+			<span class="k">del</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+	<span class="k">if</span> <span class="n">max_df_part</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+		<span class="n">x</span> <span class="o">=</span> <span class="n">max_df_part</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+		<span class="n">above</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span> <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">&gt;</span><span class="n">x</span><span class="p">]</span>
+		<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">above</span><span class="p">:</span>
+			<span class="k">del</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+	<span class="k">return</span> <span class="n">df</span></div>
+
+<span class="c1"># TODO rename max_df_part-&gt;max_df_part min_tf_doc-&gt;min_tf_doc</span>
+<span class="c1"># TODO rename chi variables</span>
+<span class="c1"># TODO option to include whole words shorter than char ngram_range &#39;lo&#39; value</span>
+<span class="c1"># TODO option to mark word begin/end in char ngrams</span>
+<span class="c1"># TODO max_df float</span>
+<span class="c1"># TODO max_df int</span>
+<span class="c1"># TODO max_df_part float</span>
+<span class="c1"># TODO min_df float</span>
+<span class="c1"># TODO reorder ARGS</span>
+<div class="viewcode-block" id="get_df"><a class="viewcode-back" href="../source/nlp.html#nlp.get_df">[docs]</a><span class="k">def</span> <span class="nf">get_df</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">token_pattern</span><span class="o">=</span><span class="s1">&#39;[\w][\w-]*&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> 
+	   <span class="n">lowercase</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_df_part</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_df</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_df_part</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+	   <span class="n">analyzer</span><span class="o">=</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+	   <span class="n">decode_error</span><span class="o">=</span><span class="s1">&#39;strict&#39;</span><span class="p">,</span> <span class="n">stop_words</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mp_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+	   <span class="n">min_tf_doc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ngram_range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">postprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ngram_words</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Convert a collection of text documents to a collection of token counts</span>
+<span class="sd">	</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	</span>
+<span class="sd">	X : iterable</span>
+<span class="sd">	</span>
+<span class="sd">	workers : int, default=4</span>
+<span class="sd">	</span>
+<span class="sd">	token_pattern : string, default=&#39;[\w][\w-]*&#39;</span>
+<span class="sd">		Regular expression denoting what constitute a &quot;token&quot;</span>
+<span class="sd">	</span>
+<span class="sd">	ngram_range : tuple (lo, hi)</span>
+<span class="sd">		The lower and upper &quot;n&quot; for n-grams to be extracted</span>
+<span class="sd">	</span>
+<span class="sd">	encoding: string or None, default=&#39;utf8&#39;</span>
+<span class="sd">	</span>
+<span class="sd">	lowercase: boolean, default=True</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+	
+	<span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.0</span><span class="o">*</span><span class="n">cnt</span><span class="o">/</span><span class="n">workers</span><span class="p">))</span>
+	<span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">):</span>
+		<span class="n">lo</span> <span class="o">=</span> <span class="n">pos</span>
+		<span class="n">hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span><span class="n">lo</span><span class="o">+</span><span class="n">n</span><span class="p">)</span>
+		<span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+				<span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span>
+				<span class="p">,</span><span class="n">token_pattern</span> <span class="o">=</span> <span class="n">token_pattern</span>
+				<span class="p">,</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span>
+				<span class="p">,</span><span class="n">lowercase</span> <span class="o">=</span> <span class="n">lowercase</span>
+				<span class="p">,</span><span class="n">min_df_part</span> <span class="o">=</span> <span class="n">min_df_part</span>
+				<span class="p">,</span><span class="n">max_df_part</span> <span class="o">=</span> <span class="n">max_df_part</span>
+				<span class="p">,</span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">analyzer</span>
+				<span class="p">,</span><span class="n">ngram_range</span> <span class="o">=</span> <span class="n">ngram_range</span>
+				<span class="p">,</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span>
+				<span class="p">,</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="n">preprocessor</span>
+				<span class="p">,</span><span class="n">decode_error</span> <span class="o">=</span> <span class="n">decode_error</span>
+				<span class="p">,</span><span class="n">stop_words</span> <span class="o">=</span> <span class="n">stop_words</span>
+				<span class="p">,</span><span class="n">min_tf_doc</span> <span class="o">=</span> <span class="n">min_tf_doc</span>
+				<span class="p">,</span><span class="n">postprocessor</span> <span class="o">=</span> <span class="n">postprocessor</span>
+				<span class="p">,</span><span class="n">ngram_words</span> <span class="o">=</span> <span class="n">ngram_words</span>
+			<span class="p">)</span>
+		<span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="n">pos</span> <span class="o">+=</span> <span class="n">n</span>
+	
+	<span class="n">pool</span> <span class="o">=</span> <span class="n">mp_pool</span> <span class="ow">or</span> <span class="n">Pool</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
+	<span class="n">df_partitions</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_df_part</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+	<span class="n">df</span><span class="o">=</span><span class="n">df_partitions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="k">for</span> <span class="n">df_</span> <span class="ow">in</span> <span class="n">df_partitions</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+		<span class="n">df</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">df_</span><span class="p">)</span>
+	
+	<span class="k">if</span> <span class="n">min_df</span><span class="p">:</span>
+		<span class="n">below</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span> <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">&lt;</span><span class="n">min_df</span><span class="p">]</span>
+		<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">below</span><span class="p">:</span>
+			<span class="k">del</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+	<span class="k">if</span> <span class="n">max_df</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+		<span class="n">max_df_cnt</span> <span class="o">=</span> <span class="n">max_df</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+		<span class="n">above</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span> <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">&gt;</span><span class="n">max_df_cnt</span><span class="p">]</span>
+		<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">above</span><span class="p">:</span>
+			<span class="k">del</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+	<span class="k">return</span> <span class="n">df</span></div>
+
+<span class="c1">### 24s get_dfy vs 11s get_df vs 25s get_dfy2(specialized)</span>
+<div class="viewcode-block" id="get_dfy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_dfy">[docs]</a><span class="k">def</span> <span class="nf">get_dfy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">mp_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+	<span class="n">dfy</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">X</span><span class="p">))</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">X</span><span class="p">)</span>
+	<span class="n">pool</span> <span class="o">=</span> <span class="n">mp_pool</span> <span class="ow">or</span> <span class="n">Pool</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">y</span><span class="p">,</span><span class="n">g</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+		<span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">g</span><span class="p">]</span>
+		<span class="n">dfy</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_df</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">mp_pool</span><span class="o">=</span><span class="n">pool</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">dfy</span></div>
+
+<div class="viewcode-block" id="get_df_from_dfy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_df_from_dfy">[docs]</a><span class="k">def</span> <span class="nf">get_df_from_dfy</span><span class="p">(</span><span class="n">dfy</span><span class="p">):</span>
+	<span class="n">df</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+	<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">dfy</span><span class="p">:</span>
+		<span class="n">df</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dfy</span><span class="p">[</span><span class="n">y</span><span class="p">])</span>
+	<span class="k">return</span> <span class="n">df</span></div>
+
+<span class="c1"># ---[ feature selection ]------------------------------------------------------</span>
+
+<div class="viewcode-block" id="get_idf"><a class="viewcode-back" href="../source/nlp.html#nlp.get_idf">[docs]</a><span class="k">def</span> <span class="nf">get_idf</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">a1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">a2</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">a3</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="n">idf</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+	<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">min_df</span> <span class="ow">and</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">&lt;</span><span class="n">min_df</span><span class="p">:</span> <span class="k">continue</span>
+		<span class="n">idf</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span> <span class="p">(</span><span class="n">a1</span><span class="o">+</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">a2</span><span class="o">+</span><span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="p">)</span> <span class="o">+</span> <span class="n">a3</span>
+	<span class="k">return</span> <span class="n">idf</span></div>
+	
+<div class="viewcode-block" id="get_chi"><a class="viewcode-back" href="../source/nlp.html#nlp.get_chi">[docs]</a><span class="k">def</span> <span class="nf">get_chi</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">dfy</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="n">chi</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+	<span class="nb">all</span> <span class="o">=</span> <span class="n">df</span>
+	<span class="n">topic</span> <span class="o">=</span> <span class="n">dfy</span>
+	<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+		<span class="c1"># observed</span>
+		<span class="n">o_c1_t1</span> <span class="o">=</span> <span class="n">topic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">o_c1_t0</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">-</span> <span class="n">topic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">o_c0_t1</span> <span class="o">=</span> <span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">topic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">o_c0_t0</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="n">o_c1_t1</span> <span class="o">-</span> <span class="n">o_c1_t0</span> <span class="o">-</span> <span class="n">o_c0_t1</span>
+		<span class="c1"># expected</span>
+		<span class="n">e_c1_t1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">/</span><span class="n">n</span>
+		<span class="n">e_c1_t0</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">])</span><span class="o">/</span><span class="n">n</span>
+		<span class="n">e_c0_t1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">ny</span><span class="p">)</span><span class="o">/</span><span class="n">n</span> <span class="o">*</span> <span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">e_c0_t0</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">ny</span><span class="p">)</span><span class="o">/</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+		<span class="c1"># chi components</span>
+		<span class="n">c1_t1</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c1_t1</span> <span class="o">-</span> <span class="n">e_c1_t1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c1_t1</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="n">c1_t0</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c1_t0</span> <span class="o">-</span> <span class="n">e_c1_t0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c1_t0</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="n">c0_t1</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c0_t1</span> <span class="o">-</span> <span class="n">e_c0_t1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c0_t1</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="n">c0_t0</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c0_t0</span> <span class="o">-</span> <span class="n">e_c0_t0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c0_t0</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="c1"># chi</span>
+		<span class="n">chi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">c0_t0</span> <span class="o">+</span> <span class="n">c1_t0</span> <span class="o">+</span> <span class="n">c0_t1</span> <span class="o">+</span> <span class="n">c1_t1</span>
+	<span class="k">return</span> <span class="n">chi</span></div>
+
+<div class="viewcode-block" id="get_chi_explain"><a class="viewcode-back" href="../source/nlp.html#nlp.get_chi_explain">[docs]</a><span class="k">def</span> <span class="nf">get_chi_explain</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">dfy</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="n">chi_explain</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+	<span class="nb">all</span> <span class="o">=</span> <span class="n">df</span>
+	<span class="n">topic</span> <span class="o">=</span> <span class="n">dfy</span>
+	<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+		<span class="c1"># observed</span>
+		<span class="n">o_c1_t1</span> <span class="o">=</span> <span class="n">topic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">o_c1_t0</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">-</span> <span class="n">topic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">o_c0_t1</span> <span class="o">=</span> <span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">topic</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">o_c0_t0</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="n">o_c1_t1</span> <span class="o">-</span> <span class="n">o_c1_t0</span> <span class="o">-</span> <span class="n">o_c0_t1</span>
+		<span class="c1"># expected</span>
+		<span class="n">e_c1_t1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">/</span><span class="n">n</span>
+		<span class="n">e_c1_t0</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">])</span><span class="o">/</span><span class="n">n</span>
+		<span class="n">e_c0_t1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">ny</span><span class="p">)</span><span class="o">/</span><span class="n">n</span> <span class="o">*</span> <span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+		<span class="n">e_c0_t0</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">ny</span><span class="p">)</span><span class="o">/</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="nb">all</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+		<span class="c1"># chi components</span>
+		<span class="n">c1_t1</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c1_t1</span> <span class="o">-</span> <span class="n">e_c1_t1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c1_t1</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="n">c1_t0</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c1_t0</span> <span class="o">-</span> <span class="n">e_c1_t0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c1_t0</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="n">c0_t1</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c0_t1</span> <span class="o">-</span> <span class="n">e_c0_t1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c0_t1</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="n">c0_t0</span> <span class="o">=</span> <span class="p">(</span><span class="n">o_c0_t0</span> <span class="o">-</span> <span class="n">e_c0_t0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_c0_t0</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+		<span class="c1"># chi</span>
+		<span class="n">chi</span> <span class="o">=</span> <span class="n">c0_t0</span> <span class="o">+</span> <span class="n">c1_t0</span> <span class="o">+</span> <span class="n">c0_t1</span> <span class="o">+</span> <span class="n">c1_t1</span>
+		<span class="c1"># explain</span>
+		<span class="n">ex</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;o_c1_t1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o_c1_t1</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;o_c1_t0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o_c1_t0</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;o_c0_t1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o_c0_t1</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;o_c0_t0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">o_c0_t0</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;e_c1_t1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_c1_t1</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;e_c1_t0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_c1_t0</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;e_c0_t1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_c0_t1</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;e_c0_t0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_c0_t0</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;c1_t1&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">c1_t1</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;c1_t0&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">c1_t0</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;c0_t1&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">c0_t1</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;c0_t0&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">c0_t0</span>
+		<span class="n">ex</span><span class="p">[</span><span class="s1">&#39;chi&#39;</span><span class="p">]</span>     <span class="o">=</span> <span class="n">chi</span>
+		<span class="n">ex</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">ex</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+		<span class="n">chi_explain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">ex</span>
+	<span class="k">return</span> <span class="n">chi_explain</span></div>
+
+<span class="c1"># ---[ vectorization ]----------------------------------------------------------</span>
+
+<div class="viewcode-block" id="vectorize_part"><a class="viewcode-back" href="../source/nlp.html#nlp.vectorize_part">[docs]</a><span class="k">def</span> <span class="nf">vectorize_part</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+	
+	<span class="n">vocabulary</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vocabulary&#39;</span><span class="p">]</span>
+	<span class="n">binary</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]</span>
+	<span class="n">sparse</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sparse&#39;</span><span class="p">]</span>
+	<span class="n">upper_limit</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;upper_limit&#39;</span><span class="p">]</span>
+	
+	<span class="n">dtype</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span>
+	<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+		<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+	
+	<span class="n">X</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">]</span>
+	<span class="n">token_pattern</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;token_pattern&#39;</span><span class="p">]</span>
+	<span class="n">stop_words</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;stop_words&#39;</span><span class="p">]</span>
+	<span class="n">lowercase</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;lowercase&#39;</span><span class="p">]</span>
+	<span class="n">encoding</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;encoding&#39;</span><span class="p">]</span>
+	<span class="n">decode_error</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;decode_error&#39;</span><span class="p">]</span>
+	<span class="n">ngram_range</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ngram_range&#39;</span><span class="p">]</span>
+	<span class="n">ngram_words</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ngram_words&#39;</span><span class="p">]</span>
+	<span class="n">analyzer</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;analyzer&#39;</span><span class="p">]</span>
+	<span class="n">preprocessor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;preprocessor&#39;</span><span class="p">]</span>
+	<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">]</span>
+	<span class="n">postprocessor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;postprocessor&#39;</span><span class="p">]</span>
+	
+	<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">vocabulary</span><span class="p">,</span><span class="s1">&#39;items&#39;</span><span class="p">):</span>
+		<span class="n">vocab_dict</span> <span class="o">=</span> <span class="n">vocabulary</span>
+		<span class="n">vocab_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">vocab_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">vocab_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span><span class="n">t_id</span> <span class="k">for</span> <span class="n">t_id</span><span class="p">,</span><span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vocabulary</span><span class="p">)}</span>
+		<span class="n">vocab_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vocabulary</span><span class="p">)</span>
+	<span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+	
+	<span class="n">stop_words_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">stop_words</span> <span class="ow">or</span> <span class="p">[])</span>
+	<span class="n">ngram_words_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ngram_words</span> <span class="ow">or</span> <span class="p">[])</span>
+	<span class="n">re_tok</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">token_pattern</span><span class="p">,</span><span class="n">re</span><span class="o">.</span><span class="n">U</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">ix</span><span class="p">,</span><span class="n">text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+		<span class="c1"># prepare tokens</span>
+		<span class="k">if</span> <span class="n">encoding</span><span class="p">:</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="p">,</span><span class="n">decode_error</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">preprocessor</span><span class="p">:</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">lowercase</span><span class="p">:</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+		<span class="k">if</span> <span class="n">tokenizer</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">re_tok</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">postprocessor</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">postprocessor</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">stop_words</span><span class="p">:</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stop_words_set</span><span class="p">]</span>
+		
+		<span class="c1"># TODO filter tokens - keep only vocabulary -&gt; here or after ngrams ???</span>
+		
+		<span class="c1"># ngrams</span>
+		<span class="k">if</span> <span class="n">ngram_range</span><span class="p">:</span>
+			<span class="n">lo</span><span class="p">,</span><span class="n">hi</span> <span class="o">=</span> <span class="n">ngram_range</span>
+			<span class="n">ngrams</span> <span class="o">=</span> <span class="p">[]</span>
+			<span class="k">if</span> <span class="n">analyzer</span><span class="o">==</span><span class="s1">&#39;word&#39;</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span><span class="o">-</span><span class="n">lo</span><span class="p">):</span> <span class="c1"># TEST off-by-one</span>
+					<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span><span class="n">hi</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+						<span class="k">if</span> <span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="o">&gt;</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span> <span class="k">break</span> <span class="c1"># TEST off-by-one</span>
+						<span class="n">ngram</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="p">])</span>
+						<span class="k">if</span> <span class="ow">not</span> <span class="n">ngram_words_set</span><span class="o">&amp;</span><span class="nb">set</span><span class="p">(</span><span class="n">ngram</span><span class="p">):</span> <span class="k">continue</span>
+						<span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ngram</span><span class="p">)</span> <span class="c1"># TODO tuple vs string</span>
+			<span class="k">elif</span> <span class="n">analyzer</span><span class="o">==</span><span class="s1">&#39;char&#39;</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span><span class="n">hi</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+						<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">&lt;</span><span class="n">n</span><span class="p">:</span> <span class="k">pass</span>
+						<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">==</span><span class="n">n</span><span class="p">:</span>
+							<span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+						<span class="k">else</span><span class="p">:</span>
+							<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+								<span class="n">ngrams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">n</span><span class="p">])</span>
+			<span class="n">tokens</span> <span class="o">=</span> <span class="n">ngrams</span>
+		
+		<span class="c1"># output</span>
+		<span class="k">if</span> <span class="n">sparse</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">binary</span><span class="p">:</span>
+				<span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="n">vocab_dict</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">vocab_dict</span><span class="p">]</span>
+				<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+					<span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">tf</span> <span class="o">=</span> <span class="p">{}</span>
+				<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+					<span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocab_dict</span><span class="p">:</span> <span class="k">continue</span>
+					<span class="n">t_id</span> <span class="o">=</span> <span class="n">vocab_dict</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+					<span class="k">if</span> <span class="n">t_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tf</span><span class="p">:</span> <span class="n">tf</span><span class="p">[</span><span class="n">t_id</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">tf</span><span class="p">[</span><span class="n">t_id</span><span class="p">]</span><span class="o">+=</span><span class="mi">1</span>
+				<span class="k">if</span> <span class="n">upper_limit</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tf</span><span class="p">:</span>
+						<span class="n">tf</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span><span class="n">tf</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+				<span class="n">v</span> <span class="o">=</span> <span class="n">tf</span>
+				<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+					<span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">vocab_len</span>
+			<span class="k">if</span> <span class="n">binary</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+					<span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocab_dict</span><span class="p">:</span> <span class="k">continue</span>
+					<span class="n">t_id</span> <span class="o">=</span> <span class="n">vocab_dict</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+					<span class="n">v</span><span class="p">[</span><span class="n">t_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+					<span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocab_dict</span><span class="p">:</span> <span class="k">continue</span>
+					<span class="n">t_id</span> <span class="o">=</span> <span class="n">vocab_dict</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+					<span class="n">v</span><span class="p">[</span><span class="n">t_id</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+			<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+				<span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">upper_limit</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+					<span class="n">v</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">upper_limit</span><span class="p">)</span>
+				<span class="k">elif</span> <span class="n">dtype</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">t_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">vocab_len</span><span class="p">):</span>
+						<span class="n">v</span><span class="p">[</span><span class="n">t_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span><span class="n">v</span><span class="p">[</span><span class="n">t_id</span><span class="p">])</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+		<span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">out</span></div>
+
+<span class="c1"># TODO remove dead options</span>
+<div class="viewcode-block" id="vectorize"><a class="viewcode-back" href="../source/nlp.html#nlp.vectorize">[docs]</a><span class="k">def</span> <span class="nf">vectorize</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">vocabulary</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+	   <span class="n">token_pattern</span><span class="o">=</span><span class="s1">&#39;[\w][\w-]*&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="n">lowercase</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+	   <span class="n">analyzer</span><span class="o">=</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+	   <span class="n">decode_error</span><span class="o">=</span><span class="s1">&#39;strict&#39;</span><span class="p">,</span> <span class="n">stop_words</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mp_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+	   <span class="n">ngram_range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">postprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ngram_words</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+	   <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">upper_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+	   <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="n">cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+	
+	<span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="n">n</span> <span class="o">=</span> <span class="n">cnt</span><span class="o">/</span><span class="n">workers</span> <span class="c1"># TEST off-by-one</span>
+	<span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">workers</span><span class="p">):</span>
+		<span class="n">lo</span> <span class="o">=</span> <span class="n">pos</span>
+		<span class="n">hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span><span class="n">lo</span><span class="o">+</span><span class="n">n</span><span class="p">)</span>
+		<span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+				<span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span>
+				<span class="p">,</span><span class="n">token_pattern</span> <span class="o">=</span> <span class="n">token_pattern</span>
+				<span class="p">,</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span>
+				<span class="p">,</span><span class="n">lowercase</span> <span class="o">=</span> <span class="n">lowercase</span>
+				<span class="p">,</span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">analyzer</span>
+				<span class="p">,</span><span class="n">ngram_range</span> <span class="o">=</span> <span class="n">ngram_range</span>
+				<span class="p">,</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span>
+				<span class="p">,</span><span class="n">preprocessor</span> <span class="o">=</span> <span class="n">preprocessor</span>
+				<span class="p">,</span><span class="n">decode_error</span> <span class="o">=</span> <span class="n">decode_error</span>
+				<span class="p">,</span><span class="n">stop_words</span> <span class="o">=</span> <span class="n">stop_words</span>
+				<span class="p">,</span><span class="n">postprocessor</span> <span class="o">=</span> <span class="n">postprocessor</span>
+				<span class="p">,</span><span class="n">ngram_words</span> <span class="o">=</span> <span class="n">ngram_words</span>
+				
+				<span class="p">,</span><span class="n">vocabulary</span> <span class="o">=</span> <span class="n">vocabulary</span>
+				<span class="p">,</span><span class="n">binary</span> <span class="o">=</span> <span class="n">binary</span>
+				<span class="p">,</span><span class="n">sparse</span> <span class="o">=</span> <span class="n">sparse</span>
+				<span class="p">,</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+				<span class="p">,</span><span class="n">upper_limit</span> <span class="o">=</span> <span class="n">upper_limit</span>
+				
+			<span class="p">)</span>
+		<span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="n">pos</span> <span class="o">+=</span> <span class="n">n</span>
+	
+	<span class="n">pool</span> <span class="o">=</span> <span class="n">mp_pool</span> <span class="ow">or</span> <span class="n">Pool</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
+	<span class="n">v_partitions</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">vectorize_part</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">v_partitions</span> <span class="c1"># TODO join?</span></div>
+
+<span class="c1"># ---[ cooccurrence ]-----------------------------------------------------------</span>
+
+<span class="c1"># TODO Y</span>
+<div class="viewcode-block" id="get_co"><a class="viewcode-back" href="../source/nlp.html#nlp.get_co">[docs]</a><span class="k">def</span> <span class="nf">get_co</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">diagonal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">triangular</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+		<span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+		<span class="n">output_dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">output_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+	<span class="n">co</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+	<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">sparse</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">binary</span><span class="p">:</span>
+				<span class="k">for</span> <span class="n">t1</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">t2</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+						<span class="n">a</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">)</span>
+						<span class="n">b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">)</span>
+						<span class="k">if</span> <span class="n">a</span><span class="o">==</span><span class="n">b</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">diagonal</span><span class="p">:</span>
+							<span class="k">continue</span>
+						<span class="n">co</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+						<span class="k">if</span> <span class="n">a</span><span class="o">!=</span><span class="n">b</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">triangular</span><span class="p">:</span>
+							<span class="n">co</span><span class="p">[</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+					<span class="k">pass</span> <span class="c1"># TODO</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="k">for</span> <span class="n">t1</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+						<span class="k">for</span> <span class="n">t2</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+							<span class="n">a</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">)</span>
+							<span class="n">b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">)</span>
+							<span class="k">if</span> <span class="n">a</span><span class="o">==</span><span class="n">b</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">diagonal</span><span class="p">:</span>
+								<span class="k">continue</span>
+							<span class="n">f</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">a</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="n">b</span><span class="p">])</span>
+							<span class="n">co</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">f</span>
+							<span class="k">if</span> <span class="n">a</span><span class="o">!=</span><span class="n">b</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">triangular</span><span class="p">:</span>
+								<span class="n">co</span><span class="p">[</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">f</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">pass</span> <span class="c1"># TODO</span>
+	<span class="k">if</span> <span class="n">output_dtype</span> <span class="ow">and</span> <span class="n">output_len</span><span class="p">:</span>
+		<span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">output_len</span><span class="p">,</span><span class="n">output_len</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">output_dtype</span><span class="p">)</span>
+		<span class="c1"># for (t1,t2),f in co.items():</span>
+			<span class="c1"># out[t1,t2] = min(upper_limit,f) if upper_limit else f</span>
+		<span class="k">if</span> <span class="n">upper_limit</span><span class="p">:</span>
+			<span class="k">for</span> <span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">),</span><span class="n">f</span> <span class="ow">in</span> <span class="n">co</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+				<span class="n">out</span><span class="p">[</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">for</span> <span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">),</span><span class="n">f</span> <span class="ow">in</span> <span class="n">co</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+				<span class="n">out</span><span class="p">[</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span>
+		<span class="k">return</span> <span class="n">out</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="n">co</span></div>
+
+<div class="viewcode-block" id="get_coy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_coy">[docs]</a><span class="k">def</span> <span class="nf">get_coy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+	<span class="n">coy</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">X</span><span class="p">))</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">X</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">y</span><span class="p">,</span><span class="n">g</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+		<span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">g</span><span class="p">]</span>
+		<span class="n">coy</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_co</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">coy</span></div>
+
+<span class="c1"># TODO np.array input</span>
+<div class="viewcode-block" id="get_co_from_coy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_co_from_coy">[docs]</a><span class="k">def</span> <span class="nf">get_co_from_coy</span><span class="p">(</span><span class="n">coy</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
+		<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+		<span class="n">co</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">coy</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">coy</span><span class="p">:</span>
+			<span class="n">co</span> <span class="o">+=</span> <span class="n">coy</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">co</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+		<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">coy</span><span class="p">:</span>
+			<span class="n">co</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">coy</span><span class="p">[</span><span class="n">y</span><span class="p">])</span>
+	<span class="k">return</span> <span class="n">co</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Maciej Obarski
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
