@@ -145,10 +145,12 @@
             
   <div class="section" id="module-nlp">
 <span id="nlp-module"></span><h1>nlp module<a class="headerlink" href="#module-nlp" title="Permalink to this headline">¶</a></h1>
+<p>Functions for converting text documents into vector space.</p>
 <dl class="function">
 <dt id="nlp.get_chi">
 <code class="descclassname">nlp.</code><code class="descname">get_chi</code><span class="sig-paren">(</span><em>df</em>, <em>n</em>, <em>dfy</em>, <em>ny</em>, <em>alpha=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_chi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_chi" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Calculate chi scores for features from one topic</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.get_chi_explain">
@@ -158,33 +160,55 @@
 <dl class="function">
 <dt id="nlp.get_co">
 <code class="descclassname">nlp.</code><code class="descname">get_co</code><span class="sig-paren">(</span><em>X</em>, <em>diagonal=True</em>, <em>triangular=False</em>, <em>sparse=True</em>, <em>binary=False</em>, <em>dtype=None</em>, <em>output_dtype=None</em>, <em>upper_limit=0</em>, <em>output_len=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_co"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_co" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Calculate cooccurence count from a collection of token counts.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.get_co_from_coy">
 <code class="descclassname">nlp.</code><code class="descname">get_co_from_coy</code><span class="sig-paren">(</span><em>coy</em>, <em>dtype=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_co_from_coy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_co_from_coy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Convert per topic cooccurence count into total cooccurence count.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.get_coy">
 <code class="descclassname">nlp.</code><code class="descname">get_coy</code><span class="sig-paren">(</span><em>X</em>, <em>Y</em>, <em>sort=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_coy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_coy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Calculate per topic cooccurence count from a collection of token counts.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.get_df">
 <code class="descclassname">nlp.</code><code class="descname">get_df</code><span class="sig-paren">(</span><em>X</em>, <em>workers=4</em>, <em>token_pattern='[\\w][\\w-]*'</em>, <em>encoding='utf8'</em>, <em>lowercase=True</em>, <em>min_df=0</em>, <em>min_df_part=0</em>, <em>max_df=1.0</em>, <em>max_df_part=1.0</em>, <em>analyzer='word'</em>, <em>tokenizer=None</em>, <em>preprocessor=None</em>, <em>decode_error='strict'</em>, <em>stop_words=None</em>, <em>mp_pool=None</em>, <em>min_tf_doc=0</em>, <em>ngram_range=None</em>, <em>postprocessor=None</em>, <em>ngram_words=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_df" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a collection of text documents to a collection of token counts</p>
+<dd><p>Calculate document frequency from a collection of text documents.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>X</strong> (<em>iterable</em>) – </li>
+<li><strong>X</strong> (<em>iterable</em>) – Collection of text documents.</li>
 <li><strong>workers</strong> (<em>int</em><em>, </em><em>default=4</em>) – </li>
 <li><strong>token_pattern</strong> (<em>string</em><em>, </em><em>default='</em><em>[</em><em>w</em><em>]</em><em>[</em><em>w-</em><em>]</em><em>*'</em>) – Regular expression denoting what constitute a “token”</li>
 <li><strong>ngram_range</strong> (<em>tuple</em><em> (</em><em>lo</em><em>, </em><em>hi</em><em>)</em>) – The lower and upper “n” for n-grams to be extracted</li>
+<li><strong>ngram_words</strong> (<em>iterable</em><em> or </em><em>None</em><em> (</em><em>default</em><em>)</em>) – Limit n-gram generation to cases where at least one word occurs
+in the provided list.</li>
 <li><strong>encoding</strong> (<em>string</em><em> or </em><em>None</em><em>, </em><em>default='utf8'</em>) – </li>
 <li><strong>lowercase</strong> (<em>boolean</em><em>, </em><em>default=True</em>) – </li>
+<li><strong>analyzer</strong> (<em>str {'word'</em><em>,</em><em>'char'}</em>) – Whether the features should be made of word or character n-grams.
+Option ‘char’ creates character n-grams only from text inside
+word boundaries.</li>
+<li><strong>tokenizer</strong> (<em>callable</em><em> or </em><em>None</em><em> (</em><em>default</em><em>)</em>) – Function which transforms text into list of tokens (before
+postprocessing and n-gram generation).</li>
+<li><strong>preprocessor</strong> (<em>callable</em><em> or </em><em>None</em><em> (</em><em>default</em><em>)</em>) – Function which transforms text before tokenization.</li>
+<li><strong>postprocessor</strong> (<em>callable</em><em> or </em><em>None</em><em> (</em><em>default</em><em>)</em>) – Function which transforms list of tokens (before n-gram
+generation)</li>
+<li><strong>min_df</strong> (<em>int</em><em>, </em><em>default=0</em>) – </li>
+<li><strong>min_df_part</strong> (<em>int</em><em>, </em><em>default=0</em>) – </li>
+<li><strong>min_tf_doc</strong> (<em>int</em><em>, </em><em>default=0</em>) – </li>
+<li><strong>max_df</strong> (<em>float</em><em>, </em><em>default=1.0</em>) – </li>
+<li><strong>max_df_part</strong> (<em>float</em><em>, </em><em>default=1.0</em>) – </li>
+<li><strong>decode_error</strong> (<em>str</em><em>, </em><em>default='strict'</em>) – </li>
+<li><strong>stop_words</strong> (<em>iterable</em><em> or </em><em>None</em><em> (</em><em>default</em><em>)</em>) – </li>
+<li><strong>mp_pool</strong> (<em>multiprocessing.Pool</em><em> or </em><em>None</em><em> (</em><em>default</em><em>)</em>) – Multiprocessing pool object that will be used to parallelize
+execution. If none is provided a new one will be created.</li>
 </ul>
 </td>
 </tr>
@@ -195,7 +219,8 @@
 <dl class="function">
 <dt id="nlp.get_df_from_dfy">
 <code class="descclassname">nlp.</code><code class="descname">get_df_from_dfy</code><span class="sig-paren">(</span><em>dfy</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_df_from_dfy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_df_from_dfy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Convert per topic document frequency into total document frequency.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.get_df_part">
@@ -205,17 +230,20 @@
 <dl class="function">
 <dt id="nlp.get_dfy">
 <code class="descclassname">nlp.</code><code class="descname">get_dfy</code><span class="sig-paren">(</span><em>X</em>, <em>Y</em>, <em>workers=4</em>, <em>sort=True</em>, <em>mp_pool=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_dfy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_dfy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Calcualte per topic document frequency.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.get_idf">
 <code class="descclassname">nlp.</code><code class="descname">get_idf</code><span class="sig-paren">(</span><em>df</em>, <em>n</em>, <em>a1=1</em>, <em>a2=1</em>, <em>a3=1</em>, <em>min_df=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#get_idf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.get_idf" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Calculate inverse document frequency.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.vectorize">
 <code class="descclassname">nlp.</code><code class="descname">vectorize</code><span class="sig-paren">(</span><em>X</em>, <em>vocabulary</em>, <em>workers=4</em>, <em>token_pattern='[\\w][\\w-]*'</em>, <em>encoding='utf8'</em>, <em>lowercase=True</em>, <em>analyzer='word'</em>, <em>tokenizer=None</em>, <em>preprocessor=None</em>, <em>decode_error='strict'</em>, <em>stop_words=None</em>, <em>mp_pool=None</em>, <em>ngram_range=None</em>, <em>postprocessor=None</em>, <em>ngram_words=None</em>, <em>binary=False</em>, <em>sparse=True</em>, <em>upper_limit=0</em>, <em>dtype=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nlp.html#vectorize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nlp.vectorize" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Convert a collection of text documents into a collection of token counts</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="nlp.vectorize_part">

@@ -1,8 +1,13 @@
+"""
+Functions for converting text documents into vector space.
+"""
+
 from multiprocessing import Pool
 from collections import Counter
 from itertools import groupby,chain
 from math import log,ceil
 import re
+
 
 # TODO sklearn model.fit/transform interface
 # TODO liczenie lift dla co
@@ -102,12 +107,13 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None):
-	"""Convert a collection of text documents to a collection of token counts
+	"""Calculate document frequency from a collection of text documents.
 	
 	Parameters
 	----------
 	
 	X : iterable
+		Collection of text documents.
 	
 	workers : int, default=4
 	
@@ -117,10 +123,47 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 	ngram_range : tuple (lo, hi)
 		The lower and upper "n" for n-grams to be extracted
 	
+	ngram_words: iterable or None (default)
+		Limit n-gram generation to cases where at least one word occurs
+		in the provided list.
+	
 	encoding: string or None, default='utf8'
 	
 	lowercase: boolean, default=True
 
+	analyzer: str {'word','char'}
+		Whether the features should be made of word or character n-grams.
+		Option 'char' creates character n-grams only from text inside
+		word boundaries.
+	
+	tokenizer: callable or None (default)
+		Function which transforms text into list of tokens (before
+		postprocessing and n-gram generation).
+	
+	preprocessor: callable or None (default)
+		Function which transforms text before tokenization.
+
+	postprocessor: callable or None (default)
+		Function which transforms list of tokens (before n-gram
+		generation)
+
+	min_df: int, default=0
+	
+	min_df_part: int, default=0
+	
+	min_tf_doc: int, default=0
+	
+	max_df: float, default=1.0
+	
+	max_df_part: float, default=1.0
+	
+	decode_error: str, default='strict'
+	
+	stop_words: iterable or None (default)
+	
+	mp_pool: multiprocessing.Pool or None (default)
+		Multiprocessing pool object that will be used to parallelize
+		execution. If none is provided a new one will be created.
 	"""
 	cnt = len(X)
 	
@@ -169,6 +212,8 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 
 ### 24s get_dfy vs 11s get_df vs 25s get_dfy2(specialized)
 def get_dfy(X,Y,workers=4,sort=True,mp_pool=None,**kwargs):
+	"""Calcualte per topic document frequency.
+	"""
 	dfy = {}
 	if sort:
 		data = sorted(zip(Y,X))
@@ -181,6 +226,8 @@ def get_dfy(X,Y,workers=4,sort=True,mp_pool=None,**kwargs):
 	return dfy
 
 def get_df_from_dfy(dfy):
+	"""Convert per topic document frequency into total document frequency.
+	"""
 	df = Counter()
 	for y in dfy:
 		df.update(dfy[y])
@@ -189,6 +236,8 @@ def get_df_from_dfy(dfy):
 # ---[ feature selection ]------------------------------------------------------
 
 def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
+	"""Calculate inverse document frequency.
+	"""
 	idf = Counter()
 	for t in df:
 		if min_df and df[t]<min_df: continue
@@ -196,6 +245,8 @@ def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
 	return idf
 	
 def get_chi(df,n,dfy,ny,alpha=0):
+	"""Calculate chi scores for features from one topic
+	"""
 	chi = Counter()
 	all = df
 	topic = dfy
@@ -391,6 +442,8 @@ def vectorize(X, vocabulary, workers=4,
 	   ngram_range=None, postprocessor=None, ngram_words=None,
 	   binary=False, sparse=True, upper_limit=0,
 	   dtype=None):
+	"""Convert a collection of text documents into a collection of token counts
+	"""
 	cnt = len(X)
 	
 	data = []
@@ -433,6 +486,8 @@ def vectorize(X, vocabulary, workers=4,
 def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
 		dtype=None,
 		output_dtype=None, upper_limit=0, output_len=None):
+	"""Calculate cooccurence count from a collection of token counts.
+	"""
 	import numpy as np
 	co = Counter()
 	for x in X:
@@ -478,6 +533,8 @@ def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
 		return co
 
 def get_coy(X,Y,sort=True,**kwargs):
+	"""Calculate per topic cooccurence count from a collection of token counts.
+	"""
 	coy = {}
 	if sort:
 		data = sorted(zip(Y,X))
@@ -490,6 +547,8 @@ def get_coy(X,Y,sort=True,**kwargs):
 
 # TODO np.array input
 def get_co_from_coy(coy,dtype=None):
+	"""Convert per topic cooccurence count into total cooccurence count.
+	"""
 	if dtype:
 		import numpy as np
 		co = np.zeros_like(list(coy.values())[0],dtype=dtype)

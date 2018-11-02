@@ -1,8 +1,13 @@
+"""TSV files operations
+"""
+
 from itertools import islice
 import re
 
 def tsv_iter_iter(lines, sep='\t', encoding='utf8',
 		line_offset=None, line_limit=None):
+	"""Return record iterator for given line iterator.
+	"""
 	it = iter(lines)
 	if line_offset:
 		next(islice(it,line_offset,line_offset),None)
@@ -18,6 +23,8 @@ def tsv_iter_iter(lines, sep='\t', encoding='utf8',
 def tsv_iter(path, sep='\t', encoding='utf8',
 		file_offset=None, line_offset=None,
 		file_limit=None, line_limit=None):
+	"""Return record iterator for given file.
+	"""
 	with open(path,'rb') as f:
 		if file_offset:
 			f.seek(file_offset)
@@ -31,6 +38,8 @@ def tsv_iter(path, sep='\t', encoding='utf8',
 				yield rec
 
 def tsv_header(path, sep='\t', encoding='utf8'):
+	"""Return column names for given file.
+	"""
 	with open(path,'rb') as f:
 		line = next(f)
 		line = line.rstrip('\r\n')
@@ -38,27 +47,3 @@ def tsv_header(path, sep='\t', encoding='utf8'):
 			line = line.decode(encoding)
 		rec = line.split(sep)
 	return rec
-
-# ultra light data frames
-
-def frame_from_iter(iterable, names):
-	frame = {name:[] for name in names}
-	for rec in iterable:
-		for i,name in enumerate(names):
-			frame[name].append(rec[i])
-	return frame
-
-def filter_frame(frame, predicates, select=None):
-	f = {}
-	columns = select or frame.keys()
-	for col in columns:
-		f[col] = [v for p,v in zip(predicates,frame[col]) if p]
-	return f
-
-def where(frame,cols,fun):
-	predicates = []
-	frame_cols = [frame[col] for col in cols]
-	for args in zip(*frame_cols):
-		predicates.append(1 if fun(*args)  else 0)
-	return predicates
-

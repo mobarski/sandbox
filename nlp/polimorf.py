@@ -1,5 +1,9 @@
+"""Creation of dictionaries (word to lemma, word to POS).
+"""
 
 def get_lem_dict(path):
+	"""Create mapping from word to lemma
+	"""
 	SKIP = 32
 	lem_by_word = {}
 
@@ -23,6 +27,8 @@ def get_lem_dict(path):
 	return out
 
 def get_stats(path):
+	"""
+	"""
 	SKIP = 32
 	i1_set = set()
 	i2_set = set()

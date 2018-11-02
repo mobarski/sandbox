@@ -139,11 +139,16 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nlp</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pool</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions for converting text documents into vector space.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pool</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">groupby</span><span class="p">,</span><span class="n">chain</span>
 <span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">log</span><span class="p">,</span><span class="n">ceil</span>
 <span class="kn">import</span> <span class="nn">re</span>
+
 
 <span class="c1"># TODO sklearn model.fit/transform interface</span>
 <span class="c1"># TODO liczenie lift dla co</span>
@@ -243,12 +248,13 @@
 	   <span class="n">analyzer</span><span class="o">=</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 	   <span class="n">decode_error</span><span class="o">=</span><span class="s1">&#39;strict&#39;</span><span class="p">,</span> <span class="n">stop_words</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mp_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 	   <span class="n">min_tf_doc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ngram_range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">postprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ngram_words</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Convert a collection of text documents to a collection of token counts</span>
+	<span class="sd">&quot;&quot;&quot;Calculate document frequency from a collection of text documents.</span>
 <span class="sd">	</span>
 <span class="sd">	Parameters</span>
 <span class="sd">	----------</span>
 <span class="sd">	</span>
 <span class="sd">	X : iterable</span>
+<span class="sd">		Collection of text documents.</span>
 <span class="sd">	</span>
 <span class="sd">	workers : int, default=4</span>
 <span class="sd">	</span>
@@ -258,10 +264,47 @@
 <span class="sd">	ngram_range : tuple (lo, hi)</span>
 <span class="sd">		The lower and upper &quot;n&quot; for n-grams to be extracted</span>
 <span class="sd">	</span>
+<span class="sd">	ngram_words: iterable or None (default)</span>
+<span class="sd">		Limit n-gram generation to cases where at least one word occurs</span>
+<span class="sd">		in the provided list.</span>
+<span class="sd">	</span>
 <span class="sd">	encoding: string or None, default=&#39;utf8&#39;</span>
 <span class="sd">	</span>
 <span class="sd">	lowercase: boolean, default=True</span>
 
+<span class="sd">	analyzer: str {&#39;word&#39;,&#39;char&#39;}</span>
+<span class="sd">		Whether the features should be made of word or character n-grams.</span>
+<span class="sd">		Option &#39;char&#39; creates character n-grams only from text inside</span>
+<span class="sd">		word boundaries.</span>
+<span class="sd">	</span>
+<span class="sd">	tokenizer: callable or None (default)</span>
+<span class="sd">		Function which transforms text into list of tokens (before</span>
+<span class="sd">		postprocessing and n-gram generation).</span>
+<span class="sd">	</span>
+<span class="sd">	preprocessor: callable or None (default)</span>
+<span class="sd">		Function which transforms text before tokenization.</span>
+
+<span class="sd">	postprocessor: callable or None (default)</span>
+<span class="sd">		Function which transforms list of tokens (before n-gram</span>
+<span class="sd">		generation)</span>
+
+<span class="sd">	min_df: int, default=0</span>
+<span class="sd">	</span>
+<span class="sd">	min_df_part: int, default=0</span>
+<span class="sd">	</span>
+<span class="sd">	min_tf_doc: int, default=0</span>
+<span class="sd">	</span>
+<span class="sd">	max_df: float, default=1.0</span>
+<span class="sd">	</span>
+<span class="sd">	max_df_part: float, default=1.0</span>
+<span class="sd">	</span>
+<span class="sd">	decode_error: str, default=&#39;strict&#39;</span>
+<span class="sd">	</span>
+<span class="sd">	stop_words: iterable or None (default)</span>
+<span class="sd">	</span>
+<span class="sd">	mp_pool: multiprocessing.Pool or None (default)</span>
+<span class="sd">		Multiprocessing pool object that will be used to parallelize</span>
+<span class="sd">		execution. If none is provided a new one will be created.</span>
 <span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 	
@@ -310,6 +353,8 @@
 
 <span class="c1">### 24s get_dfy vs 11s get_df vs 25s get_dfy2(specialized)</span>
 <div class="viewcode-block" id="get_dfy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_dfy">[docs]</a><span class="k">def</span> <span class="nf">get_dfy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">mp_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Calcualte per topic document frequency.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">dfy</span> <span class="o">=</span> <span class="p">{}</span>
 	<span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
 		<span class="n">data</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">X</span><span class="p">))</span>
@@ -322,6 +367,8 @@
 	<span class="k">return</span> <span class="n">dfy</span></div>
 
 <div class="viewcode-block" id="get_df_from_dfy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_df_from_dfy">[docs]</a><span class="k">def</span> <span class="nf">get_df_from_dfy</span><span class="p">(</span><span class="n">dfy</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Convert per topic document frequency into total document frequency.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">df</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
 	<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">dfy</span><span class="p">:</span>
 		<span class="n">df</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dfy</span><span class="p">[</span><span class="n">y</span><span class="p">])</span>
@@ -330,6 +377,8 @@
 <span class="c1"># ---[ feature selection ]------------------------------------------------------</span>
 
 <div class="viewcode-block" id="get_idf"><a class="viewcode-back" href="../source/nlp.html#nlp.get_idf">[docs]</a><span class="k">def</span> <span class="nf">get_idf</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">a1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">a2</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">a3</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Calculate inverse document frequency.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">idf</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
 	<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
 		<span class="k">if</span> <span class="n">min_df</span> <span class="ow">and</span> <span class="n">df</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">&lt;</span><span class="n">min_df</span><span class="p">:</span> <span class="k">continue</span>
@@ -337,6 +386,8 @@
 	<span class="k">return</span> <span class="n">idf</span></div>
 	
 <div class="viewcode-block" id="get_chi"><a class="viewcode-back" href="../source/nlp.html#nlp.get_chi">[docs]</a><span class="k">def</span> <span class="nf">get_chi</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">dfy</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Calculate chi scores for features from one topic</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">chi</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
 	<span class="nb">all</span> <span class="o">=</span> <span class="n">df</span>
 	<span class="n">topic</span> <span class="o">=</span> <span class="n">dfy</span>
@@ -532,6 +583,8 @@
 	   <span class="n">ngram_range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">postprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ngram_words</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 	   <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">upper_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
 	   <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Convert a collection of text documents into a collection of token counts</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 	
 	<span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
@@ -574,6 +627,8 @@
 <div class="viewcode-block" id="get_co"><a class="viewcode-back" href="../source/nlp.html#nlp.get_co">[docs]</a><span class="k">def</span> <span class="nf">get_co</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">diagonal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">triangular</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 		<span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 		<span class="n">output_dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">output_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Calculate cooccurence count from a collection of token counts.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 	<span class="n">co</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
 	<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
@@ -619,6 +674,8 @@
 		<span class="k">return</span> <span class="n">co</span></div>
 
 <div class="viewcode-block" id="get_coy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_coy">[docs]</a><span class="k">def</span> <span class="nf">get_coy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Calculate per topic cooccurence count from a collection of token counts.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">coy</span> <span class="o">=</span> <span class="p">{}</span>
 	<span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
 		<span class="n">data</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">X</span><span class="p">))</span>
@@ -631,6 +688,8 @@
 
 <span class="c1"># TODO np.array input</span>
 <div class="viewcode-block" id="get_co_from_coy"><a class="viewcode-back" href="../source/nlp.html#nlp.get_co_from_coy">[docs]</a><span class="k">def</span> <span class="nf">get_co_from_coy</span><span class="p">(</span><span class="n">coy</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Convert per topic cooccurence count into total cooccurence count.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="k">if</span> <span class="n">dtype</span><span class="p">:</span>
 		<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 		<span class="n">co</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">coy</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>

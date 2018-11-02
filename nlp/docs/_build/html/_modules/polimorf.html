@@ -139,8 +139,12 @@
            <div itemprop="articleBody">
             
   <h1>Source code for polimorf</h1><div class="highlight"><pre>
-<span></span>
+<span></span><span class="sd">&quot;&quot;&quot;Creation of dictionaries (word to lemma, word to POS).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="get_lem_dict"><a class="viewcode-back" href="../source/polimorf.html#polimorf.get_lem_dict">[docs]</a><span class="k">def</span> <span class="nf">get_lem_dict</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Create mapping from word to lemma</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">SKIP</span> <span class="o">=</span> <span class="mi">32</span>
 	<span class="n">lem_by_word</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -164,6 +168,8 @@
 	<span class="k">return</span> <span class="n">out</span></div>
 
 <div class="viewcode-block" id="get_stats"><a class="viewcode-back" href="../source/polimorf.html#polimorf.get_stats">[docs]</a><span class="k">def</span> <span class="nf">get_stats</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="n">SKIP</span> <span class="o">=</span> <span class="mi">32</span>
 	<span class="n">i1_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 	<span class="n">i2_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>

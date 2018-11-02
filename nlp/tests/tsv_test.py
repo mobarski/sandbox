@@ -1,5 +1,6 @@
 import sys; sys.path.append('..')
 from tsv import *
+from frame import *
 
 if __name__=="__main__":
 	from time import time

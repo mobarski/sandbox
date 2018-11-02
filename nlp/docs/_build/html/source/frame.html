@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>polimorf module &mdash; NLP  documentation</title>
+  <title>frame module &mdash; NLP  documentation</title>
   
 
   
@@ -78,7 +78,7 @@
             
               <!-- Local TOC -->
               <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">polimorf module</a></li>
+<li><a class="reference internal" href="#">frame module</a></li>
 </ul>
 </div>
             
@@ -124,13 +124,13 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>polimorf module</li>
+      <li>frame module</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/source/polimorf.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/source/frame.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -143,19 +143,26 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-polimorf">
-<span id="polimorf-module"></span><h1>polimorf module<a class="headerlink" href="#module-polimorf" title="Permalink to this headline">¶</a></h1>
-<p>Creation of dictionaries (word to lemma, word to POS).</p>
+  <div class="section" id="module-frame">
+<span id="frame-module"></span><h1>frame module<a class="headerlink" href="#module-frame" title="Permalink to this headline">¶</a></h1>
+<p>Ultra light data frames.</p>
 <dl class="function">
-<dt id="polimorf.get_lem_dict">
-<code class="descclassname">polimorf.</code><code class="descname">get_lem_dict</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/polimorf.html#get_lem_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polimorf.get_lem_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create mapping from word to lemma</p>
+<dt id="frame.filter_frame">
+<code class="descclassname">frame.</code><code class="descname">filter_frame</code><span class="sig-paren">(</span><em>frame</em>, <em>predicates</em>, <em>select=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frame.html#filter_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frame.filter_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter frame using given predicates.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="polimorf.get_stats">
-<code class="descclassname">polimorf.</code><code class="descname">get_stats</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/polimorf.html#get_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polimorf.get_stats" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="frame.frame_from_iter">
+<code class="descclassname">frame.</code><code class="descname">frame_from_iter</code><span class="sig-paren">(</span><em>iterable</em>, <em>names</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frame.html#frame_from_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frame.frame_from_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create data frame from records.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="frame.where">
+<code class="descclassname">frame.</code><code class="descname">where</code><span class="sig-paren">(</span><em>frame</em>, <em>cols</em>, <em>fun</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/frame.html#where"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frame.where" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate predicates</p>
+</dd></dl>
 
 </div>
 
