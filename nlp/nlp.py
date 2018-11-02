@@ -8,6 +8,7 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
+# TODO optional replacing Counter with dict (marshaling + performance?)
 
 # TODO sklearn model.fit/transform interface
 # TODO liczenie lift dla co
@@ -15,7 +16,6 @@ import re
 
 # ---[ document frequency ]-----------------------------------------------------
 
-# TODO test replacing Coutner with dict (marshaling + performance?)
 def get_df_part(kwargs):
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -102,7 +102,7 @@ def get_df_part(kwargs):
 # TODO max_df_part float
 # TODO min_df float
 # TODO reorder ARGS
-def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8', 
+def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding=None, 
 	   lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
@@ -127,7 +127,7 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding='utf8',
 		Limit n-gram generation to cases where at least one word occurs
 		in the provided list.
 	
-	encoding: string or None, default='utf8'
+	encoding: string or None (default)
 	
 	lowercase: boolean, default=True
 
@@ -436,7 +436,7 @@ def vectorize_part(kwargs):
 
 # TODO remove dead options
 def vectorize(X, vocabulary, workers=4,
-	   token_pattern='[\w][\w-]*', encoding='utf8', lowercase=True,
+	   token_pattern='[\w][\w-]*', encoding=None, lowercase=True,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   ngram_range=None, postprocessor=None, ngram_words=None,
