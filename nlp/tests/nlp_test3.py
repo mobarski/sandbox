@@ -7,7 +7,7 @@ from tsv import *
 from cache import *
 
 if __name__=="__main__":
-	cache = disk_cache('../cache')
+	cache = disk_cache('../cache','v2')
 	
 	# frame
 	t0=time()
@@ -17,15 +17,14 @@ if __name__=="__main__":
 
 	# dfy
 	t0=time()
-	#dfy = cache.use('dfy', get_dfy, frame['text'],frame['col'], min_df=10, encoding=None)
-	dfy = get_dfy(frame['text'],frame['col'], min_df=10, encoding=None)
+	dfy = cache.use('dfy2', get_dfy, frame['text'], frame['col'], min_df=10)
 	print('dfy {:.2f} s'.format(time()-t0))
 	
 	# df
 	t0=time()
 	df = get_df_from_dfy(dfy)
 	print('df {:.2f} s'.format(time()-t0))
-
+	
 	# chi
 	t0=time()
 	topic = 'automaniak'

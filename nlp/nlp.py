@@ -8,8 +8,6 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
-# TODO optional replacing Counter with dict (marshaling + performance?)
-
 # TODO sklearn model.fit/transform interface
 # TODO liczenie lift dla co
 # TODO wybieranie ngramow na podstawie liftu
@@ -93,7 +91,6 @@ def get_df_part(kwargs):
 			del df[t]
 	return df
 
-# TODO rename max_df_part->max_df_part min_tf_doc->min_tf_doc
 # TODO rename chi variables
 # TODO option to include whole words shorter than char ngram_range 'lo' value
 # TODO option to mark word begin/end in char ngrams
@@ -102,7 +99,7 @@ def get_df_part(kwargs):
 # TODO max_df_part float
 # TODO min_df float
 # TODO reorder ARGS
-def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding=None, 
+def get_df(X, workers=4, as_dict=True, token_pattern='[\w][\w-]*', encoding=None, 
 	   lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
@@ -208,6 +205,8 @@ def get_df(X, workers=4, token_pattern='[\w][\w-]*', encoding=None,
 		above = [t for t in df if df[t]>max_df_cnt]
 		for t in above:
 			del df[t]
+	if as_dict:
+		df = dict(df)
 	return df
 
 ### 24s get_dfy vs 11s get_df vs 25s get_dfy2(specialized)
@@ -225,12 +224,14 @@ def get_dfy(X,Y,workers=4,sort=True,mp_pool=None,**kwargs):
 		dfy[y] = get_df(x,mp_pool=pool,**kwargs)
 	return dfy
 
-def get_df_from_dfy(dfy):
+def get_df_from_dfy(dfy,as_dict=True):
 	"""Convert per topic document frequency into total document frequency.
 	"""
 	df = Counter()
 	for y in dfy:
 		df.update(dfy[y])
+	if as_dict:
+		df = dict(df)
 	return df
 
 # ---[ feature selection ]------------------------------------------------------
@@ -252,9 +253,9 @@ def get_chi(df,n,dfy,ny,alpha=0):
 	topic = dfy
 	for t in df:
 		# observed
-		o_c1_t1 = topic[t]
-		o_c1_t0 = ny - topic[t]
-		o_c0_t1 = all[t] - topic[t]
+		o_c1_t1 = topic.get(t,0)
+		o_c1_t0 = ny - topic.get(t,0)
+		o_c0_t1 = all[t] - topic.get(t,0)
 		o_c0_t0 = n - o_c1_t1 - o_c1_t0 - o_c0_t1
 		# expected
 		e_c1_t1 = 1.0 * ny * all[t]/n
@@ -276,9 +277,9 @@ def get_chi_explain(df,n,dfy,ny,alpha=0):
 	topic = dfy
 	for t in df:
 		# observed
-		o_c1_t1 = topic[t]
-		o_c1_t0 = ny - topic[t]
-		o_c0_t1 = all[t] - topic[t]
+		o_c1_t1 = topic.get(t,0)
+		o_c1_t0 = ny - topic.get(t,0)
+		o_c0_t1 = all[t] - topic.get(t,0)
 		o_c0_t0 = n - o_c1_t1 - o_c1_t0 - o_c0_t1
 		# expected
 		e_c1_t1 = 1.0 * ny * all[t]/n
