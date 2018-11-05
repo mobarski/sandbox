@@ -7,7 +7,7 @@ from tsv import *
 from cache import *
 
 if __name__=="__main__":
-	cache = disk_cache('../cache','v2')
+	cache = disk_cache('../cache','v2',show_time=True)
 	
 	# frame
 	t0=time()
@@ -16,21 +16,15 @@ if __name__=="__main__":
 	print('frame {:.2f} s'.format(time()-t0))
 
 	# dfy
-	t0=time()
 	dfy = cache.use('dfy2', get_dfy, frame['text'], frame['col'], min_df=10)
-	print('dfy {:.2f} s'.format(time()-t0))
 	
 	# df
-	t0=time()
-	df = get_df_from_dfy(dfy)
-	print('df {:.2f} s'.format(time()-t0))
+	df = cache.use('df', get_df_from_dfy, dfy)
 	
 	# chi
-	t0=time()
 	topic = 'automaniak'
-	chi = get_chi(df, len(frame['text']), dfy[topic], Counter(frame['col'])[topic])
-	print('chi {:.2f} s'.format(time()-t0))
-	
-	for t,v in chi.most_common(100):
+	chi = cache.use('chi_'+topic, get_chi, df, len(frame['text']), dfy[topic], Counter(frame['col'])[topic], as_dict=True)
+
+	for t,v in Counter(chi).most_common(100):
 		print(topic,t,v)
-	
+

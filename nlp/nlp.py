@@ -1,5 +1,6 @@
 """
-Functions for converting text documents into vector space.
+Functions for converting text documents into vector space
+and dealing with dirty data.
 """
 
 from multiprocessing import Pool
@@ -8,6 +9,7 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
+# TODO smart lowercase (prosty NER w oparciu o DF[t] vs DF[t.lower])
 # TODO sklearn model.fit/transform interface
 # TODO liczenie lift dla co
 # TODO wybieranie ngramow na podstawie liftu
@@ -17,6 +19,7 @@ import re
 def get_df_part(kwargs):
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
+	split_pattern = kwargs['split_pattern']
 	stop_words = kwargs['stop_words']
 	lowercase = kwargs['lowercase']
 	encoding = kwargs['encoding']
@@ -33,7 +36,10 @@ def get_df_part(kwargs):
 	
 	stop_words_set = set(stop_words or [])
 	ngram_words_set = set(ngram_words or [])
-	re_tok = re.compile(token_pattern,re.U)
+	if token_pattern:
+		re_tok = re.compile(token_pattern,re.U)
+	if split_pattern:
+		re_split = re.compile(split_pattern,re.U)
 	df = Counter()
 	for text in X:
 		# prepare tokens
@@ -45,7 +51,9 @@ def get_df_part(kwargs):
 			text = text.lower()
 		if tokenizer:
 			tokens = tokenizer(text)
-		else:
+		elif split_pattern:
+			tokens = re_split.split(text)
+		elif token_pattern:
 			tokens = re_tok.findall(text)
 		if postprocessor:
 			tokens = postprocessor(tokens)
@@ -99,11 +107,12 @@ def get_df_part(kwargs):
 # TODO max_df_part float
 # TODO min_df float
 # TODO reorder ARGS
-def get_df(X, workers=4, as_dict=True, token_pattern='[\w][\w-]*', encoding=None, 
-	   lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
-	   analyzer='word', tokenizer=None, preprocessor=None,
-	   decode_error='strict', stop_words=None, mp_pool=None,
-	   min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None):
+def get_df(X, workers=4, as_dict=True,
+		token_pattern='[\w][\w-]*', split_pattern='', encoding=None, 
+		lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
+		analyzer='word', tokenizer=None, preprocessor=None,
+		decode_error='strict', stop_words=None, mp_pool=None,
+		min_tf_doc=0, ngram_range=None, postprocessor=None, ngram_words=None):
 	"""Calculate document frequency from a collection of text documents.
 	
 	Parameters
@@ -115,7 +124,12 @@ def get_df(X, workers=4, as_dict=True, token_pattern='[\w][\w-]*', encoding=None
 	workers : int, default=4
 	
 	token_pattern : string, default='[\w][\w-]*'
-		Regular expression denoting what constitute a "token"
+		Regular expression denoting what constitute a "token".
+		Will not be used when tokenizer or split_pattern is defined.
+
+	split_pattern : string, default=''
+		Regular expression denoting what separetes "tokens".
+		Will not be used when tokenizer is defined.
 	
 	ngram_range : tuple (lo, hi)
 		The lower and upper "n" for n-grams to be extracted
@@ -173,6 +187,7 @@ def get_df(X, workers=4, as_dict=True, token_pattern='[\w][\w-]*', encoding=None
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
+				,split_pattern = split_pattern
 				,encoding = encoding
 				,lowercase = lowercase
 				,min_df_part = min_df_part
@@ -234,6 +249,102 @@ def get_df_from_dfy(dfy,as_dict=True):
 		df = dict(df)
 	return df
 
+# ---[ clean ]------------------------------------------------------------------
+
+# TODO refactor with get_df_part
+
+def get_clean_x_part(kwargs):
+	X = kwargs['X']
+	token_pattern = kwargs['token_pattern']
+	split_pattern = kwargs['split_pattern']
+	stop_words = kwargs['stop_words']
+	lowercase = kwargs['lowercase']
+	encoding = kwargs['encoding']
+	decode_error = kwargs['decode_error']
+	preprocessor = kwargs['preprocessor']
+	tokenizer = kwargs['tokenizer']
+	postprocessor = kwargs['postprocessor']
+	
+	stop_hashes = kwargs['stop_hashes']
+	replace = kwargs['replace']
+	hash_fun = kwargs['hash_fun'] or hash
+	
+	stop_words_set = set(stop_words or [])
+	stop_hashes_set = set(stop_hashes or [])
+	if token_pattern:
+		re_tok = re.compile(token_pattern,re.U)
+	if split_pattern:
+		re_split = re.compile(split_pattern,re.U)
+	out = []
+	for text in X:
+		# prepare tokens
+		if encoding:
+			text = text.decode(encoding,decode_error)
+		if preprocessor:
+			text = preprocessor(text)
+		if lowercase:
+			text = text.lower()
+		if tokenizer:
+			tokens = tokenizer(text)
+		elif split_pattern:
+			tokens = re_split.split(text)
+		elif token_pattern:
+			tokens = re_tok.findall(text)
+		if postprocessor:
+			tokens = postprocessor(tokens)
+		if stop_words:
+			tokens = [t for t in tokens if t not in stop_words_set]
+		if stop_hashes:
+			tokens = [t for t in tokens if hash_fun(t) not in stop_hashes_set]
+		
+		out.append(replace.join(tokens))
+	
+	return out
+
+# TODO refactor with get_df
+
+def get_clean_x(X, workers=4, 
+		token_pattern='[\w][\w-]*', split_pattern='', encoding=None, 
+		lowercase=True,
+		tokenizer=None, preprocessor=None,
+		decode_error='strict', stop_words=None, mp_pool=None,
+		postprocessor=None,
+		replace=u' ; ', stop_hashes=None, hash_fun=None):
+	"""
+	"""
+	cnt = len(X)
+	
+	data = []
+	n = int(ceil(1.0*cnt/workers))
+	pos = 0
+	for i in range(workers):
+		lo = pos
+		hi = min(cnt,lo+n)
+		kwargs = dict(
+				X = X[lo:hi]
+				,token_pattern = token_pattern
+				,split_pattern = split_pattern
+				,encoding = encoding
+				,lowercase = lowercase
+				,tokenizer = tokenizer
+				,preprocessor = preprocessor
+				,decode_error = decode_error
+				,stop_words = stop_words
+				,postprocessor = postprocessor
+				,replace = replace
+				,stop_hashes = stop_hashes
+				,hash_fun = hash_fun
+			)
+		data.append(kwargs)
+		pos += n
+	
+	pool = mp_pool or Pool(workers)
+	x_partitions = pool.map(get_clean_x_part, data)
+	x=x_partitions[0]
+	for x_ in x_partitions[1:]:
+		x.extend(x_)
+	return x
+
 # ---[ feature selection ]------------------------------------------------------
 
 def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
@@ -245,7 +356,7 @@ def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
 		idf[t] = log( (a1+n) / (a2+df[t]) ) + a3
 	return idf
 	
-def get_chi(df,n,dfy,ny,alpha=0):
+def get_chi(df,n,dfy,ny,alpha=0,as_dict=True):
 	"""Calculate chi scores for features from one topic
 	"""
 	chi = Counter()
@@ -269,6 +380,8 @@ def get_chi(df,n,dfy,ny,alpha=0):
 		c0_t0 = (o_c0_t0 - e_c0_t0)**2 / (e_c0_t0 + alpha)
 		# chi
 		chi[t] = c0_t0 + c1_t0 + c0_t1 + c1_t1
+	if as_dict:
+		chi = dict(chi)
 	return chi
 
 def get_chi_explain(df,n,dfy,ny,alpha=0):
