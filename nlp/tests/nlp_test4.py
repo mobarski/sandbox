@@ -26,6 +26,17 @@ if 0:
 			if not lem: continue
 			out.append(t)
 		return out
+		
+	# TODO optimize -> regexp based preprocessor?
+	def replace_numbers(tokens):
+		out = []
+		for t in tokens:
+			if t.isdigit():
+				out.append('N')
+			else:
+				out.append(t)
+		return out
+	# TODO replace_links
 
 if __name__=="__main__":
 	cache = disk_cache('../cache','t4v1',show_time=True,linear=True)
@@ -37,8 +48,10 @@ if __name__=="__main__":
 	print('frame {:.2f} s'.format(time()-t0))
 	
 	# noise
-	noise = cache.use('noise', get_df,
-		frame['text'], split_pattern='[\s;]*;[\s;]*',
+	# TODO test split with also "..."
+	noise = cache.set('noise', get_df,
+		frame['text'],
+		split_pattern='[\s;]*;[\s;]*', postprocessor=None,
 		min_df_part=2, min_df=2)
 	
 	# clean_x
@@ -48,13 +61,15 @@ if __name__=="__main__":
 
 	# dfy
 	dfy = cache.use('dfy', get_dfy,
-		X, frame['col'], postprocessor=None, min_df=10)
+		X, frame['col'],
+		postprocessor=None,
+		min_df=10)
 	
 	# df
 	df = cache.use('df', get_df_from_dfy, dfy)
 	
 	# chi
-	topic = 'planszomaniak'
+	topic = 'milosnicy'
 	chi = cache.use('chi_'+topic, get_chi, df, len(X), dfy[topic], Counter(frame['col'])[topic])
 	
 	# vocabulary

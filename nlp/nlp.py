@@ -201,6 +201,8 @@ def get_df_from_dfy(dfy,as_dict=True):
 
 # ---[ clean ]------------------------------------------------------------------
 
+# TODO replace based on matched split_pattern
+
 def get_clean_x_part(kwargs):
 	replace = kwargs['replace']
 	out = []
@@ -517,6 +519,9 @@ def get_co_from_coy(coy,dtype=None):
 	return co
 
 # ---[ tokens ]-----------------------------------------------------------------
+
+# TODO multiple postprocessors
+# TODO multiple preprocessors
 
 def iter_tokens_part(kwargs):
 	X = kwargs['X']
