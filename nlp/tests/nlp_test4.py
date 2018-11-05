@@ -28,7 +28,7 @@ if 0:
 		return out
 
 if __name__=="__main__":
-	cache = disk_cache('../cache','t4v1',show_time=True,skip=False)
+	cache = disk_cache('../cache','t4v1',show_time=True,reset=False)
 	
 	# frame
 	t0=time()
@@ -47,15 +47,24 @@ if __name__=="__main__":
 		stop_words=noise)
 
 	# dfy
-	dfy = cache.set('dfy', get_dfy,
+	dfy = cache.use('dfy', get_dfy,
 		X, frame['col'], postprocessor=None, min_df=10)
 	
 	# df
-	df = cache.set('df', get_df_from_dfy, dfy)
+	df = cache.use('df', get_df_from_dfy, dfy)
 	
 	# chi
 	topic = 'planszomaniak'
-	chi = cache.set('chi_'+topic, get_chi, df, len(X), dfy[topic], Counter(frame['col'])[topic], as_dict=True)
-
-	for t,v in Counter(chi).most_common(200):
+	chi = cache.use('chi_'+topic, get_chi, df, len(X), dfy[topic], Counter(frame['col'])[topic])
+	
+	# vocabulary
+	vocab = Counter(chi).most_common(200)
+	for t,v in vocab:
 		print(topic,t,v)
+	vocab = [t for t,v in vocab]
+
+	# vectorized
+	V = cache.use('vectorized', vectorize, X, vocab)
+
+	print(V)
+	

@@ -1,6 +1,12 @@
 """
 Functions for converting text documents into vector space
 and dealing with dirty data.
+
+Features:
+- DF calculation
+- CHI feature selection
+- IDF calculation
+- CO matrix calcualtion
 """
 
 from multiprocessing import Pool
@@ -9,82 +15,27 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
+# TODO reorder functions top-down vs bottom-up vs subject
 # TODO smart lowercase (prosty NER w oparciu o DF[t] vs DF[t.lower])
-# TODO sklearn model.fit/transform interface
+# TODO sklearn model.fit/transform interface OR SIMILAR via functools.partial
 # TODO liczenie lift dla co
 # TODO wybieranie ngramow na podstawie liftu
 
 # ---[ document frequency ]-----------------------------------------------------
 
 def get_df_part(kwargs):
-	X = kwargs['X']
-	token_pattern = kwargs['token_pattern']
-	split_pattern = kwargs['split_pattern']
-	stop_words = kwargs['stop_words']
-	lowercase = kwargs['lowercase']
-	encoding = kwargs['encoding']
-	decode_error = kwargs['decode_error']
 	min_df_part = kwargs['min_df_part']
 	max_df_part = kwargs['max_df_part']
 	min_tf_doc = kwargs['min_tf_doc']
-	ngram_range = kwargs['ngram_range']
-	ngram_words = kwargs['ngram_words']
-	analyzer = kwargs['analyzer']
-	preprocessor = kwargs['preprocessor']
-	tokenizer = kwargs['tokenizer']
-	postprocessor = kwargs['postprocessor']
-	
-	stop_words_set = set(stop_words or [])
-	ngram_words_set = set(ngram_words or [])
-	if token_pattern:
-		re_tok = re.compile(token_pattern,re.U)
-	if split_pattern:
-		re_split = re.compile(split_pattern,re.U)
-	df = Counter()
-	for text in X:
-		# prepare tokens
-		if encoding:
-			text = text.decode(encoding,decode_error)
-		if preprocessor:
-			text = preprocessor(text)
-		if lowercase:
-			text = text.lower()
-		if tokenizer:
-			tokens = tokenizer(text)
-		elif split_pattern:
-			tokens = re_split.split(text)
-		elif token_pattern:
-			tokens = re_tok.findall(text)
-		if postprocessor:
-			tokens = postprocessor(tokens)
-		if stop_words:
-			tokens = [t for t in tokens if t not in stop_words_set]
 		
-		# update df
-		if ngram_range:
-			lo,hi = ngram_range
-			ngrams = []
-			if analyzer=='word':
-				for i in range(len(tokens)-lo): # TEST off-by-one
-					for n in range(lo,hi+1):
-						if i+n>len(tokens): break # TEST off-by-one
-						ngram = tuple(tokens[i:i+n])
-						if not ngram_words_set&set(ngram): continue
-						ngrams.append(ngram) # TODO tuple vs string
-			elif analyzer=='char':
-				for t in tokens:
-					for n in range(lo,hi+1):
-						if len(t)<n: pass
-						elif len(t)==n:
-							ngrams.append(t)
-						else:
-							for i in range(len(t)-n+1):
-								ngrams.append(t[i:i+n])
-			tokens = ngrams
+	df = Counter()
+	for tokens in iter_tokens_part(kwargs):
+	
 		if min_tf_doc:
 			unique_tokens = [t for t,f in Counter(tokens).items() if f>=min_tf_doc]
 		else:
 			unique_tokens = set(tokens)
+		
 		df.update(unique_tokens)
 	
 	# limit within partition
@@ -99,7 +50,6 @@ def get_df_part(kwargs):
 			del df[t]
 	return df
 
-# TODO rename chi variables
 # TODO option to include whole words shorter than char ngram_range 'lo' value
 # TODO option to mark word begin/end in char ngrams
 # TODO max_df float
@@ -251,58 +201,15 @@ def get_df_from_dfy(dfy,as_dict=True):
 
 # ---[ clean ]------------------------------------------------------------------
 
-# TODO refactor with get_df_part
-
 def get_clean_x_part(kwargs):
-	X = kwargs['X']
-	token_pattern = kwargs['token_pattern']
-	split_pattern = kwargs['split_pattern']
-	stop_words = kwargs['stop_words']
-	lowercase = kwargs['lowercase']
-	encoding = kwargs['encoding']
-	decode_error = kwargs['decode_error']
-	preprocessor = kwargs['preprocessor']
-	tokenizer = kwargs['tokenizer']
-	postprocessor = kwargs['postprocessor']
-	
-	stop_hashes = kwargs['stop_hashes']
 	replace = kwargs['replace']
-	hash_fun = kwargs['hash_fun'] or hash
-	
-	stop_words_set = set(stop_words or [])
-	stop_hashes_set = set(stop_hashes or [])
-	if token_pattern:
-		re_tok = re.compile(token_pattern,re.U)
-	if split_pattern:
-		re_split = re.compile(split_pattern,re.U)
 	out = []
-	for text in X:
-		# prepare tokens
-		if encoding:
-			text = text.decode(encoding,decode_error)
-		if preprocessor:
-			text = preprocessor(text)
-		if lowercase:
-			text = text.lower()
-		if tokenizer:
-			tokens = tokenizer(text)
-		elif split_pattern:
-			tokens = re_split.split(text)
-		elif token_pattern:
-			tokens = re_tok.findall(text)
-		if postprocessor:
-			tokens = postprocessor(tokens)
-		if stop_words:
-			tokens = [t for t in tokens if t not in stop_words_set]
-		if stop_hashes:
-			tokens = [t for t in tokens if hash_fun(t) not in stop_hashes_set]
-		
+	for tokens in iter_tokens_part(kwargs):
 		out.append(replace.join(tokens))
-	
 	return out
 
-# TODO refactor with get_df
 
+# TODO refactor with get_df
 def get_clean_x(X, workers=4, 
 		token_pattern='[\w][\w-]*', split_pattern='', encoding=None, 
 		lowercase=True,
@@ -355,37 +262,21 @@ def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
 		if min_df and df[t]<min_df: continue
 		idf[t] = log( (a1+n) / (a2+df[t]) ) + a3
 	return idf
-	
-def get_chi(df,n,dfy,ny,alpha=0,as_dict=True):
+
+def get_chi(df,n,dfy,ny,alpha=0):
 	"""Calculate chi scores for features from one topic
 	"""
-	chi = Counter()
-	all = df
-	topic = dfy
-	for t in df:
-		# observed
-		o_c1_t1 = topic.get(t,0)
-		o_c1_t0 = ny - topic.get(t,0)
-		o_c0_t1 = all[t] - topic.get(t,0)
-		o_c0_t0 = n - o_c1_t1 - o_c1_t0 - o_c0_t1
-		# expected
-		e_c1_t1 = 1.0 * ny * all[t]/n
-		e_c1_t0 = 1.0 * ny * (n-all[t])/n
-		e_c0_t1 = 1.0 * (n-ny)/n * all[t]
-		e_c0_t0 = 1.0 * (n-ny)/n * (n-all[t])
-		# chi components
-		c1_t1 = (o_c1_t1 - e_c1_t1)**2 / (e_c1_t1 + alpha)
-		c1_t0 = (o_c1_t0 - e_c1_t0)**2 / (e_c1_t0 + alpha)
-		c0_t1 = (o_c0_t1 - e_c0_t1)**2 / (e_c0_t1 + alpha)
-		c0_t0 = (o_c0_t0 - e_c0_t0)**2 / (e_c0_t0 + alpha)
-		# chi
-		chi[t] = c0_t0 + c1_t0 + c0_t1 + c1_t1
-	if as_dict:
-		chi = dict(chi)
+	chi = {}
+	for t,val in iter_chi(df,n,dfy,ny,alpha):
+		chi[t] = val
 	return chi
 
 def get_chi_explain(df,n,dfy,ny,alpha=0):
-	chi_explain = dict()
+	chi_explain = iter_chi(df,n,dfy,ny,alpha,explain=True)
+	return dict(chi_explain)
+
+# TODO rename chi variables
+def iter_chi(df,n,dfy,ny,alpha=0,explain=False):
 	all = df
 	topic = dfy
 	for t in df:
@@ -406,29 +297,32 @@ def get_chi_explain(df,n,dfy,ny,alpha=0):
 		c0_t0 = (o_c0_t0 - e_c0_t0)**2 / (e_c0_t0 + alpha)
 		# chi
 		chi = c0_t0 + c1_t0 + c0_t1 + c1_t1
-		# explain
-		ex = dict()
-		ex['o_c1_t1'] = o_c1_t1
-		ex['o_c1_t0'] = o_c1_t0
-		ex['o_c0_t1'] = o_c0_t1
-		ex['o_c0_t0'] = o_c0_t0
-		ex['e_c1_t1'] = e_c1_t1
-		ex['e_c1_t0'] = e_c1_t0
-		ex['e_c0_t1'] = e_c0_t1
-		ex['e_c0_t0'] = e_c0_t0
-		ex['c1_t1']   = c1_t1
-		ex['c1_t0']   = c1_t0
-		ex['c0_t1']   = c0_t1
-		ex['c0_t0']   = c0_t0
-		ex['chi']     = chi
-		ex = {k:int(v) for k,v in ex.items()}
-		chi_explain[t] = ex
-	return chi_explain
+		# result
+		if explain:
+			ex = dict()
+			ex['o_c1_t1'] = o_c1_t1
+			ex['o_c1_t0'] = o_c1_t0
+			ex['o_c0_t1'] = o_c0_t1
+			ex['o_c0_t0'] = o_c0_t0
+			ex['e_c1_t1'] = e_c1_t1
+			ex['e_c1_t0'] = e_c1_t0
+			ex['e_c0_t1'] = e_c0_t1
+			ex['e_c0_t0'] = e_c0_t0
+			ex['c1_t1']   = c1_t1
+			ex['c1_t0']   = c1_t0
+			ex['c0_t1']   = c0_t1
+			ex['c0_t0']   = c0_t0
+			ex['chi']     = chi
+			ex = {k:int(v) for k,v in ex.items()}
+			yield t,ex
+		else:
+			yield t,chi
 
 # ---[ vectorization ]----------------------------------------------------------
 
+# TODO refactor using iter_tokens_part
 def vectorize_part(kwargs):
-	
+
 	vocabulary = kwargs['vocabulary']
 	binary = kwargs['binary']
 	sparse = kwargs['sparse']
@@ -437,72 +331,18 @@ def vectorize_part(kwargs):
 	dtype = kwargs['dtype']
 	if dtype:
 		import numpy as np
-	
-	X = kwargs['X']
-	token_pattern = kwargs['token_pattern']
-	stop_words = kwargs['stop_words']
-	lowercase = kwargs['lowercase']
-	encoding = kwargs['encoding']
-	decode_error = kwargs['decode_error']
-	ngram_range = kwargs['ngram_range']
-	ngram_words = kwargs['ngram_words']
-	analyzer = kwargs['analyzer']
-	preprocessor = kwargs['preprocessor']
-	tokenizer = kwargs['tokenizer']
-	postprocessor = kwargs['postprocessor']
-	
+
 	if hasattr(vocabulary,'items'):
 		vocab_dict = vocabulary
 		vocab_len = max(vocab_dict.values()) + 1
 	else:
 		vocab_dict = {t:t_id for t_id,t in enumerate(vocabulary)}
 		vocab_len = len(vocabulary)
+
 	out = []
-	
-	stop_words_set = set(stop_words or [])
-	ngram_words_set = set(ngram_words or [])
-	re_tok = re.compile(token_pattern,re.U)
-	for ix,text in enumerate(X):
-		# prepare tokens
-		if encoding:
-			text = text.decode(encoding,decode_error)
-		if preprocessor:
-			text = preprocessor(text)
-		if lowercase:
-			text = text.lower()
-		if tokenizer:
-			tokens = tokenizer(text)
-		else:
-			tokens = re_tok.findall(text)
-		if postprocessor:
-			tokens = postprocessor(tokens)
-		if stop_words:
-			tokens = [t for t in tokens if t not in stop_words_set]
-		
+	for tokens in iter_tokens_part(kwargs):
 		# TODO filter tokens - keep only vocabulary -> here or after ngrams ???
-		
-		# ngrams
-		if ngram_range:
-			lo,hi = ngram_range
-			ngrams = []
-			if analyzer=='word':
-				for i in range(len(tokens)-lo): # TEST off-by-one
-					for n in range(lo,hi+1):
-						if i+n>len(tokens): break # TEST off-by-one
-						ngram = tuple(tokens[i:i+n])
-						if not ngram_words_set&set(ngram): continue
-						ngrams.append(ngram) # TODO tuple vs string
-			elif analyzer=='char':
-				for t in tokens:
-					for n in range(lo,hi+1):
-						if len(t)<n: pass
-						elif len(t)==n:
-							ngrams.append(t)
-						else:
-							for i in range(len(t)-n+1):
-								ngrams.append(t[i:i+n])
-			tokens = ngrams
-		
+				
 		# output
 		if sparse:
 			if binary:
@@ -550,7 +390,8 @@ def vectorize_part(kwargs):
 
 # TODO remove dead options
 def vectorize(X, vocabulary, workers=4,
-	   token_pattern='[\w][\w-]*', encoding=None, lowercase=True,
+	   token_pattern='[\w][\w-]*', split_pattern='',
+	   encoding=None, lowercase=True,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   ngram_range=None, postprocessor=None, ngram_words=None,
@@ -569,6 +410,7 @@ def vectorize(X, vocabulary, workers=4,
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
+				,split_pattern = split_pattern
 				,encoding = encoding
 				,lowercase = lowercase
 				,analyzer = analyzer
@@ -674,3 +516,76 @@ def get_co_from_coy(coy,dtype=None):
 			co.update(coy[y])
 	return co
 
+# ---[ tokens ]-----------------------------------------------------------------
+
+def iter_tokens_part(kwargs):
+	X = kwargs['X']
+	token_pattern = kwargs['token_pattern']
+	split_pattern = kwargs['split_pattern']
+	stop_words = kwargs['stop_words']
+	lowercase = kwargs['lowercase']
+	encoding = kwargs['encoding']
+	decode_error = kwargs['decode_error']
+	preprocessor = kwargs['preprocessor']
+	tokenizer = kwargs['tokenizer']
+	postprocessor = kwargs['postprocessor']
+	
+	ngram_range = kwargs.get('ngram_range')
+	ngram_words = kwargs.get('ngram_words')
+	analyzer = kwargs.get('analyzer') or 'word'
+
+	stop_hashes = kwargs.get('stop_hashes')
+	hash_fun = kwargs.get('hash_fun') or hash
+	
+	stop_words_set = set(stop_words or [])
+	stop_hashes_set = set(stop_hashes or [])
+	
+	ngram_words_set = set(ngram_words or [])
+	
+	if token_pattern:
+		re_tok = re.compile(token_pattern,re.U)
+	if split_pattern:
+		re_split = re.compile(split_pattern,re.U)
+	out = []
+	for text in X:
+		if encoding:
+			text = text.decode(encoding,decode_error)
+		if preprocessor:
+			text = preprocessor(text)
+		if lowercase:
+			text = text.lower()
+		if tokenizer:
+			tokens = tokenizer(text)
+		elif split_pattern:
+			tokens = re_split.split(text)
+		elif token_pattern:
+			tokens = re_tok.findall(text)
+		if postprocessor:
+			tokens = postprocessor(tokens)
+		if stop_words:
+			tokens = [t for t in tokens if t not in stop_words_set]
+		if stop_hashes:
+			tokens = [t for t in tokens if hash_fun(t) not in stop_hashes_set]
+
+		if ngram_range:
+			lo,hi = ngram_range
+			ngrams = []
+			if analyzer=='word':
+				for i in range(len(tokens)-lo): # TEST off-by-one
+					for n in range(lo,hi+1):
+						if i+n>len(tokens): break # TEST off-by-one
+						ngram = tuple(tokens[i:i+n])
+						if not ngram_words_set&set(ngram): continue
+						ngrams.append(ngram) # TODO tuple vs string
+			elif analyzer=='char':
+				for t in tokens:
+					for n in range(lo,hi+1):
+						if len(t)<n: pass
+						elif len(t)==n:
+							ngrams.append(t)
+						else:
+							for i in range(len(t)-n+1):
+								ngrams.append(t[i:i+n])
+			tokens = ngrams
+
+		yield tokens

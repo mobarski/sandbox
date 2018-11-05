@@ -12,17 +12,21 @@ from time import time
 # TODO h na podstawie args i kwargs
 
 class disk_cache:
-	def __init__(self, dir, prefix='', show_time=False, skip=False):
+	def __init__(self, dir, prefix='', show_time=False, skip=False, reset=False):
 		self.dir = dir
 		self.show_time = show_time
 		self.skip_cache = skip
+		self.reset_cache = reset
 		self.prefix = prefix + '_' if prefix else ''
 	
 	def use(self, key, fun, *args, **kwargs):
 		"""
 		"""
+		if self.reset_cache:
+			return self.set(key, fun, *args, **kwargs)
 		if self.skip_cache:
 			return self.skip(key, fun, *args, **kwargs)
+			
 		t0 = time()
 		h = '' # TODO
 		fn = self.prefix + key + h + '.marshal'
