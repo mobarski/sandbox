@@ -28,7 +28,7 @@ if 0:
 		return out
 
 if __name__=="__main__":
-	cache = disk_cache('../cache','t4v1',show_time=True,reset=False)
+	cache = disk_cache('../cache','t4v1',show_time=True,linear=True)
 	
 	# frame
 	t0=time()
