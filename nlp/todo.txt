@@ -1,0 +1,3 @@
+usuniecie rekordow z mala iloscia ficzerow
+funkcja do eksportu ramek
+klasa batch do liniowego wykonania kodu

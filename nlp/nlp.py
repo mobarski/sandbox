@@ -15,6 +15,8 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
+from batch import partitions
+
 # TODO reorder functions top-down vs bottom-up vs subject
 # TODO smart lowercase (prosty NER w oparciu o DF[t] vs DF[t.lower])
 # TODO sklearn model.fit/transform interface OR SIMILAR via functools.partial
@@ -126,14 +128,8 @@ def get_df(X, workers=4, as_dict=True,
 		Multiprocessing pool object that will be used to parallelize
 		execution. If none is provided a new one will be created.
 	"""
-	cnt = len(X)
-	
 	data = []
-	n = int(ceil(1.0*cnt/workers))
-	pos = 0
-	for i in range(workers):
-		lo = pos
-		hi = min(cnt,lo+n)
+	for lo,hi in partitions(len(X),workers):
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -153,7 +149,6 @@ def get_df(X, workers=4, as_dict=True,
 				,ngram_words = ngram_words
 			)
 		data.append(kwargs)
-		pos += n
 	
 	pool = mp_pool or Pool(workers)
 	df_partitions = pool.map(get_df_part, data)
@@ -221,14 +216,9 @@ def get_clean_x(X, workers=4,
 		replace=u' ; ', stop_hashes=None, hash_fun=None):
 	"""
 	"""
-	cnt = len(X)
 	
 	data = []
-	n = int(ceil(1.0*cnt/workers))
-	pos = 0
-	for i in range(workers):
-		lo = pos
-		hi = min(cnt,lo+n)
+	for lo,hi in partitions(len(X),workers):
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -245,7 +235,6 @@ def get_clean_x(X, workers=4,
 				,hash_fun = hash_fun
 			)
 		data.append(kwargs)
-		pos += n
 	
 	pool = mp_pool or Pool(workers)
 	x_partitions = pool.map(get_clean_x_part, data)
@@ -265,6 +254,13 @@ def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
 		idf[t] = log( (a1+n) / (a2+df[t]) ) + a3
 	return idf
 
+def get_chiy(df,n,dfy,ny,alpha=0):
+	chiy = {}
+	for y in dfy:
+		chiy[y] = get_chi(df,n,dfy[y],ny[y],alpha)
+	return chiy
+		
+# TODO rename dfy,ny
 def get_chi(df,n,dfy,ny,alpha=0):
 	"""Calculate chi scores for features from one topic
 	"""
@@ -273,10 +269,12 @@ def get_chi(df,n,dfy,ny,alpha=0):
 		chi[t] = val
 	return chi
 
+# TODO rename dfy,ny
 def get_chi_explain(df,n,dfy,ny,alpha=0):
 	chi_explain = iter_chi(df,n,dfy,ny,alpha,explain=True)
 	return dict(chi_explain)
 
+# TODO rename dfy,ny
 # TODO rename chi variables
 def iter_chi(df,n,dfy,ny,alpha=0,explain=False):
 	all = df
@@ -333,6 +331,9 @@ def vectorize_part(kwargs):
 	dtype = kwargs['dtype']
 	if dtype:
 		import numpy as np
+	typecode = kwargs['typecode']
+	if typecode:
+		from array import array
 
 	if hasattr(vocabulary,'items'):
 		vocab_dict = vocabulary
@@ -351,6 +352,8 @@ def vectorize_part(kwargs):
 				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
 				if dtype:
 					v = np.array(v,dtype=dtype)
+				if typecode:
+					v = array(typecode,v)
 			else:
 				tf = {}
 				for t in tokens:
@@ -365,6 +368,8 @@ def vectorize_part(kwargs):
 				v = tf
 				if dtype:
 					v = np.array(tf.items(),dtype=dtype)
+				if typecode:
+					pass # TODO
 		else:
 			v = [0]*vocab_len
 			if binary:
@@ -398,17 +403,13 @@ def vectorize(X, vocabulary, workers=4,
 	   decode_error='strict', stop_words=None, mp_pool=None,
 	   ngram_range=None, postprocessor=None, ngram_words=None,
 	   binary=False, sparse=True, upper_limit=0,
-	   dtype=None):
+	   dtype=None,typecode=None,
+	   partitioned=False):
 	"""Convert a collection of text documents into a collection of token counts
 	"""
-	cnt = len(X)
 	
 	data = []
-	n = cnt/workers # TEST off-by-one
-	pos = 0
-	for i in range(workers):
-		lo = pos
-		hi = min(cnt,lo+n)
+	for lo,hi in partitions(len(X),workers):
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -428,16 +429,19 @@ def vectorize(X, vocabulary, workers=4,
 				,binary = binary
 				,sparse = sparse
 				,dtype = dtype
+				,typecode = typecode
 				,upper_limit = upper_limit
 				
 			)
 		data.append(kwargs)
-		pos += n
 	
 	pool = mp_pool or Pool(workers)
 	v_partitions = pool.map(vectorize_part, data)
-
-	out = list(chain.from_iterable(v_partitions))
+	
+	if partitioned:
+		out = v_partitions
+	else:
+		out = list(chain.from_iterable(v_partitions))
 	return out
 
 # ---[ cooccurrence ]-----------------------------------------------------------
