@@ -10,28 +10,27 @@ from cache import *
 
 from multiprocessing import Pool
 
-if 1:
-	# dict
-	def load_lem_dict():
-		global lem_dict
-		t0=time()
-		lem_dict = marshal.load(open('../data/lem_dict.mrl','rb'))
-		print('lem_dict {:.2f} s'.format(time()-t0))
-	
-	def lem_only(tokens):
-		out = []
-		for t in tokens:
-			lem = lem_dict.get(t)
-			if not lem: continue
-			out.append(lem)
-		return out
-	def in_dict_only(tokens):
-		out = []
-		for t in tokens:
-			lem = lem_dict.get(t)
-			if not lem: continue
-			out.append(t)
-		return out
+
+def load_lem_dict():
+	global lem_dict
+	t0=time()
+	lem_dict = marshal.load(open('../data/lem_dict.mrl','rb'))
+	print('lem_dict {:.2f} s'.format(time()-t0))
+
+def lem_only(tokens):
+	out = []
+	for t in tokens:
+		lem = lem_dict.get(t)
+		if not lem: continue
+		out.append(lem)
+	return out
+def in_dict_only(tokens):
+	out = []
+	for t in tokens:
+		lem = lem_dict.get(t)
+		if not lem: continue
+		out.append(t)
+	return out
 
 re_num = re.compile(r'\b\d+\b')
 def replace_numbers(text):
@@ -41,12 +40,14 @@ re_link = re.compile(r'>>>>[^<]*<<<<')
 def replace_links(text):
 	return re_link.sub('_LINK_',text)
 
+
 if __name__=="__main__":
 	cache = disk_cache('../cache','t4v1',show_time=True,linear=True)
 	
 	topic = 'alergie'
+	load_lem_dict()
 	
-	pool = Pool(4,load_lem_dict)
+	#pool = Pool(4,load_lem_dict)
 
 	# frame
 	t0=time()
@@ -80,8 +81,7 @@ if __name__=="__main__":
 	dfy = cache.set('dfy', get_dfy,
 		X, frame['col'],
 		postprocessor=in_dict_only,
-		min_df=10,
-		mp_pool=pool)
+		min_df=10)
 	
 	# df
 	df = cache.use('df', get_df_from_dfy, dfy)
@@ -101,12 +101,12 @@ if __name__=="__main__":
 
 	# check
 	topic_cnt = Counter(frame['col'])
+	#cnt_by_topic = zip(frame['col'],[len(v) for part in V for v in part])
 	cnt_by_topic = zip(frame['col'],[len(v) for v in V])
 	cnt = Counter()
 	for t,c in cnt_by_topic:
 		cnt[t] += c
 	for t in cnt:
 		print t,int(1.0*cnt[t]/topic_cnt[t]),cnt[t],topic_cnt[t]
-	
-	del pool
+
 

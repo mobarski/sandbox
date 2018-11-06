@@ -101,11 +101,11 @@ def get_df(X, workers=4, as_dict=True,
 		Function which transforms text into list of tokens (before
 		postprocessing and n-gram generation).
 	
-	preprocessor: callable or None (default)
-		Function which transforms text before tokenization.
+	preprocessor: callable, list of callable or None (default)
+		Function or list of functions which transforms text before tokenization.
 
-	postprocessor: callable or None (default)
-		Function which transforms list of tokens (before n-gram
+	postprocessor: callable, list of callable or None (default)
+		Function(s) or list of functions which transforms list of tokens (before n-gram
 		generation)
 
 	min_df: int, default=0
@@ -436,7 +436,9 @@ def vectorize(X, vocabulary, workers=4,
 	
 	pool = mp_pool or Pool(workers)
 	v_partitions = pool.map(vectorize_part, data)
-	return v_partitions # TODO join?
+
+	out = list(chain.from_iterable(v_partitions))
+	return out
 
 # ---[ cooccurrence ]-----------------------------------------------------------
 
@@ -520,9 +522,6 @@ def get_co_from_coy(coy,dtype=None):
 
 # ---[ tokens ]-----------------------------------------------------------------
 
-# TODO multiple postprocessors
-# TODO multiple preprocessors
-
 def iter_tokens_part(kwargs):
 	X = kwargs['X']
 	token_pattern = kwargs['token_pattern']
@@ -556,7 +555,11 @@ def iter_tokens_part(kwargs):
 		if encoding:
 			text = text.decode(encoding,decode_error)
 		if preprocessor:
-			text = preprocessor(text)
+			if callable(preprocessor):
+				text = preprocessor(text)
+			else:
+				for p in preprocessor:
+					text = p(text)
 		if lowercase:
 			text = text.lower()
 		if tokenizer:
@@ -566,7 +569,11 @@ def iter_tokens_part(kwargs):
 		elif token_pattern:
 			tokens = re_tok.findall(text)
 		if postprocessor:
-			tokens = postprocessor(tokens)
+			if callable(postprocessor):
+				tokens = postprocessor(tokens)
+			else:
+				for p in postprocessor:
+					tokens = p(tokens)
 		if stop_words:
 			tokens = [t for t in tokens if t not in stop_words_set]
 		if stop_hashes:
