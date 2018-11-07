@@ -57,7 +57,7 @@ def replace_links(text):
 	return re_link.sub('_LINK_',text)
 
 if __name__=="__main__":
-	cache = disk_cache('../cache','t5v2',show_time=True,linear=True)
+	cache = disk_cache('../cache','t5v2',verbose=True,linear=True)
 	
 	pool = Pool(4,load_lem_dict)
 
@@ -65,7 +65,8 @@ if __name__=="__main__":
 	t0=time()
 	rows = tsv_iter('../data/__all__.txt')
 	frame = frame_from_iter(rows, ['col', 'id', 'text'])
-	print('frame {:.2f} s'.format(time()-t0))
+	print('frame\t{:.2f} s'.format(time()-t0))
+	print('frame\t{} rows'.format(len(frame['id'])))
 	
 	# noise
 	# TODO test split with also "..."
@@ -85,52 +86,109 @@ if __name__=="__main__":
 	# dfy
 	dfy = cache.use('dfy', get_dfy,
 		X, frame['col'],
-		postprocessor=in_dict_only,
+		postprocessor=lem_only,
 		min_df=10,
 		mp_pool=pool)
 	
 	# df
-	df = cache.use('df', get_df_from_dfy, dfy)
+	df = get_df_from_dfy(dfy)
 	
-	# chi
+	# chiy
 	chiy = cache.use('chiy', get_chiy, df, len(X), dfy, Counter(frame['col']))
 	
-	# vocabulary
-	vocab = set()
+	# vocaby
+	vocaby = {}
 	for y in chiy:
-		t_v = Counter(chiy[y]).most_common(100)
-		vocab.update([t for t,v in t_v])
+		t_v = Counter(chiy[y]).most_common(200)
+		vocaby[y] = set([t for t,v in t_v])
+	
+	# TODO - TEST usuwamy slowa wystepujace w kilku tematach
+	
+	#cache.missed = True
+	
+	# vocab
+	vocab = set()
+	for y in vocaby:
+		vocab.update(vocaby[y])
 	print('len_vocab',len(vocab))
 
+	# term_id
+	term_id = {t:i for i,t in enumerate(vocab)}
+
+	# vec_vocaby
+	vec_vocaby = {}
+	for y in vocaby:
+		vec_vocaby[y] = set([term_id[t] for t in vocaby[y]])
+	
 	# vectorized
 	V = cache.use('vectorized',
-		vectorize, X, vocab,
-		postprocessor=in_dict_only,
+		#vectorize, X, vocab,
+		vectorize, frame['text'], vocab,
+		#preprocessor=[replace_numbers,replace_links],
+		postprocessor=lem_only,
 		mp_pool=pool)
+	
+	frame['tf'] = V
 
+	# col_score & all_score
+	t0 = time()
+	col_score = []
+	all_score = []
+	for col,tf in zip(frame['col'],frame['tf']):
+		common = set(tf) & vec_vocaby[col]
+		col_score.append(len(common))
+		all_score.append(len(tf))
+	frame['col_score'] = col_score
+	frame['all_score'] = all_score
+	print('col_score\t{:.2f} s'.format(time()-t0))
+
+	# low score examples
+	topic='kibic'
+	for col,als,cls,text in zip(frame['col'],frame['all_score'],frame['col_score'],frame['text']):
+		if col==topic and cls==0:
+			pass
+			#print(col,als,cls,text)
+
+	# score vocab
+	cs_zero = Counter()
+	as_zero = Counter()
+	all = Counter()
+	for col,cs,as_ in zip(frame['col'],frame['col_score'],frame['all_score']):
+		all[col] += 1
+		if cs==0:
+			cs_zero[col] += 1
+		if as_==0:
+			as_zero[col] += 1
+	for col in sorted(all):
+		x = 1.0 * cs_zero[col]/all[col]
+		print(col,x,as_zero[col],cs_zero[col],all[col])
+		
+	total_cs_zero = sum(cs_zero.values())
+	total_as_zero = sum(as_zero.values())
+	total_all = sum(all.values())
+	x = 1.0 * total_cs_zero / total_all
+	print('TOTAL',x,total_as_zero,total_cs_zero,total_all)
+	
 	# export
 	t0 = time()
-	if 0:
-		with open('../data/vectorized_{}.tsv'.format(p),'wb',100000) as fo:
-			row_cnt = len(frame['id'])
-			feature_cnt = len(vocab)
-			for i in range(row_cnt):
-				fo.write(frame['col'][i])
-				fo.write('\t')
-				fo.write(frame['id'][i])
-				fo.write('\t')
-				
-				vi = V[i]
-				v = [str(vi.get(j,0)) for j in range(feature_cnt)]
-				fo.write('\t'.join(v))
+	if 1:
+		feature_cnt = len(vocab)
+		with open('../data/vectorized.tsv','wb',100000) as fo:
+			for row in iter_from_frame(frame,['col','id','col_score','tf']):
+				if row[-2]==0: continue # omit col_score==0
+				tf = row[-1]
+				features = [str(tf.get(j,0)) for j in range(feature_cnt)]
+				fo.write(row[0]+'\t')
+				fo.write(row[1]+'\t')
+				fo.write('\t'.join(features))
 				fo.write('\n')
-
-	args = []
-	feature_cnt = len(vocab)
-	for p,(lo,hi) in enumerate(partitions(len(frame['id']),4)):
-		f = {}
-		f['col'] = frame['col']
-		f['id'] = frame['id']
-		args += [(p,lo,hi,feature_cnt,f,V)]
-	pool.map(export_part,args)
+	elif 0:
+		args = []
+		feature_cnt = len(vocab)
+		for p,(lo,hi) in enumerate(partitions(len(frame['id']),4)):
+			f = {}
+			f['col'] = frame['col']
+			f['id'] = frame['id']
+			args += [(p,lo,hi,feature_cnt,f,V)]
+		pool.map(export_part,args)
 	print('export',time()-t0)

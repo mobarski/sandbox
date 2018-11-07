@@ -5,15 +5,16 @@ import marshal
 import os
 from time import time
 
+# TODO rename missed -> complete? clean? recent?
 # TODO refactor
 # TODO data_structures (fun=None???)
 # TODO h tylko na podstawie kwargs
 # TODO h na podstawie args i kwargs
 
 class disk_cache:
-	def __init__(self, dir, prefix='', show_time=False, skip=False, reset=False, linear=False):
+	def __init__(self, dir, prefix='', verbose=False, skip=False, reset=False, linear=False):
 		self.dir = dir
-		self.show_time = show_time
+		self.verbose = verbose
 		self.skip_cache = skip
 		self.reset_cache = reset
 		self.prefix = prefix + '_' if prefix else ''
@@ -35,21 +36,27 @@ class disk_cache:
 		fn = self.prefix + key + h + '.marshal'
 		path = os.path.join(self.dir,fn)
 		if os.path.exists(path):
-			obj = marshal.load(open(path,'rb'))
+			with open(path,'rb') as f:
+				obj = marshal.load(f)
+				size = f.tell()
+			mode = 'from cache'
 		else:
 			obj = fun(*args,**kwargs)
-			marshal.dump(obj, open(path,'wb'))
+			with open(path,'wb') as f:
+				marshal.dump(obj, f)
+				size = f.tell()
 			self.missed = True
-		if self.show_time:
-			print('{} {:.2f} s'.format(key, time()-t0))
+			mode = ''
+		if self.verbose:
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
 		return obj
-
+	
 	def skip(self, key, fun, *args, **kwargs):
 		"""Call function without storing the results in cache
 		"""
 		t0 = time()
 		obj = fun(*args,**kwargs)
-		if self.show_time:
+		if self.verbose:
 			print('{} {:.2f} s'.format(key, time()-t0))
 		return obj
 	
@@ -60,10 +67,31 @@ class disk_cache:
 		h = '' # TODO
 		fn = self.prefix + key + h + '.marshal'
 		path = os.path.join(self.dir,fn)
-		obj = fun(*args,**kwargs)
-		marshal.dump(obj, open(path,'wb'))
+		if callable(fun):
+			obj = fun(*args,**kwargs)
+		else:
+			obj = fun # TODO document
+		with open(path,'wb') as f:
+			marshal.dump(obj, f)
+			size = f.tell()
 		self.missed = True
-		if self.show_time:
-			print('{} {:.2f} s'.format(key, time()-t0))
+		mode = ''
+		if self.verbose:
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
 		return obj
 	
+	def get(self, key, default=None):
+		t0 = time()
+		fn = self.prefix + key + '.marshal'
+		path = os.path.join(self.dir,fn)
+		if os.path.exists(path):
+			with open(path,'rb') as f:
+				obj = marshal.load(f)
+				size = f.tell()
+			mode = 'from cache'
+		else:
+			obj = default
+			mode = ''
+		if self.verbose:
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
+		return obj
