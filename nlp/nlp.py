@@ -351,18 +351,6 @@ def iter_wcpy(df,dfy,explain=False):
 		else:
 			yield t,wcpy
 
-# TODO refactor with get_giniy
-def get_wcpy(df,dfy):
-	"""Calculate WCP for all topics
-	"""
-	wcpy = {y:{} for y in dfy}
-	for t,wy in iter_wcpy(df,dfy):
-		for y in wy:
-			val = wy[y]
-			if val:
-				wcpy[y][t] = val
-	return wcpy
-
 def iter_giniy(df,dfy,ny,explain=False):
 	topics = dfy.keys()
 	for t in df:
@@ -378,17 +366,6 @@ def iter_giniy(df,dfy,ny,explain=False):
 		else:
 			yield t,giniy
 
-# TODO refactor with get_wcpy
-def get_giniy(df,dfy,ny):
-	"""Calculate improved GINI for all topics
-	"""
-	giniy = {y:{} for y in dfy}
-	for t,gy in iter_giniy(df,dfy,ny):
-		for y in gy:
-			val = gy[y]
-			if val:
-				giniy[y][t] = val
-	return giniy
 
 def iter_cmfsy(df,dfy,explain=False):
 	topics = dfy.keys()
@@ -410,18 +387,28 @@ def iter_cmfsy(df,dfy,explain=False):
 		else:
 			yield t,cmfsy
 
-# TODO refactor with get_wcpy, get_giniy
-def get_cmfsy(df,dfy):
+def get_giniy(df, dfy, ny):
+	"""Calculate improved GINI for all topics
+	"""
+	items = iter_giniy(df,dfy,ny)
+	topics = dfy.keys()
+	return swap_dict_keys(items, topics)
+
+
+def get_cmfsy(df, dfy):
 	"""
 	http://www.dafl.yuntech.edu.tw/download/2012.IPM.48.A%20new%20feature%20selection%20based%20on%20comprehensive%20measurement%20both%20in%20inter-category%20and%20intra-category%20for%20text%20categorization.pdf
 	"""
-	cmfsy = {y:{} for y in dfy}
-	for t,cy in iter_cmfsy(df,dfy):
-		for y in cy:
-			val = cy[y]
-			if val:
-				cmfsy[y][t] = val
-	return cmfsy
+	items = iter_cmfsy(df,dfy)
+	topics = dfy.keys()
+	return swap_dict_keys(items, topics)
+
+def get_wcpy(df, dfy):
+	"""Calculate WCP for all topics
+	"""
+	items = iter_wcpy(df, dfy)
+	topics = dfy.keys()
+	return swap_dict_keys(items, topics)
 
 # ---[ vectorization ]----------------------------------------------------------
 
@@ -710,3 +697,17 @@ def iter_tokens_part(kwargs):
 			tokens = ngrams
 
 		yield tokens
+
+
+# ---[ utils ]------------------------------------------------------------------
+
+def swap_dict_keys(items,keys):
+	"transforms items of dict[a][b]->val into dict[b][a]->val dictionary"
+	out = {key:{} for key in keys}
+	for k,d in items:
+		for key in keys:
+			val = d[key]
+			if val:
+				out[key][k] = val
+	return out
+

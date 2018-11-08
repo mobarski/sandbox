@@ -33,7 +33,6 @@ def where(frame, cols, fun):
 		predicates.append(1 if fun(*args)  else 0)
 	return predicates
 
-
 if __name__=="__main__":
 	def fff(vals):
 		out = []

@@ -93,6 +93,8 @@ if __name__=="__main__":
 	# df
 	df = get_df_from_dfy(dfy)
 	
+	#cache.missed = True
+	
 	# chiy
 	chiy = cache.use('chiy', get_chiy, df, len(X), dfy, Counter(frame['col']))
 	
