@@ -102,12 +102,16 @@ if __name__=="__main__":
 	# giniy
 	giniy = cache.use('giniy', get_giniy, df, dfy, Counter(frame['col']))
 	
+	# cmfsy
+	cmfsy = cache.use('cmfsy', get_cmfsy, df, dfy)
+	
 	# vocaby
 	vocaby = {}
 	for y in chiy:
 		#t_v = Counter(chiy[y]).most_common(200)
 		#t_v = Counter(wcpy[y]).most_common(20)
-		t_v = Counter(giniy[y]).most_common(20)
+		#t_v = Counter(giniy[y]).most_common(20)
+		t_v = Counter(cmfsy[y]).most_common(20)
 		vocaby[y] = set([t for t,v in t_v])
 		print(y,vocaby[y])
 	

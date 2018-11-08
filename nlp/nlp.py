@@ -4,10 +4,11 @@ and dealing with dirty data.
 
 Features:
 - no external dependencies
-- feature selection
+- feature selection methods:
   - CHI
-  - WCP
-  - improved GINI
+  - WCP (Within Class Probability)
+  - CMFS (Comprehensively Measure Feature Selection)
+  - improved GINI 
 - CO matrix calcualtion
 - DF calculation
 - IDF calculation
@@ -26,9 +27,7 @@ from batch import partitions
 # TODO przeniesienie feature selection do osobnego pliku
 # TODO __init__.py
 
-
-# TODO: http://www.dafl.yuntech.edu.tw/download/2012.IPM.48.A%20new%20feature%20selection%20based%20on%20comprehensive%20measurement%20both%20in%20inter-category%20and%20intra-category%20for%20text%20categorization.pdf
-# - Orthogonal Centroid Feature Selection
+# TODO przyjecie nomenklatury t-term,c-category, tk, ci
 
 # TODO reorder functions top-down vs bottom-up vs subject
 # TODO smart lowercase (prosty NER w oparciu o DF[t] vs DF[t.lower])
@@ -390,6 +389,39 @@ def get_giniy(df,dfy,ny):
 			if val:
 				giniy[y][t] = val
 	return giniy
+
+def iter_cmfsy(df,dfy,explain=False):
+	topics = dfy.keys()
+	C = len(topics)
+	V = len(df)
+	sum_dfy = {y:sum(dfy[y].values()) for y in topics}
+		
+	for t in df:
+		cmfsy = {}
+		for y in topics:
+			nom = dfy[y].get(t,0) + 1
+			denom1 = df[t] + C
+			denom2 = sum_dfy[y] + V
+			cmfsy[y] = 1.0 * nom / (denom1 * denom2)
+		if explain:
+			ex = dict()
+			# TODO
+			yield t,ex
+		else:
+			yield t,cmfsy
+
+# TODO refactor with get_wcpy, get_giniy
+def get_cmfsy(df,dfy):
+	"""
+	http://www.dafl.yuntech.edu.tw/download/2012.IPM.48.A%20new%20feature%20selection%20based%20on%20comprehensive%20measurement%20both%20in%20inter-category%20and%20intra-category%20for%20text%20categorization.pdf
+	"""
+	cmfsy = {y:{} for y in dfy}
+	for t,cy in iter_cmfsy(df,dfy):
+		for y in cy:
+			val = cy[y]
+			if val:
+				cmfsy[y][t] = val
+	return cmfsy
 
 # ---[ vectorization ]----------------------------------------------------------
 
