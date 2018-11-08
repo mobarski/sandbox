@@ -3,10 +3,14 @@ Functions for converting text documents into vector space
 and dealing with dirty data.
 
 Features:
-- DF calculation
-- CHI feature selection
-- IDF calculation
+- no external dependencies
+- feature selection
+  - CHI
+  - WCP
+  - improved GINI
 - CO matrix calcualtion
+- DF calculation
+- IDF calculation
 """
 
 from multiprocessing import Pool
@@ -17,11 +21,15 @@ import re
 
 from batch import partitions
 
+# TODO resampling
+
+# TODO przeniesienie feature selection do osobnego pliku
+# TODO __init__.py
+
+
 # TODO: http://www.dafl.yuntech.edu.tw/download/2012.IPM.48.A%20new%20feature%20selection%20based%20on%20comprehensive%20measurement%20both%20in%20inter-category%20and%20intra-category%20for%20text%20categorization.pdf
-# - Improved Gini index 
 # - Orthogonal Centroid Feature Selection
 
-# TODO resampling
 # TODO reorder functions top-down vs bottom-up vs subject
 # TODO smart lowercase (prosty NER w oparciu o DF[t] vs DF[t.lower])
 # TODO sklearn model.fit/transform interface OR SIMILAR via functools.partial
@@ -344,6 +352,7 @@ def iter_wcpy(df,dfy,explain=False):
 		else:
 			yield t,wcpy
 
+# TODO refactor with get_giniy
 def get_wcpy(df,dfy):
 	"""Calculate WCP for all topics
 	"""
@@ -354,6 +363,33 @@ def get_wcpy(df,dfy):
 			if val:
 				wcpy[y][t] = val
 	return wcpy
+
+def iter_giniy(df,dfy,ny,explain=False):
+	topics = dfy.keys()
+	for t in df:
+		giniy = {}
+		for y in topics:
+			p_t_when_y = 1.0 * dfy[y].get(t,0) / ny[y]
+			p_y_when_t = 1.0 * dfy[y].get(t,0) / df[t]
+			giniy[y] = p_t_when_y**2 + p_y_when_t**2
+		if explain:
+			ex = dict()
+			# TODO
+			yield t,ex
+		else:
+			yield t,giniy
+
+# TODO refactor with get_wcpy
+def get_giniy(df,dfy,ny):
+	"""Calculate improved GINI for all topics
+	"""
+	giniy = {y:{} for y in dfy}
+	for t,gy in iter_giniy(df,dfy,ny):
+		for y in gy:
+			val = gy[y]
+			if val:
+				giniy[y][t] = val
+	return giniy
 
 # ---[ vectorization ]----------------------------------------------------------
 

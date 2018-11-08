@@ -99,13 +99,19 @@ if __name__=="__main__":
 	# wcpy
 	wcpy = cache.use('wcpy', get_wcpy, df, dfy)
 	
+	# giniy
+	giniy = cache.use('giniy', get_giniy, df, dfy, Counter(frame['col']))
+	
 	# vocaby
 	vocaby = {}
 	for y in chiy:
-		t_v = Counter(chiy[y]).most_common(200)
+		#t_v = Counter(chiy[y]).most_common(200)
 		#t_v = Counter(wcpy[y]).most_common(20)
+		t_v = Counter(giniy[y]).most_common(20)
 		vocaby[y] = set([t for t,v in t_v])
-		#print(y,vocaby[y])
+		print(y,vocaby[y])
+	
+	exit()
 	
 	#cache.missed = True
 	
