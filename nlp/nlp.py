@@ -17,6 +17,11 @@ import re
 
 from batch import partitions
 
+# TODO: http://www.dafl.yuntech.edu.tw/download/2012.IPM.48.A%20new%20feature%20selection%20based%20on%20comprehensive%20measurement%20both%20in%20inter-category%20and%20intra-category%20for%20text%20categorization.pdf
+# - Improved Gini index 
+# - Orthogonal Centroid Feature Selection
+
+# TODO resampling
 # TODO reorder functions top-down vs bottom-up vs subject
 # TODO smart lowercase (prosty NER w oparciu o DF[t] vs DF[t.lower])
 # TODO sklearn model.fit/transform interface OR SIMILAR via functools.partial
@@ -274,7 +279,7 @@ def get_chi_explain(df,n,dfy,ny,alpha=0):
 	chi_explain = iter_chi(df,n,dfy,ny,alpha,explain=True)
 	return dict(chi_explain)
 
-# TODO rename dfy,ny
+# TODO rename dfy,ny -> dfc (class), dft (topic)
 # TODO rename chi variables
 def iter_chi(df,n,dfy,ny,alpha=0,explain=False):
 	all = df
@@ -317,6 +322,38 @@ def iter_chi(df,n,dfy,ny,alpha=0,explain=False):
 			yield t,ex
 		else:
 			yield t,chi
+			
+# TODO gini(wcp) ???
+def iter_wcpy(df,dfy,explain=False):
+	topics = dfy.keys()
+	V = len(df)
+	for t in df:
+		wcpy = {}
+		py = {}
+		for y in topics:
+			nom =  1 + dfy[y].get(t,0)
+			denom = V + df[t]
+			py[y] = 1.0 * nom / denom
+		sum_py = sum(py.values())
+		for y in topics:
+			wcpy[y] = py[y] / sum_py
+		if explain:
+			ex = dict()
+			# TODO
+			yield t,ex
+		else:
+			yield t,wcpy
+
+def get_wcpy(df,dfy):
+	"""Calculate WCP for all topics
+	"""
+	wcpy = {y:{} for y in dfy}
+	for t,wy in iter_wcpy(df,dfy):
+		for y in wy:
+			val = wy[y]
+			if val:
+				wcpy[y][t] = val
+	return wcpy
 
 # ---[ vectorization ]----------------------------------------------------------
 

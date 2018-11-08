@@ -96,13 +96,16 @@ if __name__=="__main__":
 	# chiy
 	chiy = cache.use('chiy', get_chiy, df, len(X), dfy, Counter(frame['col']))
 	
+	# wcpy
+	wcpy = cache.use('wcpy', get_wcpy, df, dfy)
+	
 	# vocaby
 	vocaby = {}
 	for y in chiy:
 		t_v = Counter(chiy[y]).most_common(200)
+		#t_v = Counter(wcpy[y]).most_common(20)
 		vocaby[y] = set([t for t,v in t_v])
-	
-	# TODO - TEST usuwamy slowa wystepujace w kilku tematach
+		#print(y,vocaby[y])
 	
 	#cache.missed = True
 	
