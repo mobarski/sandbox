@@ -1,3 +1,12 @@
-usuniecie rekordow z mala iloscia ficzerow
-funkcja do eksportu ramek
-klasa batch do liniowego wykonania kodu
+TODO:
+- export labels
+- testy GLM n-fold==2, alpha=..., lambda=...
+- porownanie scorow GLM z testami VOCAB
+- kod laczacy sie z h2o
+- generowanie modelu binomial dla kazdej kategorii ???
+
+DONE:
+- miara maksymalnie rozrozniajaca klasy
+- binarne atrybuty
+- scorowanie vocab + confusion matrix
+- kolumna z waga wiersza aby zrownowazyc zbior testowy i dane produkcyjne -> chyba duzo nie dalo - potrzebne testy

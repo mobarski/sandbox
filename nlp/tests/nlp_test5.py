@@ -90,36 +90,66 @@ if __name__=="__main__":
 		min_df=10,
 		mp_pool=pool)
 	
+	# row weight
+	ny = Counter(frame['col'])
+	max_ny = max(ny.values())
+	wy = {y:1.0*max_ny/ny[y] for y in dfy}
+	frame['rw'] = [wy[y] for y in frame['col']]
+	
 	# df
 	df = get_df_from_dfy(dfy)
 	
-	#cache.missed = True
+	cache.missed = True
 	
 	# chiy
 	chiy = cache.use('chiy', get_chiy, df, len(X), dfy, Counter(frame['col']))
+	mchiy = cache.use('mchiy', get_mcdy, chiy)
 	
 	# wcpy
 	wcpy = cache.use('wcpy', get_wcpy, df, dfy)
+	mwcpy = cache.use('mwcpy', get_mcdy, wcpy)
 	
 	# giniy
 	giniy = cache.use('giniy', get_giniy, df, dfy, Counter(frame['col']))
+	mginiy = cache.use('mginiy', get_mcdy, giniy)
 	
 	# cmfsy
 	cmfsy = cache.use('cmfsy', get_cmfsy, df, dfy)
+	mcmfsy = cache.use('mcmfsy', get_mcdy, cmfsy)
+	
+	# mdfy
+	mdfy = cache.use('mdfy', get_mcdy, dfy)
+	
+	# TODO wiecej slow dla kategorii z duza iloscia zer
+	# TODO test mieszania algo do wyboru ficzerow
 	
 	# vocaby
 	vocaby = {}
-	for y in chiy:
-		#t_v = Counter(chiy[y]).most_common(200)
-		#t_v = Counter(wcpy[y]).most_common(20)
-		#t_v = Counter(giniy[y]).most_common(20)
-		t_v = Counter(cmfsy[y]).most_common(20)
+	for y in dfy:
+		#t_v = Counter(chiy[y]).most_common(20) # 200 -> 9% zeros, GLM 19% err
+		#t_v = Counter(wcpy[y]).most_common(20) # 200 -> 48% zeros, GLM 10% err
+		#t_v = Counter(giniy[y]).most_common(20) # 200 -> 16% zeros, GLM 18% err
+		#t_v = Counter(cmfsy[y]).most_common(20) # 200 -> 47% zeros, GLM 10% err
+		t_v = Counter(mginiy[y]).most_common(200) # 200 -> 32% zeros, GLM % err
 		vocaby[y] = set([t for t,v in t_v])
 		print(y,vocaby[y])
 	
-	exit()
+	#exit()
+	cache.missed = True
 	
-	#cache.missed = True
+	# score vocaby
+	vy_score = {}
+	for y1 in dfy:
+		for y2 in dfy:
+			if y2<=y1: continue
+			common = len(vocaby[y1]&vocaby[y2])
+			score = 1.0 * common / len(vocaby[y1])
+			vy_score[y1,y2] = score
+	print
+	vy_score = Counter(vy_score)
+	for yy,p in vy_score.most_common(100):
+		print(yy,p)
+	exit()
 	
 	# vocab
 	vocab = set()
@@ -187,14 +217,32 @@ if __name__=="__main__":
 	# export
 	t0 = time()
 	if 1:
+		topics = list(sorted(dfy))
 		feature_cnt = len(vocab)
 		with open('../data/vectorized.tsv','wb',100000) as fo:
-			for row in iter_from_frame(frame,['col','id','col_score','tf']):
+			for row in iter_from_frame(frame,['col','rw','id','col_score','tf']):
 				if row[-2]==0: continue # omit col_score==0
+				
+				# col/topic
+				fo.write(row[0]+'\t')
+				
+				# is_topic
+				if 0:
+					is_topic = ['n']*len(topics)
+					ti = topics.index(row[0])
+					is_topic[ti]='y'
+					fo.write('\t'.join(is_topic)+'\t')
+				
+				# row weight
+				fo.write('{:.2f}'.format(row[1])+'\t')
+				
+				# id
+				fo.write(row[2]+'\t')
+				
+				# features
 				tf = row[-1]
 				features = [str(tf.get(j,0)) for j in range(feature_cnt)]
-				fo.write(row[0]+'\t')
-				fo.write(row[1]+'\t')
+				#features = [str(min(1,tf.get(j,0))) for j in range(feature_cnt)] # binarne
 				fo.write('\t'.join(features))
 				fo.write('\n')
 	elif 0:

@@ -266,6 +266,7 @@ def get_idf(df, n, a1=1, a2=1, a3=1, min_df=0):
 		idf[t] = log( (a1+n) / (a2+df[t]) ) + a3
 	return idf
 
+# TODO mcd
 def get_chiy(df,n,dfy,ny,alpha=0):
 	chiy = {}
 	for y in dfy:
@@ -392,8 +393,7 @@ def get_giniy(df, dfy, ny):
 	"""
 	items = iter_giniy(df,dfy,ny)
 	topics = dfy.keys()
-	return swap_dict_keys(items, topics)
-
+	return transform_items_topics(items, topics)
 
 def get_cmfsy(df, dfy):
 	"""
@@ -401,14 +401,30 @@ def get_cmfsy(df, dfy):
 	"""
 	items = iter_cmfsy(df,dfy)
 	topics = dfy.keys()
-	return swap_dict_keys(items, topics)
+	return transform_items_topics(items, topics)
 
 def get_wcpy(df, dfy):
 	"""Calculate WCP for all topics
 	"""
 	items = iter_wcpy(df, dfy)
 	topics = dfy.keys()
-	return swap_dict_keys(items, topics)
+	return transform_items_topics(items, topics)
+
+# TODO opisac
+def get_mcdy(fsy):
+	"minimal class difference of feature score"
+	topics = fsy.keys()
+	mcdy = {y:{} for y in topics}
+	vocab = set()
+	for y in topics:
+		vocab.update(fsy[y])
+	for t in vocab:
+		for y in topics:
+			val = min([abs(fsy[y].get(t,0)-fsy[y2].get(t,0)) for y2 in topics if y!=y2])
+			if val:
+				mcdy[y][t] = val
+	return mcdy
+
 
 # ---[ vectorization ]----------------------------------------------------------
 
@@ -701,13 +717,12 @@ def iter_tokens_part(kwargs):
 
 # ---[ utils ]------------------------------------------------------------------
 
-def swap_dict_keys(items,keys):
-	"transforms items of dict[a][b]->val into dict[b][a]->val dictionary"
-	out = {key:{} for key in keys}
-	for k,d in items:
-		for key in keys:
-			val = d[key]
+def transform_items_topics(items, topics):
+	"transforms items of dict[token][topic]->val into dict[topic][token]->val dictionary"
+	out = {y:{} for y in topics}
+	for t,d in items:
+		for y in topics:
+			val = d[y]
 			if val:
-				out[key][k] = val
+				out[y][t] = val
 	return out
-
