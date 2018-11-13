@@ -138,6 +138,7 @@ if __name__=="__main__":
 	cache.missed = True
 	
 	# score vocaby
+	# TODO list words
 	vy_score = {}
 	for y1 in dfy:
 		for y2 in dfy:

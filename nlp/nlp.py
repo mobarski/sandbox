@@ -139,6 +139,10 @@ def get_df(X, workers=4, as_dict=True,
 	mp_pool: multiprocessing.Pool or None (default)
 		Multiprocessing pool object that will be used to parallelize
 		execution. If none is provided a new one will be created.
+	
+	as_dict: boolean, default=True
+		Whether the result should be converted into dict or left
+		as collections.Counter (which doesn't support marshaling)
 	"""
 	data = []
 	for lo,hi in partitions(len(X),workers):
@@ -226,7 +230,31 @@ def get_clean_x(X, workers=4,
 		decode_error='strict', stop_words=None, mp_pool=None,
 		postprocessor=None,
 		replace=u' ; ', stop_hashes=None, hash_fun=None):
-	"""
+	"""Replace noise tokens (words/phrases).
+	
+	Parameters
+	----------
+	
+	X : iterable
+		Collection of text documents.
+	
+	stop_words : iterable or None (default)
+		Collection of tokens that should be replaced
+	
+	stop_hashes : iterable or None (default)
+		Collection of hashes of tokens that should be replaced
+	
+	replace : str, default=u' ; '
+		Replacement text for noise tokens
+	
+	workers : int, default=4
+	
+	token_pattern : string, default='[\w][\w-]*'
+		Regular expression denoting what constitute a "token".
+		Will not be used when tokenizer or split_pattern is defined.
+	
+	... TODO rest of params
+	
 	"""
 	
 	data = []
@@ -514,6 +542,33 @@ def vectorize(X, vocabulary, workers=4,
 	   dtype=None,typecode=None,
 	   partitioned=False):
 	"""Convert a collection of text documents into a collection of token counts
+	
+	Parameters
+	----------
+	
+	X : iterable
+	
+	vocabulary : iterable or mapping
+		TODO
+	
+	binary : boolean, default=False
+		TODO
+	
+	sparse : boolean, default=True
+		TODO
+	
+	upper_limit : int, default=0
+		Upper limit for token counts in the vector
+	
+	dtype : numpy.dtype or None (default)
+		numpy data type of the result
+	
+	typecode : str or None (default)
+		array.array typecode of the result
+	
+	partitioned : boolean, default=False
+		Whether the result should be partitioned or merged
+		into a single list
 	"""
 	
 	data = []
