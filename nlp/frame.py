@@ -33,6 +33,13 @@ def where(frame, cols, fun):
 		predicates.append(1 if fun(*args)  else 0)
 	return predicates
 
+def filtered(data,params,fun):
+	for d,p in zip(data,params):
+		if fun(p):
+			yield d
+
+# TODO multiprocessing and parition operations
+
 if __name__=="__main__":
 	def fff(vals):
 		out = []

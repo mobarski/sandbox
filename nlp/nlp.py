@@ -456,12 +456,15 @@ def get_mcdy(fsy):
 
 # ---[ vectorization ]----------------------------------------------------------
 
+# TODO token_id iter not token_cnt
+
 # TODO refactor using iter_tokens_part
 def vectorize_part(kwargs):
 
 	vocabulary = kwargs['vocabulary']
 	binary = kwargs['binary']
 	sparse = kwargs['sparse']
+	stream = kwargs['stream']
 	upper_limit = kwargs['upper_limit']
 	
 	dtype = kwargs['dtype']
@@ -486,6 +489,24 @@ def vectorize_part(kwargs):
 		if sparse:
 			if binary:
 				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
+				if dtype:
+					v = np.array(v,dtype=dtype)
+				if typecode:
+					v = array(typecode,v)
+			elif stream:
+				v = []
+				empty = True
+				for t in tokens:
+					if t not in vocab_dict:
+						continue # XXX
+						if not empty:
+							v.append(0) # XXX
+						empty = True
+						#continue # TODO optional -1 token
+					else:
+						t_id = vocab_dict[t]
+						v.append(t_id)
+						empty = False
 				if dtype:
 					v = np.array(v,dtype=dtype)
 				if typecode:
@@ -540,7 +561,8 @@ def vectorize(X, vocabulary, workers=4,
 	   ngram_range=None, postprocessor=None, ngram_words=None,
 	   binary=False, sparse=True, upper_limit=0,
 	   dtype=None,typecode=None,
-	   partitioned=False):
+	   partitioned=False,
+	   stream=False):
 	"""Convert a collection of text documents into a collection of token counts
 	
 	Parameters
@@ -591,6 +613,7 @@ def vectorize(X, vocabulary, workers=4,
 				,vocabulary = vocabulary
 				,binary = binary
 				,sparse = sparse
+				,stream = stream
 				,dtype = dtype
 				,typecode = typecode
 				,upper_limit = upper_limit
@@ -609,9 +632,11 @@ def vectorize(X, vocabulary, workers=4,
 
 # ---[ cooccurrence ]-----------------------------------------------------------
 
+# TODO parallelize
+
 # TODO Y
 def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
-		dtype=None,
+		dtype=None,stream=False,ngram_max=5,
 		output_dtype=None, upper_limit=0, output_len=None):
 	"""Calculate cooccurence count from a collection of token counts.
 	"""
@@ -629,6 +654,22 @@ def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
 						co[a,b] += 1
 						if a!=b and not triangular:
 							co[b,a] += 1
+			elif stream:
+				for i in range(len(x)):
+					t1 = x[i]
+					for j in range(i,i+ngram_max):
+						if j>=len(x): break
+						t2=x[j]
+						if t2==0: break
+						
+						a = min(t1,t2)
+						b = max(t1,t2)
+						if a==b and not diagonal:
+							continue
+						co[a,b] += 1
+						if a!=b and not triangular:
+							co[b,a] += 1
+						
 			else:
 				if dtype:
 					pass # TODO
@@ -668,6 +709,7 @@ def get_coy(X,Y,sort=True,**kwargs):
 	else:
 		data = zip(Y,X)
 	for y,g in groupby(data,lambda x:x[0]):
+		print('xxx',y) # XXX
 		x = [v[1] for v in g]
 		coy[y] = get_co(x,**kwargs)
 	return coy

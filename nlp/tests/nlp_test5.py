@@ -68,6 +68,10 @@ if __name__=="__main__":
 	print('frame\t{:.2f} s'.format(time()-t0))
 	print('frame\t{} rows'.format(len(frame['id'])))
 	
+	cache.set('col',frame['col'])
+	cache.missed = False
+	
+	
 	# noise
 	# TODO test split with also "..."
 	noise = cache.use('noise', get_df,
@@ -84,7 +88,7 @@ if __name__=="__main__":
 		replace=u' ; ', stop_words=noise)
 	
 	# dfy
-	dfy = cache.use('dfy', get_dfy,
+	dfy = cache.set('dfy', get_dfy,
 		X, frame['col'],
 		postprocessor=lem_only,
 		min_df=10,
@@ -99,7 +103,7 @@ if __name__=="__main__":
 	# df
 	df = get_df_from_dfy(dfy)
 	
-	cache.missed = True
+	#cache.missed = False
 	
 	# chiy
 	chiy = cache.use('chiy', get_chiy, df, len(X), dfy, Counter(frame['col']))
@@ -124,18 +128,20 @@ if __name__=="__main__":
 	# TODO test mieszania algo do wyboru ficzerow
 	
 	# vocaby
+	measure = cmfsy
 	vocaby = {}
 	for y in dfy:
 		#t_v = Counter(chiy[y]).most_common(20) # 200 -> 9% zeros, GLM 19% err
 		#t_v = Counter(wcpy[y]).most_common(20) # 200 -> 48% zeros, GLM 10% err
 		#t_v = Counter(giniy[y]).most_common(20) # 200 -> 16% zeros, GLM 18% err
 		#t_v = Counter(cmfsy[y]).most_common(20) # 200 -> 47% zeros, GLM 10% err
-		t_v = Counter(mginiy[y]).most_common(200) # 200 -> 32% zeros, GLM % err
+		#t_v = Counter(mginiy[y]).most_common(200) # 200 -> 32% zeros, GLM % err
+		t_v = Counter(measure[y]).most_common(200)
 		vocaby[y] = set([t for t,v in t_v])
 		print(y,vocaby[y])
 	
 	#exit()
-	cache.missed = True
+	#cache.missed = True
 	
 	# score vocaby
 	# TODO list words
@@ -150,12 +156,16 @@ if __name__=="__main__":
 	vy_score = Counter(vy_score)
 	for yy,p in vy_score.most_common(100):
 		print(yy,p)
-	exit()
+
 	
 	# vocab
 	vocab = set()
 	for y in vocaby:
 		vocab.update(vocaby[y])
+	vocab = list(sorted(vocab))
+	#vocab.insert(0,'') # xxx
+	cache.set('vocab',vocab)
+	cache.missed = False
 	print('len_vocab',len(vocab))
 
 	# term_id
@@ -167,11 +177,12 @@ if __name__=="__main__":
 		vec_vocaby[y] = set([term_id[t] for t in vocaby[y]])
 	
 	# vectorized
-	V = cache.use('vectorized',
+	V = cache.set('vectorized',
 		#vectorize, X, vocab,
 		vectorize, frame['text'], vocab,
-		#preprocessor=[replace_numbers,replace_links],
+		preprocessor=[replace_numbers,replace_links],
 		postprocessor=lem_only,
+		stream=True,
 		mp_pool=pool)
 	
 	frame['tf'] = V
@@ -217,7 +228,7 @@ if __name__=="__main__":
 	
 	# export
 	t0 = time()
-	if 1:
+	if 0:
 		topics = list(sorted(dfy))
 		feature_cnt = len(vocab)
 		with open('../data/vectorized.tsv','wb',100000) as fo:
