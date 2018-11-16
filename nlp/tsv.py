@@ -1,6 +1,11 @@
 """TSV files operations
 """
 
+# TODO rename all
+# - 
+# - 
+# - 
+
 from itertools import islice
 import re
 

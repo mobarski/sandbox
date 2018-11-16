@@ -15,6 +15,7 @@ def iter_from_frame(frame, names):
 	"""
 	return zip(*[iter(frame[c]) for c in names])
 
+# TODO use columnar.select
 def filter_frame(frame, predicates, select=None):
 	"""Filter frame using given predicates.
 	"""
@@ -24,6 +25,7 @@ def filter_frame(frame, predicates, select=None):
 		f[col] = [v for p,v in zip(predicates,frame[col]) if p]
 	return f
 
+# TODO use columnar.select
 def where(frame, cols, fun):
 	"""Calculate predicates
 	"""
@@ -33,10 +35,16 @@ def where(frame, cols, fun):
 		predicates.append(1 if fun(*args)  else 0)
 	return predicates
 
-def filtered(data,params,fun):
-	for d,p in zip(data,params):
-		if fun(p):
-			yield d
+# TODO use columnar.select
+def filtered(data,params,fun=None):
+	if fun:
+		for d,p in zip(data,params):
+			if fun(p):
+				yield d
+	else:
+		for d,p in zip(data,params):
+			if p:
+				yield d		
 
 # TODO multiprocessing and parition operations
 
@@ -51,4 +59,12 @@ if __name__=="__main__":
 	i = iter_from_frame(f,"cbda")
 	print(f)
 	print(list(i))
+	print
+	a = [0,1,2,3,4,5]
+	b = [0,1,0,1,0,1]
+	c = [1,2,1,2,1,2]
+	print(list(filtered(a,b)))
+	d = map(lambda x:x==2,c)
+	print(list(filtered(a,d)))
+
 

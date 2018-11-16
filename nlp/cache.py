@@ -5,21 +5,24 @@ import marshal
 import os
 from time import time
 
+
 # TODO rename missed -> complete? clean? recent?
 # TODO refactor
-# TODO data_structures (fun=None???)
-# TODO h tylko na podstawie kwargs
-# TODO h na podstawie args i kwargs
 
 class disk_cache:
-	def __init__(self, dir, prefix='', verbose=False, skip=False, reset=False, linear=False):
+	"""simple key-value database for fast caching of basic types
+	"""
+	def __init__(self, dir, verbose=False, skip=False, reset=False, linear=False):
 		self.dir = dir
+		if not os.path.exists(dir):
+			os.makedirs(dir)
 		self.verbose = verbose
 		self.skip_cache = skip
 		self.reset_cache = reset
-		self.prefix = prefix + '_' if prefix else ''
 		self.missed = False
 		self.linear = linear # dont use cached data after first miss/set
+		self.ext = ".marshal"
+		self.protocol = 2
 	
 	def use(self, key, fun, *args, **kwargs):
 		"""Get the result from cache if possible or call the function and store the result
@@ -32,8 +35,7 @@ class disk_cache:
 			return self.set(key, fun, *args, **kwargs)
 		
 		t0 = time()
-		h = '' # TODO
-		fn = self.prefix + key + h + '.marshal'
+		fn = key + self.ext
 		path = os.path.join(self.dir,fn)
 		if os.path.exists(path):
 			with open(path,'rb') as f:
@@ -43,7 +45,7 @@ class disk_cache:
 		else:
 			obj = fun(*args,**kwargs)
 			with open(path,'wb') as f:
-				marshal.dump(obj, f)
+				marshal.dump(obj, f, self.protocol)
 				size = f.tell()
 			self.missed = True
 			mode = ''
@@ -64,25 +66,24 @@ class disk_cache:
 		"""Call function and store the result in cache
 		"""
 		t0 = time()
-		h = '' # TODO
-		fn = self.prefix + key + h + '.marshal'
+		fn = key + self.ext
 		path = os.path.join(self.dir,fn)
 		if callable(fun):
 			obj = fun(*args,**kwargs)
 		else:
 			obj = fun # TODO document
 		with open(path,'wb') as f:
-			marshal.dump(obj, f)
+			marshal.dump(obj, f, self.protocol)
 			size = f.tell()
 		self.missed = True
-		mode = ''
 		if self.verbose:
+			mode = ''
 			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
 		return obj
 	
 	def get(self, key, default=None):
 		t0 = time()
-		fn = self.prefix + key + '.marshal'
+		fn = key + self.ext
 		path = os.path.join(self.dir,fn)
 		if os.path.exists(path):
 			with open(path,'rb') as f:
@@ -95,3 +96,39 @@ class disk_cache:
 		if self.verbose:
 			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
 		return obj
+
+	# TODO rename
+	def set_map(self, key, obj, columns=None):
+		t0 = time()
+		path = os.path.join(self.dir, key)
+		if not os.path.exists(path):
+			os.makedirs(path)
+		cols = columns or obj.keys()
+		size = 0
+		for col in cols:
+			p = os.path.join(path, col + self.ext)
+			with open(p,'wb') as f:
+				marshal.dump(obj[col], f, self.protocol)
+				size += f.tell()
+		if self.verbose:
+			mode = ''
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
+		return obj
+	
+	# TODO rename
+	def get_map(self, key, columns=None):
+		t0 = time()
+		obj = {}
+		path = os.path.join(self.dir, key)
+		cols = columns or [p.replace(self.ext,'') for p in os.listdir(path)]
+		size = 0
+		for col in cols:
+			p = os.path.join(path,col + self.ext)
+			with open(p,'rb') as f:
+				obj[col] = marshal.load(f)
+				size += f.tell()
+		if self.verbose:
+			mode = ''
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
+		return obj
+	

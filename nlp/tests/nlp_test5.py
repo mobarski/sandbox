@@ -57,7 +57,7 @@ def replace_links(text):
 	return re_link.sub('_LINK_',text)
 
 if __name__=="__main__":
-	cache = disk_cache('../cache','t5v2',verbose=True,linear=True)
+	cache = disk_cache('../cache/v6',verbose=True,linear=True)
 	
 	pool = Pool(4,load_lem_dict)
 
@@ -88,7 +88,7 @@ if __name__=="__main__":
 		replace=u' ; ', stop_words=noise)
 	
 	# dfy
-	dfy = cache.set('dfy', get_dfy,
+	dfy = cache.use('dfy', get_dfy,
 		X, frame['col'],
 		postprocessor=lem_only,
 		min_df=10,
@@ -128,7 +128,8 @@ if __name__=="__main__":
 	# TODO test mieszania algo do wyboru ficzerow
 	
 	# vocaby
-	measure = cmfsy
+	measure = chiy
+	#cache.missed = True
 	vocaby = {}
 	for y in dfy:
 		#t_v = Counter(chiy[y]).most_common(20) # 200 -> 9% zeros, GLM 19% err
@@ -140,8 +141,12 @@ if __name__=="__main__":
 		vocaby[y] = set([t for t,v in t_v])
 		print(y,vocaby[y])
 	
-	#exit()
-	#cache.missed = True
+	for y in measure:
+		for t,v in Counter(measure[y]).most_common(200):
+			if t in set(['li','url','float','solid']):
+				print(y,t,v)
+	exit()
+	
 	
 	# score vocaby
 	# TODO list words
@@ -204,7 +209,8 @@ if __name__=="__main__":
 	for col,als,cls,text in zip(frame['col'],frame['all_score'],frame['col_score'],frame['text']):
 		if col==topic and cls==0:
 			pass
-			#print(col,als,cls,text)
+			print(col,als,cls,text)
+	exit()
 
 	# score vocab
 	cs_zero = Counter()
