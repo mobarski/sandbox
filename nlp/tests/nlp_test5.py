@@ -57,35 +57,39 @@ def replace_links(text):
 	return re_link.sub('_LINK_',text)
 
 if __name__=="__main__":
-	cache = disk_cache('../cache/v6',verbose=True,linear=True)
+	cache = disk_cache('../cache/v7',verbose=True,linear=True)
 	
 	pool = Pool(4,load_lem_dict)
 
 	# frame
 	t0=time()
 	rows = tsv_iter('../data/__all__.txt')
-	frame = frame_from_iter(rows, ['col', 'id', 'text'])
+	frame = frame_from_iter(rows, ['col', 'id', 'url', 'text'])
 	print('frame\t{:.2f} s'.format(time()-t0))
 	print('frame\t{} rows'.format(len(frame['id'])))
 	
 	cache.set('col',frame['col'])
 	cache.missed = False
 	
-	
-	# noise
-	# TODO test split with also "..."
-	noise = cache.use('noise', get_df,
-		frame['text'],
-		split_pattern='[\s;]*[;.][\s;]*',
-		preprocessor=[replace_numbers,replace_links], postprocessor=None,
-		min_df_part=2, min_df=2)
-	
-	# clean_x
-	X = cache.use('clean_x',get_clean_x,
-		frame['text'],
-		split_pattern='[\s;]*[;.][\s;]*',
-		preprocessor=[replace_numbers,replace_links], postprocessor=None,
-		replace=u' ; ', stop_words=noise)
+	if 1:
+		# noise
+		# TODO test split with also "..."
+		noise = cache.use('noise', get_df,
+			frame['text'],
+			split_pattern='[\s;]*[;.][\s;]*',
+			preprocessor=[replace_numbers,replace_links], postprocessor=None,
+			min_df_part=2, min_df=2)
+		print('len noise',len(noise))
+		
+		# clean_x
+		X = cache.use('clean_x',get_clean_x,
+			frame['text'],
+			split_pattern='[\s;]*[;.][\s;]*',
+			preprocessor=[replace_numbers,replace_links], postprocessor=None,
+			replace=u' ; ', stop_words=noise)
+		print('len clean_x',len(X))
+	else:
+		X = frame['text']
 	
 	# dfy
 	dfy = cache.use('dfy', get_dfy,
@@ -102,6 +106,7 @@ if __name__=="__main__":
 	
 	# df
 	df = get_df_from_dfy(dfy)
+	print('len df',len(df))
 	
 	#cache.missed = False
 	
@@ -128,7 +133,7 @@ if __name__=="__main__":
 	# TODO test mieszania algo do wyboru ficzerow
 	
 	# vocaby
-	measure = chiy
+	measure = cmfsy
 	#cache.missed = True
 	vocaby = {}
 	for y in dfy:
@@ -145,10 +150,8 @@ if __name__=="__main__":
 		for t,v in Counter(measure[y]).most_common(200):
 			if t in set(['li','url','float','solid']):
 				print(y,t,v)
-	exit()
 	
-	
-	# score vocaby
+	# vocaby common
 	# TODO list words
 	vy_score = {}
 	for y1 in dfy:
@@ -161,7 +164,8 @@ if __name__=="__main__":
 	vy_score = Counter(vy_score)
 	for yy,p in vy_score.most_common(100):
 		print(yy,p)
-
+	
+	exit()
 	
 	# vocab
 	vocab = set()

@@ -38,20 +38,9 @@ class disk_cache:
 		fn = key + self.ext
 		path = os.path.join(self.dir,fn)
 		if os.path.exists(path):
-			with open(path,'rb') as f:
-				obj = marshal.load(f)
-				size = f.tell()
-			mode = 'from cache'
+			return self.get(key)
 		else:
-			obj = fun(*args,**kwargs)
-			with open(path,'wb') as f:
-				marshal.dump(obj, f, self.protocol)
-				size = f.tell()
-			self.missed = True
-			mode = ''
-		if self.verbose:
-			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
-		return obj
+			return self.set(key,fun,*args,**kwargs)
 	
 	def skip(self, key, fun, *args, **kwargs):
 		"""Call function without storing the results in cache
@@ -94,7 +83,11 @@ class disk_cache:
 			obj = default
 			mode = ''
 		if self.verbose:
-			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
+			try:
+				len_str = str(len(obj))+' items \t'
+			except:
+				len_str = ''
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}{}'.format(key, time()-t0, 1.0*size/2**20, len_str, mode))
 		return obj
 
 	# TODO rename
