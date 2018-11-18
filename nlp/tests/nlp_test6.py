@@ -7,6 +7,10 @@ from frame import *
 from time import time
 from collections import Counter
 
+"""
+test6 - cooccurrence
+"""
+
 if __name__=="__main__":
 	cache = disk_cache('../cache/v6',verbose=True,linear=True)
 	

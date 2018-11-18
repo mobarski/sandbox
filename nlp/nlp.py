@@ -145,26 +145,26 @@ def get_df(X, workers=4, as_dict=True,
 		as collections.Counter (which doesn't support marshaling)
 	"""
 	data = []
+	kwargs = dict(
+			token_pattern = token_pattern
+			,split_pattern = split_pattern
+			,encoding = encoding
+			,lowercase = lowercase
+			,min_df_part = min_df_part
+			,max_df_part = max_df_part
+			,analyzer = analyzer
+			,ngram_range = ngram_range
+			,tokenizer = tokenizer
+			,preprocessor = preprocessor
+			,decode_error = decode_error
+			,stop_words = stop_words
+			,min_tf_doc = min_tf_doc
+			,postprocessor = postprocessor
+			,ngram_words = ngram_words
+		)
 	for lo,hi in partitions(len(X),workers):
-		kwargs = dict(
-				X = X[lo:hi]
-				,token_pattern = token_pattern
-				,split_pattern = split_pattern
-				,encoding = encoding
-				,lowercase = lowercase
-				,min_df_part = min_df_part
-				,max_df_part = max_df_part
-				,analyzer = analyzer
-				,ngram_range = ngram_range
-				,tokenizer = tokenizer
-				,preprocessor = preprocessor
-				,decode_error = decode_error
-				,stop_words = stop_words
-				,min_tf_doc = min_tf_doc
-				,postprocessor = postprocessor
-				,ngram_words = ngram_words
-			)
-		data.append(kwargs)
+		kw = dict(X=X[lo:hi], **kwargs)
+		data.append(kw)
 	
 	pool = mp_pool or Pool(workers)
 	df_partitions = pool.map(get_df_part, data)
@@ -634,12 +634,136 @@ def vectorize(X, vocabulary, workers=4,
 
 # TODO parallelize
 
-# TODO Y
-def get_co(X, diagonal=True, triangular=False, sparse=True, binary=False,
-		dtype=None,stream=False,ngram_max=None,symetry=True,
-		output_dtype=None, upper_limit=0, output_len=None):
+
+def get_co_part(kwargs):
 	"""Calculate cooccurence count from a collection of token counts.
 	"""
+
+	X = kwargs['X']
+	diagonal = kwargs['diagonal']
+	triangular = kwargs['triangular']
+	sparse = kwargs['sparse']
+	binary = kwargs['binary']
+	dtype = kwargs['dtype']
+	stream = kwargs['stream']
+	ngram_max = kwargs['ngram_max']
+	symetry = kwargs['symetry']
+	output_dtype = kwargs['output_dtype']
+	upper_limit = kwargs['upper_limit']
+	output_len = kwargs['output_len']
+
+	import numpy as np
+	co = Counter()
+	for x in X:
+		if sparse:
+			if binary:
+				for t1 in x:
+					for t2 in x:
+						cnt = 1
+						# TODO refactor
+						if symetry:
+							a = min(t1,t2)
+							b = max(t1,t2)
+						else:
+							a = t1
+							b = t2
+						if a==b and not diagonal:
+							continue
+						co[a,b] += cnt
+						if a!=b and not triangular and symetry:
+							co[b,a] += cnt
+
+			elif stream:
+				for i in range(len(x)):
+					t1 = x[i]
+					if ngram_max:
+						j_range = range(i,i+ngram_max)
+					else:
+						j_range = range(i,len(x))
+					for j in j_range:
+						if j>=len(x): break
+						t2=x[j]
+						if t2==0: break
+						
+						cnt = 1 
+						# TODO refactor
+						if symetry:
+							a = min(t1,t2)
+							b = max(t1,t2)
+						else:
+							a = t1
+							b = t2
+						if a==b and not diagonal:
+							continue
+						co[a,b] += cnt
+						if a!=b and not triangular and symetry:
+							co[b,a] += cnt
+						
+			else:
+				if dtype:
+					pass # TODO
+				else:
+					for t1 in x:
+						for t2 in x:
+							cnt = min(x[t1],x[t2])
+							# TODO refactor
+							if symetry:
+								a = min(t1,t2)
+								b = max(t1,t2)
+							else:
+								a = t1
+								b = t2
+							if a==b and not diagonal:
+								continue
+							co[a,b] += cnt
+							if a!=b and not triangular and symetry:
+								co[b,a] += cnt
+		else:
+			pass # TODO
+	if output_dtype and output_len:
+		out = np.zeros((output_len,output_len),dtype=output_dtype)
+		# for (t1,t2),f in co.items():
+			# out[t1,t2] = min(upper_limit,f) if upper_limit else f
+		if upper_limit:
+			for (t1,t2),f in co.items():
+				out[t1,t2] = min(upper_limit,f)
+		else:
+			for (t1,t2),f in co.items():
+				out[t1,t2] = f
+		return out
+	else:
+		return co
+
+def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=False,
+		dtype=None,stream=False,ngram_max=None,symetry=True,
+		output_dtype=None, upper_limit=0, output_len=None,
+		mp_pool=None):
+	"""Calculate cooccurence count from a collection of token counts.
+	"""
+	
+	if 0:
+		kwargs = dict(
+			diagonal=diagonal
+			,triangular=triangular
+			,sparse=sparse
+			,binary=binary
+			,dtype=dtype
+			,stream=stream
+			,ngram_max=ngram_max
+			,symetry=symetry
+			,output_dtype=output_dtype
+			,upper_limit=upper_limit
+			,output_len=output_len
+		)
+		pool = mp_pool or pool(workers)
+		# TODO refactor
+		data = []
+		for lo,hi in partitions(len(X),workers):
+			kw = dict(X=X[lo:hi],**kwargs)
+			data.append(kw)
+		
+		co_parts = pool.map(get_co_part,data)
+	
 	import numpy as np
 	co = Counter()
 	for x in X:

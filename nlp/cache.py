@@ -67,7 +67,11 @@ class disk_cache:
 		self.missed = True
 		if self.verbose:
 			mode = ''
-			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
+			try:
+				len_str = str(len(obj))+' items \t'
+			except:
+				len_str = ''
+			print('{}\t{:.2f} s\t{:.1f} MB\t{}{}'.format(key, time()-t0, 1.0*size/2**20, len_str, mode))
 		return obj
 	
 	def get(self, key, default=None):

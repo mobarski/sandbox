@@ -22,6 +22,20 @@ def select(data, predicates, positive=True):
 	"""
 	return list(iselect(data, predicates, positive))
 
+# NEW
+def fff(part):
+	out = []
+	for p in part:
+		out.append(p)
+	return out
+
+def xxx(x):
+	return sum(x)
+
+# NEW
+def pool_init(*args):
+	for k,v in args:
+		globals()[k] = v
 
 if __name__=="__main__":
 	a = [1,2,3,4,5,6,7,8,9]
@@ -40,3 +54,17 @@ if __name__=="__main__":
 	x2 = select(a,p,False)
 	print(x1,x2)
 
+	# 
+	
+	from multiprocessing import Pool
+	from batch import partitioned
+
+
+
+	pool = Pool(2,pool_init)
+	r = pool.map(fff,partitioned(a,4)) # map
+	print(r)
+	rr = pool.map(xxx,r) # combine
+	print(rr)
+	rrr = sum(rr) # reduce
+	print(rrr)
