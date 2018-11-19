@@ -1,4 +1,14 @@
 TODO:
+- rozbicie nlp.py na mniejsze pliki: core, co, feature selection score, vectorize
+- jeden plik do importu zawierajacy importy z mniejszych plikow
+- co + dtype
+- rozdzielenie ilosci workerow od ilosci partycji
+- minimalna dlugosc lancucha przy czyszczeniu
+- minimalizacja zuzycia pamieci
+- jupyter vs mp_pool+funkcje
+- cache web explorer
+
+OLD TODO:
 - export labels
 - testy GLM n-fold==2, alpha=..., lambda=...
 - porownanie scorow GLM z testami VOCAB
