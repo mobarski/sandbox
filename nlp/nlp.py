@@ -651,6 +651,7 @@ def get_co_part(kwargs):
 	output_dtype = kwargs['output_dtype']
 	upper_limit = kwargs['upper_limit']
 	output_len = kwargs['output_len']
+	min_df_part = kwargs['min_df_part']
 
 	import numpy as np
 	co = Counter()
@@ -720,6 +721,11 @@ def get_co_part(kwargs):
 								co[b,a] += cnt
 		else:
 			pass # TODO
+	# limit within partition
+	if min_df_part:
+		below = [t for t in co if co[t]<min_df_part]
+		for t in below:
+			del co[t]
 	if output_dtype and output_len:
 		out = np.zeros((output_len,output_len),dtype=output_dtype)
 		# for (t1,t2),f in co.items():
@@ -737,11 +743,12 @@ def get_co_part(kwargs):
 def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=False,
 		dtype=None,stream=False,ngram_max=None,symetry=True,
 		output_dtype=None, upper_limit=0, output_len=None,
-		mp_pool=None):
+		mp_pool=None,as_dict=True,min_df_part=0):
 	"""Calculate cooccurence count from a collection of token counts.
 	"""
-	
-	if 0:
+	import numpy as np
+
+	if 1:
 		kwargs = dict(
 			diagonal=diagonal
 			,triangular=triangular
@@ -754,8 +761,9 @@ def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=Fa
 			,output_dtype=output_dtype
 			,upper_limit=upper_limit
 			,output_len=output_len
+			,min_df_part=min_df_part
 		)
-		pool = mp_pool or pool(workers)
+		pool = mp_pool or Pool(workers)
 		# TODO refactor
 		data = []
 		for lo,hi in partitions(len(X),workers):
@@ -763,61 +771,23 @@ def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=Fa
 			data.append(kw)
 		
 		co_parts = pool.map(get_co_part,data)
+		# reduce
+		if output_dtype:
+			pass # TODO
+		else:
+			co = co_parts[0]
+			for co_part in co_parts[1:]:
+				co.update(co_part)
+			
+	else: # TODO remove this code
 	
-	import numpy as np
-	co = Counter()
-	for x in X:
-		if sparse:
-			if binary:
-				for t1 in x:
-					for t2 in x:
-						cnt = 1
-						# TODO refactor
-						if symetry:
-							a = min(t1,t2)
-							b = max(t1,t2)
-						else:
-							a = t1
-							b = t2
-						if a==b and not diagonal:
-							continue
-						co[a,b] += cnt
-						if a!=b and not triangular and symetry:
-							co[b,a] += cnt
-
-			elif stream:
-				for i in range(len(x)):
-					t1 = x[i]
-					if ngram_max:
-						j_range = range(i,i+ngram_max)
-					else:
-						j_range = range(i,len(x))
-					for j in j_range:
-						if j>=len(x): break
-						t2=x[j]
-						if t2==0: break
-						
-						cnt = 1 
-						# TODO refactor
-						if symetry:
-							a = min(t1,t2)
-							b = max(t1,t2)
-						else:
-							a = t1
-							b = t2
-						if a==b and not diagonal:
-							continue
-						co[a,b] += cnt
-						if a!=b and not triangular and symetry:
-							co[b,a] += cnt
-						
-			else:
-				if dtype:
-					pass # TODO
-				else:
+		co = Counter()
+		for x in X:
+			if sparse:
+				if binary:
 					for t1 in x:
 						for t2 in x:
-							cnt = min(x[t1],x[t2])
+							cnt = 1
 							# TODO refactor
 							if symetry:
 								a = min(t1,t2)
@@ -830,8 +800,55 @@ def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=Fa
 							co[a,b] += cnt
 							if a!=b and not triangular and symetry:
 								co[b,a] += cnt
-		else:
-			pass # TODO
+
+				elif stream:
+					for i in range(len(x)):
+						t1 = x[i]
+						if ngram_max:
+							j_range = range(i,i+ngram_max)
+						else:
+							j_range = range(i,len(x))
+						for j in j_range:
+							if j>=len(x): break
+							t2=x[j]
+							if t2==0: break
+							
+							cnt = 1 
+							# TODO refactor
+							if symetry:
+								a = min(t1,t2)
+								b = max(t1,t2)
+							else:
+								a = t1
+								b = t2
+							if a==b and not diagonal:
+								continue
+							co[a,b] += cnt
+							if a!=b and not triangular and symetry:
+								co[b,a] += cnt
+							
+				else:
+					if dtype:
+						pass # TODO
+					else:
+						for t1 in x:
+							for t2 in x:
+								cnt = min(x[t1],x[t2])
+								# TODO refactor
+								if symetry:
+									a = min(t1,t2)
+									b = max(t1,t2)
+								else:
+									a = t1
+									b = t2
+								if a==b and not diagonal:
+									continue
+								co[a,b] += cnt
+								if a!=b and not triangular and symetry:
+									co[b,a] += cnt
+			else:
+				pass # TODO
+	
 	if output_dtype and output_len:
 		out = np.zeros((output_len,output_len),dtype=output_dtype)
 		# for (t1,t2),f in co.items():
@@ -844,7 +861,7 @@ def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=Fa
 				out[t1,t2] = f
 		return out
 	else:
-		return co
+		return dict(co) if as_dict else co
 
 def get_coy(X,Y,sort=True,**kwargs):
 	"""Calculate per topic cooccurence count from a collection of token counts.
@@ -855,7 +872,6 @@ def get_coy(X,Y,sort=True,**kwargs):
 	else:
 		data = zip(Y,X)
 	for y,g in groupby(data,lambda x:x[0]):
-		print('xxx',y) # XXX
 		x = [v[1] for v in g]
 		coy[y] = get_co(x,**kwargs)
 	return coy

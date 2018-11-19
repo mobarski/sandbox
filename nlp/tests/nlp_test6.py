@@ -34,10 +34,9 @@ if __name__=="__main__":
 			print(x)
 			print([vocab[t] for t in x])
 			print
-	if 0:
-		co = get_co(x1,triangular=False,diagonal=True,stream=True,symetry=True,ngram_max=5)
-		cache.set('co',dict(co))
-	co = cache.get('co')
+	
+	#co = cache.set('co',get_co,x1,triangular=False,diagonal=True,stream=True,symetry=True,ngram_max=5)
+	co = cache.set('co',get_co,x1,triangular=True,diagonal=False,stream=True,symetry=True,ngram_max=5)
 	
 	for (v1,v2),f in Counter(co).most_common(200):
 		print(v1,v2,f,vocab[v1],vocab[v2])
