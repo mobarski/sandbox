@@ -34,7 +34,6 @@ if __name__=="__main__":
 		postprocessor=None,
 		min_df=2, # 10:150k 5:235k 2:490k
 		mp_pool=pool)
-	exit()
 
 	# vocab
 	vocab = list(sorted(df))	

@@ -1,12 +1,18 @@
 TODO:
-- rozbicie nlp.py na mniejsze pliki: core, co, feature selection score, vectorize
-- jeden plik do importu zawierajacy importy z mniejszych plikow
-- co + dtype
-- rozdzielenie ilosci workerow od ilosci partycji
-- minimalna dlugosc lancucha przy czyszczeniu
 - minimalizacja zuzycia pamieci
+- rozbicie nlp.py na mniejsze pliki: core, co, feature selection score, vectorize + jeden plik do importu zawierajacy importy z mniejszych plikow
+- co_part + dtype
+- minimalna dlugosc lancucha przy czyszczeniu
 - jupyter vs mp_pool+funkcje
 - cache web explorer
+- polimorf - opcja: czasowniki odrzeczownikowe jako rzeczowniki
+- polimorf - opcja: przymiotniki odrzeczownikowe jako rzeczowniki
+
+
+DONE:
+- rozdzielenie ilosci workerow od ilosci partycji
+- polimorf - lematyzer - jak jest konflikt z daw. przest. rzad. gwar. to przegrywa
+
 
 OLD TODO:
 - export labels
@@ -15,7 +21,7 @@ OLD TODO:
 - kod laczacy sie z h2o
 - generowanie modelu binomial dla kazdej kategorii ???
 
-DONE:
+OLD DONE:
 - miara maksymalnie rozrozniajaca klasy
 - binarne atrybuty
 - scorowanie vocab + confusion matrix
