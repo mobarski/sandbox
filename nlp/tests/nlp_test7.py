@@ -30,9 +30,11 @@ if __name__=="__main__":
 	# df
 	df = cache.set('df', get_df,
 		X,
+		partitions=24,min_df_part=2,
 		postprocessor=None,
 		min_df=2, # 10:150k 5:235k 2:490k
 		mp_pool=pool)
+	exit()
 
 	# vocab
 	vocab = list(sorted(df))	

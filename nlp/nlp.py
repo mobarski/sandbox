@@ -20,7 +20,7 @@ from itertools import groupby,chain
 from math import log,ceil
 import re
 
-from batch import partitions
+from batch import partitions as _partitions
 
 # TODO resampling
 
@@ -71,7 +71,7 @@ def get_df_part(kwargs):
 # TODO max_df_part float
 # TODO min_df float
 # TODO reorder ARGS
-def get_df(X, workers=4, as_dict=True,
+def get_df(X, workers=4, as_dict=True, partitions=None,
 		token_pattern='[\w][\w-]*', split_pattern='', encoding=None, 
 		lowercase=True, min_df=0, min_df_part=0, max_df=1.0, max_df_part=1.0,
 		analyzer='word', tokenizer=None, preprocessor=None,
@@ -86,6 +86,10 @@ def get_df(X, workers=4, as_dict=True,
 		Collection of text documents.
 	
 	workers : int, default=4
+	
+	partitions : int or None (default)
+		Number of partitons. By default it will be equal to number of 
+		workers
 	
 	token_pattern : string, default='[\w][\w-]*'
 		Regular expression denoting what constitute a "token".
@@ -162,7 +166,10 @@ def get_df(X, workers=4, as_dict=True,
 			,postprocessor = postprocessor
 			,ngram_words = ngram_words
 		)
-	for lo,hi in partitions(len(X),workers):
+	part_cnt = partitions or workers
+	if mp_pool and not partitions:
+		part_cnt = max(part_cnt,len(mp_pool._pool))
+	for lo,hi in _partitions(len(X),part_cnt):
 		kw = dict(X=X[lo:hi], **kwargs)
 		data.append(kw)
 	
@@ -223,7 +230,7 @@ def get_clean_x_part(kwargs):
 
 
 # TODO refactor with get_df
-def get_clean_x(X, workers=4, 
+def get_clean_x(X, workers=4, partitions=None,
 		token_pattern='[\w][\w-]*', split_pattern='', encoding=None, 
 		lowercase=True,
 		tokenizer=None, preprocessor=None,
@@ -258,7 +265,10 @@ def get_clean_x(X, workers=4,
 	"""
 	
 	data = []
-	for lo,hi in partitions(len(X),workers):
+	part_cnt = partitions or workers
+	if mp_pool and not partitions:
+		part_cnt = max(part_cnt,len(mp_pool._pool))
+	for lo,hi in _partitions(len(X),part_cnt):
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -553,7 +563,7 @@ def vectorize_part(kwargs):
 	return out
 
 # TODO remove dead options
-def vectorize(X, vocabulary, workers=4,
+def vectorize(X, vocabulary, workers=4, partitions=None,
 	   token_pattern='[\w][\w-]*', split_pattern='',
 	   encoding=None, lowercase=True,
 	   analyzer='word', tokenizer=None, preprocessor=None,
@@ -594,7 +604,10 @@ def vectorize(X, vocabulary, workers=4,
 	"""
 	
 	data = []
-	for lo,hi in partitions(len(X),workers):
+	part_cnt = partitions or workers
+	if mp_pool and not partitions:
+		part_cnt = max(part_cnt,len(mp_pool._pool))
+	for lo,hi in _partitions(len(X),part_cnt):
 		kwargs = dict(
 				X = X[lo:hi]
 				,token_pattern = token_pattern
@@ -740,7 +753,7 @@ def get_co_part(kwargs):
 	else:
 		return co
 
-def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=False,
+def get_co(X, workers=4, partitions=None, diagonal=True, triangular=False, sparse=True, binary=False,
 		dtype=None,stream=False,ngram_max=None,symetry=True,
 		output_dtype=None, upper_limit=0, output_len=None,
 		mp_pool=None,as_dict=True,min_df_part=0):
@@ -766,7 +779,10 @@ def get_co(X, workers=4, diagonal=True, triangular=False, sparse=True, binary=Fa
 		pool = mp_pool or Pool(workers)
 		# TODO refactor
 		data = []
-		for lo,hi in partitions(len(X),workers):
+		part_cnt = partitions or workers
+		if mp_pool and not partitions:
+			part_cnt = max(part_cnt,len(mp_pool._pool))
+		for lo,hi in _partitions(len(X),part_cnt):
 			kw = dict(X=X[lo:hi],**kwargs)
 			data.append(kw)
 		
