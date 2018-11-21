@@ -1,15 +1,18 @@
 TODO:
-- minimalizacja zuzycia pamieci
-- rozbicie nlp.py na mniejsze pliki: core, co, feature selection score, vectorize + jeden plik do importu zawierajacy importy z mniejszych plikow
 - co_part + dtype
-- minimalna dlugosc lancucha przy czyszczeniu
+- rozbicie nlp.py na mniejsze pliki: core, co, feature selection score (utility functions), vectorize, clean + jeden plik do importu zawierajacy importy z mniejszych plikow
+- przyklady: core, co, feature selection, vectorize, co, clean
+- minimalizacja zuzycia pamieci
 - jupyter vs mp_pool+funkcje
 - cache web explorer
-- polimorf - opcja: czasowniki odrzeczownikowe jako rzeczowniki
-- polimorf - opcja: przymiotniki odrzeczownikowe jako rzeczowniki
+- wazenie df funkcjami feature selection
+- wykrywanie ciekawych ngramow:
+  - dokladnie jeden rzeczownik lub czasownik i cos ala przymiotnik
 
 
 DONE:
+- pos tagging
+- minimalna dlugosc lancucha przy czyszczeniu
 - rozdzielenie ilosci workerow od ilosci partycji
 - polimorf - lematyzer - jak jest konflikt z daw. przest. rzad. gwar. to przegrywa
 

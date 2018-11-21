@@ -43,6 +43,40 @@ def get_lem_dict(path):
 	
 	return out
 
+def get_pos_dict(path):
+	"""Create mapping from word to pos
+	"""
+	SKIP = 32
+	pos_by_word = {}
+	
+	uncommon = set()
+	uncommon_re = re.compile('daw[.]|przest[.]|rzad[.]|gwar[.]')
+
+	fi = open(path,'rb')
+	i = 0
+	for line in fi:
+		i += 1
+		if i<=SKIP: continue
+		line = line.rstrip().decode('utf8').lower()
+		word,lem,info0,info1,info2 = (line+'\t\t\t\t').split('\t')[:5]
+		
+		pos = info0.split(':')[0]
+		if uncommon_re.findall(info1):
+			continue # TODO
+		
+		if word not in pos_by_word:
+			pos_by_word[word] = set([pos])
+		else:
+			pos_by_word[word].add(pos)
+		
+	
+	out = {}
+	for word in pos_by_word: 
+		pos = pos_by_word[word]
+		out[word] = u'/'.join(pos)
+	
+	return out
+
 def get_stats(path):
 	"""
 	"""
@@ -88,6 +122,9 @@ if __name__=="__main__":
 		lem_dict = get_lem_dict('data/polimorf-20181118.tab')
 		marshal.dump(lem_dict,open('data/lem_dict.mrl','wb'))
 	if 1:
+		pos_dict = get_pos_dict('data/polimorf-20181118.tab')
+		marshal.dump(pos_dict,open('data/pos_dict.mrl','wb'))
+	if 0:
 		# old
 		i0a,i1a,i2a = get_stats('data/polimorf-20181021.tab')
 		# new
