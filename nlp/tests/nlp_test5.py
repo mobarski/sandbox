@@ -79,7 +79,8 @@ if __name__=="__main__":
 			split_pattern='[\s;]*[;.][\s;]*',
 			preprocessor=[replace_numbers,replace_links], postprocessor=None,
 			min_df_part=2, min_df=2)
-		print('len noise',len(noise))
+		
+		noise = cache.set('noise2', limit_df, noise, min_tokens=4)
 		
 		# clean_x
 		X = cache.use('clean_x',get_clean_x,
@@ -87,7 +88,6 @@ if __name__=="__main__":
 			split_pattern='[\s;]*[;.][\s;]*',
 			preprocessor=[replace_numbers,replace_links], postprocessor=None,
 			replace=u' ; ', stop_words=noise)
-		print('len clean_x',len(X))
 	else:
 		X = frame['text']
 	

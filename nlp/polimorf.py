@@ -84,10 +84,10 @@ def scan_dict(path,pattern):
 
 if __name__=="__main__":
 	import marshal
-	if 1:
+	if 0:
 		lem_dict = get_lem_dict('data/polimorf-20181118.tab')
 		marshal.dump(lem_dict,open('data/lem_dict.mrl','wb'))
-	if 0:
+	if 1:
 		# old
 		i0a,i1a,i2a = get_stats('data/polimorf-20181021.tab')
 		# new

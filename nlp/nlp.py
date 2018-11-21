@@ -219,6 +219,25 @@ def get_df_from_dfy(dfy,as_dict=True):
 
 # ---[ clean ]------------------------------------------------------------------
 
+def limit_df(df,min_tokens=2,token_pattern='[\w][\w-]*', split_pattern='', tokenizer=None):
+	"""function for limiting noise df to sentences with minimum number of tokens"""
+	if token_pattern:
+		re_tok = re.compile(token_pattern,re.U)
+	if split_pattern:
+		re_split = re.compile(split_pattern,re.U)
+	new_df = {}
+	for t in df:
+		if tokenizer:
+			tokens = tokenizer(t)
+		elif split_pattern:
+			tokens = re_split.split(t)
+		elif token_pattern:
+			tokens = re_tok.findall(t)
+		if len(tokens)<min_tokens:
+			continue
+		new_df[t] = df[t]
+	return new_df
+
 # TODO replace based on matched split_pattern
 
 def get_clean_x_part(kwargs):
@@ -974,7 +993,7 @@ def iter_tokens_part(kwargs):
 					for n in range(lo,hi+1):
 						if i+n>len(tokens): break # TEST off-by-one
 						ngram = tuple(tokens[i:i+n])
-						if not ngram_words_set&set(ngram): continue
+						if ngram_words_set and not ngram_words_set&set(ngram): continue
 						ngrams.append(ngram) # TODO tuple vs string
 			elif analyzer=='char':
 				for t in tokens:
