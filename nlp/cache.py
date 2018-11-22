@@ -74,6 +74,13 @@ class disk_cache:
 			print('{}\t{:.2f} s\t{:.1f} MB\t{}{}'.format(key, time()-t0, 1.0*size/2**20, len_str, mode))
 		return obj
 	
+	def has(self, key, column=None):
+		if column:
+			path = os.path.join(self.dir, key, column + self.ext)
+		else:
+			path = os.path.join(self.dir, key + self.ext)
+		return os.path.exists(path)
+	
 	def get(self, key, default=None):
 		t0 = time()
 		fn = key + self.ext
