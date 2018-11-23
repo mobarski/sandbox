@@ -5,16 +5,19 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
+# TODO inhibition & boosting
 # TODO multiprocessing .learn
 # TODO multiprocessing .score
 # TODO multiprocessing .init
 # TODO sparsify .perm
 # TODO sequence prediction
 
+# TODO w as float
 def random_sdr(n,w):
-	all = list(range(n))
-	shuffle(all)
-	return set(all[:w])
+	out = set(np.random.randint(0,n,w))
+	while len(out)<w:
+		out.add(randint(0,n-1))
+	return out
 
 class spatial_pooler:
 	def __init__(self,n,w,t=200):
@@ -31,7 +34,9 @@ class spatial_pooler:
 		self.cfg['t'] = t
 		self.cfg['p_inc'] = 10
 		self.cfg['p_dec'] = 10
-		self.conn = {x:random_sdr(n,w) for x in range(n)}
+		t0 = time()
+		self.conn = {x:random_sdr(n,w) for x in range(n)} # TODO optimize
+		print('init0',time()-t0)
 		self.perm = None
 		self._init_perm()
 
@@ -52,13 +57,18 @@ class spatial_pooler:
 	def _init_perm(self):
 		t = self.cfg['t']
 		n = self.cfg['n']
+		w = self.cfg['w']
 		conn = self.conn
 		
+		t0 = time()
 		perm = np.random.randint(1,t-1,(n,n),np.uint8)
+		print('init1',time()-t0)
+		t0 = time()
 		for i in range(n):
-			for j in conn[i]:
-				perm[i][j] = randint(t,255)
+			perm[i][list(conn[i])] = np.random.randint(t,255,w)
+		print('init2',time()-t0)
 		self.perm = perm
+		
 
 	def score(self,input):
 		conn = self.conn
@@ -130,7 +140,7 @@ if __name__=="__main__":
 		sp.learn(a)
 		sp.learn(b)
 
-	if 0:
+	if 1:
 		N = 128*128
 		W = N//50
 		a = random_sdr(N,W)
