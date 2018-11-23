@@ -5,15 +5,22 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
-# TODO inhibition & boosting
+# TODO activity statistics
+# TODO boosting
+# TODO different size of input and pooler
+
+# TODO numba
+# TODO numba+cuda
+
 # TODO multiprocessing .learn
 # TODO multiprocessing .score
 # TODO multiprocessing .init
+
 # TODO sparsify .perm
 # TODO sequence prediction
 
-# TODO w as float
 def random_sdr(n,w):
+	w = w if type(w)==int else int(w*n)
 	out = set(np.random.randint(0,n,w))
 	while len(out)<w:
 		out.add(randint(0,n-1))
@@ -69,7 +76,8 @@ class spatial_pooler:
 		print('init2',time()-t0)
 		self.perm = perm
 		
-
+	
+	# overlap score
 	def score(self,input):
 		conn = self.conn
 		score = {x:len(input & conn[x]) for x in conn}
