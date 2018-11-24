@@ -5,7 +5,6 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
-# TODO activity statistics
 # TODO boosting
 # TODO different size of input and pooler
 
@@ -44,22 +43,10 @@ class spatial_pooler:
 		t0 = time()
 		self.conn = {x:random_sdr(n,w) for x in range(n)} # TODO optimize
 		print('init0',time()-t0)
+		self.activity = np.zeros(n,dtype=np.uint32)
+		self.cycles = 0
 		self.perm = None
 		self._init_perm()
-
-	@staticmethod
-	def load(f):
-		self = spatial_pooler(0,0)
-		self.cfg = marshal.load(f)
-		self.conn = marshal.load(f)
-		n = self.cfg['n']
-		self.perm = np.fromfile(f,np.uint8).reshape((n,n))
-		return self
-
-	def save(self,f,version=2):
-		marshal.dump(self.cfg, f, version)
-		marshal.dump(self.conn, f, version)
-		self.perm.tofile(f)
 
 	def _init_perm(self):
 		t = self.cfg['t']
@@ -75,7 +62,26 @@ class spatial_pooler:
 			perm[i][list(conn[i])] = np.random.randint(t,255,w)
 		print('init2',time()-t0)
 		self.perm = perm
+
+	@staticmethod
+	def load(f):
+		self = spatial_pooler(0,0)
+		self.cfg = marshal.load(f)
+		self.conn = marshal.load(f)
+		self.cycles = marshal.load(f)
+		n = self.cfg['n']
+		self.perm = np.fromfile(f,np.uint8,n*n).reshape((n,n))
+		self.activity = np.fromfile(f,np.uint32,n)
+		return self
+
+	def save(self,f,version=2):
+		marshal.dump(self.cfg, f, version)
+		marshal.dump(self.conn, f, version)
+		marshal.dump(self.cycles, f, version)
+		self.perm.tofile(f)
+		self.activity.tofile(f)
 		
+	# ----------------------------------------------------------------------
 	
 	# overlap score
 	def score(self,input):
@@ -90,6 +96,7 @@ class spatial_pooler:
 		p_dec = self.cfg['p_dec']
 		conn = self.conn
 		perm = self.perm
+		activity = self.activity
 		
 		tx=[]
 		
@@ -101,6 +108,8 @@ class spatial_pooler:
 		tx.append(time())
 		by_score = sorted(score.items(),key=lambda x:x[1],reverse=True)
 		active = [x[0] for x in by_score[:w]]
+		activity[active] += 1
+		self.cycles += 1
 		tx.append(time())
 		##print('input',input)
 		##print('active',active)
@@ -149,8 +158,10 @@ if __name__=="__main__":
 		sp.learn(b)
 
 	if 1:
-		N = 128*128
-		W = N//50
+		#N = 128*128
+		#W = N//50
+		N = 64
+		W = 8
 		a = random_sdr(N,W)
 		t0=time()
 		sp = spatial_pooler(N,W,t=100)
@@ -164,6 +175,7 @@ if __name__=="__main__":
 		t0=time()
 		sp.save(open('sp_test.marshal','wb'))
 		print('save',time()-t0)
+		#print(sp.activity)
 
 
 	if 1:
@@ -176,3 +188,4 @@ if __name__=="__main__":
 		t0=time()
 		sp.learn(a)
 		print('learn',time()-t0)
+		print(sp.activity)
