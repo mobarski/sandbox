@@ -5,7 +5,8 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
-# TODO boosting
+# TEST / OPTIMIZE boosting
+# TODO visualization
 # TODO different size of input and pooler
 
 # TODO numba
@@ -42,7 +43,7 @@ class spatial_pooler:
 		self.cfg['p_dec'] = 10
 		t0 = time()
 		self.conn = {x:random_sdr(n,w) for x in range(n)} # TODO optimize
-		print('init0',time()-t0)
+		#print('init0',time()-t0)
 		self.activity = np.zeros(n,dtype=np.uint32)
 		self.cycles = 0
 		self.perm = None
@@ -56,11 +57,11 @@ class spatial_pooler:
 		
 		t0 = time()
 		perm = np.random.randint(1,t-1,(n,n),np.uint8)
-		print('init1',time()-t0)
+		#print('init1',time()-t0)
 		t0 = time()
 		for i in range(n):
 			perm[i][list(conn[i])] = np.random.randint(t,255,w)
-		print('init2',time()-t0)
+		#print('init2',time()-t0)
 		self.perm = perm
 
 	@staticmethod
@@ -98,16 +99,27 @@ class spatial_pooler:
 		perm = self.perm
 		activity = self.activity
 		
-		tx=[]
+		tx=[] # time[x]
 		
 		# score
 		tx.append(time())
 		score = self.score(input)
 		
+		# boost
+		if 1 and self.cycles:
+			target_pct = 1.0 * w / n # uniform distribution
+			for i in score:
+				activity_pct = 1.0 * activity[i] / self.cycles
+				boost_factor = 1.25 if activity_pct < target_pct else 0.75+0.25*target_pct/activity_pct # TODO
+				score[i] *= boost_factor
+		
 		# activate
 		tx.append(time())
 		by_score = sorted(score.items(),key=lambda x:x[1],reverse=True)
 		active = [x[0] for x in by_score[:w]]
+		print(by_score)
+		##print(sorted(active))
+		# record activity
 		activity[active] += 1
 		self.cycles += 1
 		tx.append(time())
@@ -133,7 +145,8 @@ class spatial_pooler:
 		tx.append(time())
 		
 		for label,t1,t0 in zip(['score','activate','udate perm','update conn'],tx[1:],tx):
-			print(label,t1-t0)
+			#print(label,t1-t0)
+			pass
 
 
 if __name__=="__main__":
@@ -182,10 +195,13 @@ if __name__=="__main__":
 		t0=time()
 		sp = spatial_pooler.load(open('sp_test.marshal','rb'))
 		print('load',time()-t0)
-		N = sp.cfg['n']
-		W = sp.cfg['w']
-		a = random_sdr(N,W)
+		n = sp.cfg['n']
+		w = sp.cfg['w']
 		t0=time()
-		sp.learn(a)
+		for _ in range(200):
+			a = random_sdr(n,w)
+			sp.learn(a)
 		print('learn',time()-t0)
 		print(sp.activity)
+		print(sum(sp.activity))
+		
