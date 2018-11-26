@@ -6,21 +6,21 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
-# TODO better boost_factor formula
-# TODO permanence of overlap as tie-breaker in overlap score
-# TODO better p_inc p_dec formula
+# TODO: sparsify .perm
+# TODO: better boost_factor formula
+# TODO: permanence of overlap as tie-breaker in overlap score
+# TODO: better p_inc p_dec formula
 
-# TODO visualization
+# TODO: visualization
 
-# TODO numba
-# TODO numba+cuda
+# TODO: numba
+# TODO: numba+cuda
 
-# TODO multiprocessing .learn
-# TODO multiprocessing .score
-# TODO multiprocessing .init
+# TODO: multiprocessing .learn
+# TODO: multiprocessing .score
+# TODO: multiprocessing .init
 
-# TODO sparsify .perm
-# TODO sequence prediction
+# TODO: sequence prediction
 
 def random_sdr(n,w):
 	w = w if type(w)==int else int(w*n)
@@ -30,34 +30,35 @@ def random_sdr(n,w):
 	return out
 
 class spatial_pooler:
+	# TODO: rename w to k ???
 	def __init__(self, n, w, m=None, t=200,
 					boost=True, b_min=0.75, b_max=1.25,
-					p_inc=10, p_dec=10 ):
+					p_inc=10, p_dec=5 ):
 		"""
 		Parameters
 		----------
-			n - number of neurons
-			w - number of neurons to fire
-			m - number of input neurons (equal to n by default)
-			t - connection threshold
-			boost - 
-			b_min - 
-			b_max - 
-			p_inc - 
-			p_dec - 
+			n -- number of neurons (:int)
+			w -- number of neurons to fire (:int) or proportion of neurons to fire (:float)
+			m -- number of input neurons (equal to n by default) (:int or None)
+			t -- connection threshold (:int)
+			boost -- enable overlap score boosting (:bool)
+			b_min -- minimum boost factor (:int)
+			b_max -- maximum boost factor (:int)
+			p_inc -- permanence increase value (:int)
+			p_dec -- permanence decrease value (:int)
 		"""
 		m = m or n
 		self.cfg = {}
 		self.cfg['n'] = n
 		self.cfg['m'] = m
-		self.cfg['w'] = w if type(w)==int else int(w*n) # TODO DOC
+		self.cfg['w'] = w if type(w)==int else int(w*n) # TODO: DOC
 		self.cfg['t'] = t
 		self.cfg['p_inc'] = p_inc
 		self.cfg['p_dec'] = p_dec
 		self.cfg['b_min'] = b_min
 		self.cfg['b_max'] = b_max
 		self.cfg['boost'] = boost
-		self.conn = {x:random_sdr(m,w) for x in range(n)} # TODO optimize
+		self.conn = {x:random_sdr(m,w) for x in range(n)} # TODO: optimize
 		self.activity = np.zeros(n,dtype=np.uint32)
 		self.cycles = 0
 		self.perm = None # synaptic permanence
@@ -96,7 +97,7 @@ class spatial_pooler:
 		self.perm.tofile(f)
 		self.activity.tofile(f)
 		
-	# ----------------------------------------------------------------------
+	## -------------------------------------------------------------------------
 	
 	def score(self,input):
 		"calculate overlap score for every neuron"
@@ -110,6 +111,7 @@ class spatial_pooler:
 		w = self.cfg['w']
 		n = self.cfg['n']
 		m = self.cfg['m']
+		t = self.cfg['t']
 		p_inc = self.cfg['p_inc']
 		p_dec = self.cfg['p_dec']
 		b_min = self.cfg['b_min']
@@ -138,7 +140,7 @@ class spatial_pooler:
 			cycles = self.cycles or 1
 			for i in score:
 				activity_pct = 1.0 * activity[i] / cycles
-				boost_factor = b_max if activity_pct < target_pct else b_min+(1.0-b_min)*target_pct/activity_pct # TODO
+				boost_factor = b_max if activity_pct < target_pct else b_min+(1.0-b_min)*target_pct/activity_pct # TODO: better formula
 				score[i] *= boost_factor
 		tx.append(time())
 		
@@ -169,7 +171,8 @@ class spatial_pooler:
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
-				conn[a].update(perm[a].argsort()[-w:])
+				conn[a].update(perm[a].argsort()[-w:]) # always connect w neurons
+				# conn[a].update([x for x in range(m) if perm[a][x]>=t]) # TEST: connect neurons above threshold
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
 		

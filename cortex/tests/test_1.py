@@ -26,8 +26,8 @@ if __name__=="__main__":
 	if 0:
 		N = 128*128
 		W = N//50
-		#N = 64
-		#W = 8
+		## N = 64
+		## W = 8
 		a = random_sdr(N,W)
 		t0=time()
 		sp = spatial_pooler(N,W,t=100)
@@ -59,18 +59,17 @@ if __name__=="__main__":
 		print(sum(sp.activity))
 		
 
-	if 0:
+	if 1:
 		N = 16
 		W = 2
 		sp = spatial_pooler(N,W,boost=True)
 		X = [random_sdr(N,W) for _ in range(4)]
-		for _ in range(10):
+		for _ in range(25):
 			for x in X:
 				sp.learn(x)
 		print(sp.activity)
-		print(sum(sp.activity))
 
-	if 1:
+	if 0:
 		M = 16
 		N = 8
 		W = 3
