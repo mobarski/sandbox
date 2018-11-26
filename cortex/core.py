@@ -4,9 +4,9 @@ import numpy as np
 from random import randint,shuffle
 from time import time
 import marshal
-from heapq import nlargest # not used
 
 # TODO: sparsify .perm
+
 # TODO: better boost_factor formula
 # TODO: permanence of overlap as tie-breaker in overlap score
 # TODO: better p_inc p_dec formula
@@ -22,23 +22,22 @@ from heapq import nlargest # not used
 
 # TODO: sequence prediction
 
-def random_sdr(n,w):
-	w = w if type(w)==int else int(w*n)
-	out = set(np.random.randint(0,n,w))
-	while len(out)<w:
+def random_sdr(n,k):
+	k = k if type(k)==int else int(k*n)
+	out = set(np.random.randint(0,n,k))
+	while len(out)<k:
 		out.add(randint(0,n-1))
 	return out
 
 class spatial_pooler:
-	# TODO: rename w to k ???
-	def __init__(self, n, w, m=None, t=200,
+	def __init__(self, n, k, m=None, t=200,
 					boost=True, b_min=0.75, b_max=1.25,
 					p_inc=10, p_dec=5 ):
 		"""
 		Parameters
 		----------
 			n -- number of neurons (:int)
-			w -- number of neurons to fire (:int) or proportion of neurons to fire (:float)
+			k -- number of neurons to fire (:int) or proportion of neurons to fire (:float)
 			m -- number of input neurons (equal to n by default) (:int or None)
 			t -- connection threshold (:int)
 			boost -- enable overlap score boosting (:bool)
@@ -51,14 +50,14 @@ class spatial_pooler:
 		self.cfg = {}
 		self.cfg['n'] = n
 		self.cfg['m'] = m
-		self.cfg['w'] = w if type(w)==int else int(w*n) # TODO: DOC
+		self.cfg['k'] = k if type(k)==int else int(k*n)
 		self.cfg['t'] = t
 		self.cfg['p_inc'] = p_inc
 		self.cfg['p_dec'] = p_dec
 		self.cfg['b_min'] = b_min
 		self.cfg['b_max'] = b_max
 		self.cfg['boost'] = boost
-		self.conn = {x:random_sdr(m,w) for x in range(n)} # TODO: optimize
+		self.conn = {x:random_sdr(m,k) for x in range(n)} # TODO: optimize
 		self.activity = np.zeros(n,dtype=np.uint32)
 		self.cycles = 0
 		self.perm = None # synaptic permanence
@@ -69,12 +68,12 @@ class spatial_pooler:
 		t = self.cfg['t']
 		n = self.cfg['n']
 		m = self.cfg['m']
-		w = self.cfg['w']
+		k = self.cfg['k']
 		conn = self.conn
 		
 		perm = np.random.randint(1,t-1,(n,m),np.uint8)
 		for i in range(n):
-			perm[i][list(conn[i])] = np.random.randint(t,255,w)
+			perm[i][list(conn[i])] = np.random.randint(t,255,k)
 		self.perm = perm
 
 	@staticmethod
@@ -108,7 +107,7 @@ class spatial_pooler:
 	def learn(self,input,update_conn=True,verbose=False,show_times=False):
 		"learn single input"
 		
-		w = self.cfg['w']
+		k = self.cfg['k']
 		n = self.cfg['n']
 		m = self.cfg['m']
 		t = self.cfg['t']
@@ -136,7 +135,7 @@ class spatial_pooler:
 		
 		# boost
 		if boost:
-			target_pct = 1.0 * w / n # uniform distribution
+			target_pct = 1.0 * k / n # uniform distribution
 			cycles = self.cycles or 1
 			for i in score:
 				activity_pct = 1.0 * activity[i] / cycles
@@ -146,7 +145,7 @@ class spatial_pooler:
 		
 		# activate
 		by_score = sorted(score.items(),key=lambda x:x[1],reverse=True)
-		active = [x[0] for x in by_score[:w]]
+		active = [x[0] for x in by_score[:k]]
 		if verbose: print('activity',activity)
 		if verbose: print('by_score',by_score)
 		if verbose: print('active',active)
@@ -171,7 +170,7 @@ class spatial_pooler:
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
-				conn[a].update(perm[a].argsort()[-w:]) # always connect w neurons
+				conn[a].update(perm[a].argsort()[-k:]) # always connect w neurons
 				# conn[a].update([x for x in range(m) if perm[a][x]>=t]) # TEST: connect neurons above threshold
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
@@ -185,4 +184,4 @@ class spatial_pooler:
 		"print execution time"
 		dt = time()-t0 if t1==None else t1-t0
 		print("{:.3f}\t{}".format(dt,label))
-		
+	
