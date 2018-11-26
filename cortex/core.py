@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 from random import randint,shuffle
@@ -5,9 +6,13 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
-# TEST / OPTIMIZE boosting
-# TODO visualization
 # TODO different size of input and pooler
+
+# TODO better boost_factor formula
+# TODO permanence of overlap as tie-breaker in overlap score
+# TODO better p_inc p_dec formula
+
+# TODO visualization
 
 # TODO numba
 # TODO numba+cuda
@@ -27,45 +32,51 @@ def random_sdr(n,w):
 	return out
 
 class spatial_pooler:
-	def __init__(self,n,w,t=200):
+	def __init__(self, n, w, t=200,
+					boost=True, b_min=0.75, b_max=1.25,
+					p_inc=10, p_dec=10 ):
 		"""
 		Parameters
 		----------
 			n - number of neurons
 			w - number of neurons to fire
-			t - activation threshold
+			t - connection threshold
+			boost - 
+			b_min - 
+			b_max - 
+			p_inc - 
+			p_dec - 
 		"""
 		self.cfg = {}
 		self.cfg['n'] = n
 		self.cfg['w'] = w if type(w)==int else int(w*n) # TODO DOC
 		self.cfg['t'] = t
-		self.cfg['p_inc'] = 10
-		self.cfg['p_dec'] = 10
-		t0 = time()
+		self.cfg['p_inc'] = p_inc
+		self.cfg['p_dec'] = p_dec
+		self.cfg['b_min'] = b_min
+		self.cfg['b_max'] = b_max
+		self.cfg['boost'] = boost
 		self.conn = {x:random_sdr(n,w) for x in range(n)} # TODO optimize
-		#print('init0',time()-t0)
 		self.activity = np.zeros(n,dtype=np.uint32)
 		self.cycles = 0
-		self.perm = None
+		self.perm = None # synaptic permanence
 		self._init_perm()
 
 	def _init_perm(self):
+		"initialize synaptic permanence values"
 		t = self.cfg['t']
 		n = self.cfg['n']
 		w = self.cfg['w']
 		conn = self.conn
 		
-		t0 = time()
 		perm = np.random.randint(1,t-1,(n,n),np.uint8)
-		#print('init1',time()-t0)
-		t0 = time()
 		for i in range(n):
 			perm[i][list(conn[i])] = np.random.randint(t,255,w)
-		#print('init2',time()-t0)
 		self.perm = perm
 
 	@staticmethod
 	def load(f):
+		"load pooler from file"
 		self = spatial_pooler(0,0)
 		self.cfg = marshal.load(f)
 		self.conn = marshal.load(f)
@@ -76,6 +87,7 @@ class spatial_pooler:
 		return self
 
 	def save(self,f,version=2):
+		"save pooler to file"
 		marshal.dump(self.cfg, f, version)
 		marshal.dump(self.conn, f, version)
 		marshal.dump(self.cycles, f, version)
@@ -84,124 +96,87 @@ class spatial_pooler:
 		
 	# ----------------------------------------------------------------------
 	
-	# overlap score
 	def score(self,input):
+		"calculate overlap score for every neuron"
 		conn = self.conn
 		score = {x:len(input & conn[x]) for x in conn}
 		return score
 	
-	def learn(self,input,update_conn=True):
+	def learn(self,input,update_conn=True,verbose=False,show_times=False):
+		"learn single input"
+		
 		w = self.cfg['w']
 		n = self.cfg['n']
 		p_inc = self.cfg['p_inc']
 		p_dec = self.cfg['p_dec']
+		b_min = self.cfg['b_min']
+		b_max = self.cfg['b_max']
+		boost = self.cfg['boost']
 		conn = self.conn
 		perm = self.perm
 		activity = self.activity
+		meta = {}
 		
 		tx=[] # time[x]
+		tx.append(time())
+		
+		if verbose:
+			print()
+			print('input',list(input))
 		
 		# score
-		tx.append(time())
 		score = self.score(input)
+		if verbose: print('by_score',sorted(score.items(),key=lambda x:x[1],reverse=True))
+		tx.append(time())
 		
 		# boost
-		if 1 and self.cycles:
+		if boost:
 			target_pct = 1.0 * w / n # uniform distribution
+			cycles = self.cycles or 1
 			for i in score:
-				activity_pct = 1.0 * activity[i] / self.cycles
-				boost_factor = 1.25 if activity_pct < target_pct else 0.75+0.25*target_pct/activity_pct # TODO
+				activity_pct = 1.0 * activity[i] / cycles
+				boost_factor = b_max if activity_pct < target_pct else b_min+(1.0-b_min)*target_pct/activity_pct # TODO
 				score[i] *= boost_factor
+		tx.append(time())
 		
 		# activate
-		tx.append(time())
 		by_score = sorted(score.items(),key=lambda x:x[1],reverse=True)
 		active = [x[0] for x in by_score[:w]]
-		print(by_score)
-		##print(sorted(active))
+		if verbose: print('activity',activity)
+		if verbose: print('by_score',by_score)
+		if verbose: print('active',active)
+		tx.append(time())
+		
 		# record activity
 		activity[active] += 1
 		self.cycles += 1
 		tx.append(time())
-		##print('input',input)
-		##print('active',active)
 		
 		# update perm
-		##print('perm',perm)
+		if verbose: print('perm',[list(perm[i]) for i in active])
 		for a in active:
 			perm[a][perm[a]>p_dec+1] -= p_dec
 			for i in input:
 				perm[a][i] = min(255,perm[a][i]+p_dec+p_inc)
-		##print('perm',perm)
+		if verbose: print('perm',[list(perm[i]) for i in active])
 		tx.append(time())
 		
 		# update conn
 		if update_conn:
-			##print('conn',conn)
+			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
 				conn[a].update(perm[a].argsort()[-w:])
-			##print('conn',conn)
+			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
 		
-		for label,t1,t0 in zip(['score','activate','udate perm','update conn'],tx[1:],tx):
-			#print(label,t1-t0)
-			pass
-
-
-if __name__=="__main__":
-	if 0:
-		a = random_sdr(16,8)
-		b = random_sdr(16,8)
-		print(a)
-		print(b)
-		print(a&b)
-		print(a|b)
-		print(a^b)
-
-	if 0:
-		a = random_sdr(16,8)
-		b = random_sdr(16,8)
-		sp = spatial_pooler(16,4,t=100)
-		print(sp.conn)
-		print(sp.score(a))
-		sp.init_perm()
-		print(sp.perm)
-		sp.learn(a)
-		sp.learn(b)
-
-	if 1:
-		#N = 128*128
-		#W = N//50
-		N = 64
-		W = 8
-		a = random_sdr(N,W)
-		t0=time()
-		sp = spatial_pooler(N,W,t=100)
-		print('init',time()-t0)
-		t0=time()
-		sp.learn(a)
-		print('learn',time()-t0)
-		t0=time()
-		sp.score(a)
-		print('score',time()-t0)
-		t0=time()
-		sp.save(open('sp_test.marshal','wb'))
-		print('save',time()-t0)
-		#print(sp.activity)
-
-
-	if 1:
-		t0=time()
-		sp = spatial_pooler.load(open('sp_test.marshal','rb'))
-		print('load',time()-t0)
-		n = sp.cfg['n']
-		w = sp.cfg['w']
-		t0=time()
-		for _ in range(200):
-			a = random_sdr(n,w)
-			sp.learn(a)
-		print('learn',time()-t0)
-		print(sp.activity)
-		print(sum(sp.activity))
+		if show_times:
+			for label,t1,t0 in zip(['score','boost','activate','record activity','update perm','update conn'],tx[1:],tx):
+				self.time(label,t0,t1)
+	
+	@staticmethod
+	def time(label,t0,t1=None):
+		"print execution time"
+		dt = time()-t0 if t1==None else t1-t0
+		print("{:.3f}\t{}".format(dt,label))
 		
