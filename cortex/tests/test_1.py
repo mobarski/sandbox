@@ -71,10 +71,11 @@ if __name__=="__main__":
 		print(sum(sp.activity))
 
 	if 1:
+		M = 16
 		N = 8
 		W = 3
-		sp = spatial_pooler(N,W,boost=True,b_min=0.1)
-		x = random_sdr(N,W)
+		sp = spatial_pooler(N,W,m=M,boost=True,b_min=0.1)
+		x = random_sdr(M,2)
 		for _ in range(20):
 			sp.learn(x,verbose=True)
 		print()

@@ -6,8 +6,6 @@ from time import time
 import marshal
 from heapq import nlargest # not used
 
-# TODO different size of input and pooler
-
 # TODO better boost_factor formula
 # TODO permanence of overlap as tie-breaker in overlap score
 # TODO better p_inc p_dec formula
@@ -32,7 +30,7 @@ def random_sdr(n,w):
 	return out
 
 class spatial_pooler:
-	def __init__(self, n, w, t=200,
+	def __init__(self, n, w, m=None, t=200,
 					boost=True, b_min=0.75, b_max=1.25,
 					p_inc=10, p_dec=10 ):
 		"""
@@ -40,6 +38,7 @@ class spatial_pooler:
 		----------
 			n - number of neurons
 			w - number of neurons to fire
+			m - number of input neurons (equal to n by default)
 			t - connection threshold
 			boost - 
 			b_min - 
@@ -47,8 +46,10 @@ class spatial_pooler:
 			p_inc - 
 			p_dec - 
 		"""
+		m = m or n
 		self.cfg = {}
 		self.cfg['n'] = n
+		self.cfg['m'] = m
 		self.cfg['w'] = w if type(w)==int else int(w*n) # TODO DOC
 		self.cfg['t'] = t
 		self.cfg['p_inc'] = p_inc
@@ -56,7 +57,7 @@ class spatial_pooler:
 		self.cfg['b_min'] = b_min
 		self.cfg['b_max'] = b_max
 		self.cfg['boost'] = boost
-		self.conn = {x:random_sdr(n,w) for x in range(n)} # TODO optimize
+		self.conn = {x:random_sdr(m,w) for x in range(n)} # TODO optimize
 		self.activity = np.zeros(n,dtype=np.uint32)
 		self.cycles = 0
 		self.perm = None # synaptic permanence
@@ -66,10 +67,11 @@ class spatial_pooler:
 		"initialize synaptic permanence values"
 		t = self.cfg['t']
 		n = self.cfg['n']
+		m = self.cfg['m']
 		w = self.cfg['w']
 		conn = self.conn
 		
-		perm = np.random.randint(1,t-1,(n,n),np.uint8)
+		perm = np.random.randint(1,t-1,(n,m),np.uint8)
 		for i in range(n):
 			perm[i][list(conn[i])] = np.random.randint(t,255,w)
 		self.perm = perm
@@ -107,6 +109,7 @@ class spatial_pooler:
 		
 		w = self.cfg['w']
 		n = self.cfg['n']
+		m = self.cfg['m']
 		p_inc = self.cfg['p_inc']
 		p_dec = self.cfg['p_dec']
 		b_min = self.cfg['b_min']
