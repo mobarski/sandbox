@@ -4,8 +4,9 @@ import numpy as np
 from random import randint,shuffle
 from time import time
 import marshal
+from heapq import nlargest
 
-# TODO: sparsify .perm
+# WORK: sparsify .perm
 
 # TODO: better boost_factor formula
 # TODO: permanence of overlap as tie-breaker in overlap score
@@ -30,15 +31,16 @@ def random_sdr(n,k):
 	return out
 
 class spatial_pooler:
-	def __init__(self, n, k, m=None, t=200,
+	def __init__(self, n, k, m=None, p=None, t=200,
 					boost=True, b_min=0.75, b_max=1.25,
-					p_inc=10, p_dec=5 ):
+					p_inc=10, p_dec=6 ):
 		"""
 		Parameters
 		----------
 			n -- number of neurons (:int)
 			k -- number of neurons to fire (:int) or proportion of neurons to fire (:float)
 			m -- number of input neurons (equal to n by default) (:int or None)
+			p -- number of possible connections per neuron (EXPERIMENTAL) ??? TODO rename to p
 			t -- connection threshold (:int)
 			boost -- enable overlap score boosting (:bool)
 			b_min -- minimum boost factor (:int)
@@ -50,7 +52,8 @@ class spatial_pooler:
 		self.cfg = {}
 		self.cfg['n'] = n
 		self.cfg['m'] = m
-		self.cfg['k'] = k if type(k)==int else int(k*n)
+		self.cfg['k'] = int(k*n) if type(k)==float else k
+		self.cfg['p'] = int(p*m) if type(p)==float else p
 		self.cfg['t'] = t
 		self.cfg['p_inc'] = p_inc
 		self.cfg['p_dec'] = p_dec
@@ -69,11 +72,17 @@ class spatial_pooler:
 		n = self.cfg['n']
 		m = self.cfg['m']
 		k = self.cfg['k']
+		p = self.cfg['p']
 		conn = self.conn
 		
-		perm = np.random.randint(1,t-1,(n,m),np.uint8)
-		for i in range(n):
-			perm[i][list(conn[i])] = np.random.randint(t,255,k)
+		if not p:
+			perm = np.random.randint(1,t-1,(n,m),np.uint8)
+			for i in range(n):
+				perm[i][list(conn[i])] = np.random.randint(t,255,k)
+		else: # EXPERIMENTAL
+			perm = {}
+			for i in range(n):
+				perm[i] = dict(zip(random_sdr(m,p),np.random.randint(1,255,p)))
 		self.perm = perm
 
 	@staticmethod
@@ -84,7 +93,7 @@ class spatial_pooler:
 		self.conn = marshal.load(f)
 		self.cycles = marshal.load(f)
 		n = self.cfg['n']
-		self.perm = np.fromfile(f,np.uint8,n*n).reshape((n,n))
+		self.perm = np.fromfile(f,np.uint8,n*n).reshape((n,n)) # TODO p>0
 		self.activity = np.fromfile(f,np.uint32,n)
 		return self
 
@@ -93,7 +102,7 @@ class spatial_pooler:
 		marshal.dump(self.cfg, f, version)
 		marshal.dump(self.conn, f, version)
 		marshal.dump(self.cycles, f, version)
-		self.perm.tofile(f)
+		self.perm.tofile(f) # TODO p>0
 		self.activity.tofile(f)
 		
 	## -------------------------------------------------------------------------
@@ -108,6 +117,7 @@ class spatial_pooler:
 		"learn single input"
 		
 		k = self.cfg['k']
+		p = self.cfg['p']
 		n = self.cfg['n']
 		m = self.cfg['m']
 		t = self.cfg['t']
@@ -159,9 +169,16 @@ class spatial_pooler:
 		# update perm
 		if verbose: print('perm',[list(perm[i]) for i in active])
 		for a in active:
-			perm[a][perm[a]>p_dec+1] -= p_dec
-			for i in input:
-				perm[a][i] = min(255,perm[a][i]+p_dec+p_inc)
+			if not p: # dense perm
+				perm[a][perm[a]>p_dec+1] -= p_dec
+				for i in input:
+					perm[a][i] = min(255,perm[a][i]+p_dec+p_inc)
+			else: # EXPERIMENTAL
+				for i in perm[a]:
+					if i in input:
+						perm[a][i] = min(255,perm[a][i]+p_inc)
+					else:
+						perm[a][i] = max(1,perm[a][i]-p_dec)
 		if verbose: print('perm',[list(perm[i]) for i in active])
 		tx.append(time())
 		
@@ -170,8 +187,12 @@ class spatial_pooler:
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
-				conn[a].update(perm[a].argsort()[-k:]) # always connect w neurons
-				# conn[a].update([x for x in range(m) if perm[a][x]>=t]) # TEST: connect neurons above threshold
+				if not p: # dense perm
+					conn_a = perm[a].argsort()[-k:] # connect k best neurons
+					# conn_a = [x for x in range(m) if perm[a][x]>=t] # TEST: connect neurons above threshold
+				else: # EXPERIMENTAL
+					conn_a = nlargest(k, perm[a], key=lambda x:perm[a][x]) # connect k best neurons
+				conn[a].update(conn_a)
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
 		

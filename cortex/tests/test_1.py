@@ -30,7 +30,7 @@ if __name__=="__main__":
 		#K = 8
 		a = random_sdr(N,K)
 		t0=time()
-		sp = spatial_pooler(N,K,t=100)
+		sp = spatial_pooler(N,K,p=0.0,t=100)
 		sp.time('init',t0)
 		t0=time()
 		sp.learn(a,show_times=True)
@@ -42,7 +42,7 @@ if __name__=="__main__":
 		sp.save(open('sp_test.marshal','wb'))
 		sp.time('save',t0)
 
-	if 1:
+	if 0:
 		t0=time()
 		sp = spatial_pooler.load(open('sp_test.marshal','rb'))
 		sp.time('load',t0)
@@ -58,13 +58,13 @@ if __name__=="__main__":
 		
 
 	if 0:
-		N = 16
-		K = 2
-		sp = spatial_pooler(N,K,boost=True)
+		N = 32
+		K = 4
+		sp = spatial_pooler(N,K,p=None,boost=True)
 		X = [random_sdr(N,K) for _ in range(4)]
-		for _ in range(25):
+		for _ in range(10):
 			for x in X:
-				sp.learn(x)
+				sp.learn(x,verbose=True)
 		print(sp.activity)
 
 	if 0:
