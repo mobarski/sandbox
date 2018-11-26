@@ -30,7 +30,7 @@ if __name__=="__main__":
 		#K = 8
 		a = random_sdr(N,K)
 		t0=time()
-		sp = spatial_pooler(N,K,p=0.0,t=100)
+		sp = spatial_pooler(N,K,t=100)
 		sp.time('init',t0)
 		t0=time()
 		sp.learn(a,show_times=True)

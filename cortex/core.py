@@ -75,14 +75,10 @@ class spatial_pooler:
 		p = self.cfg['p']
 		conn = self.conn
 		
-		if not p:
-			perm = np.random.randint(1,t-1,(n,m),np.uint8)
-			for i in range(n):
-				perm[i][list(conn[i])] = np.random.randint(t,255,k)
-		else: # EXPERIMENTAL
-			perm = {}
-			for i in range(n):
-				perm[i] = dict(zip(random_sdr(m,p),np.random.randint(1,255,p)))
+		
+		perm = np.random.randint(1,t-1,(n,m),np.uint8)
+		for i in range(n):
+			perm[i][list(conn[i])] = np.random.randint(t,255,k)
 		self.perm = perm
 
 	@staticmethod
@@ -93,7 +89,7 @@ class spatial_pooler:
 		self.conn = marshal.load(f)
 		self.cycles = marshal.load(f)
 		n = self.cfg['n']
-		self.perm = np.fromfile(f,np.uint8,n*n).reshape((n,n)) # TODO p>0
+		self.perm = np.fromfile(f,np.uint8,n*n).reshape((n,n))
 		self.activity = np.fromfile(f,np.uint32,n)
 		return self
 
@@ -102,7 +98,7 @@ class spatial_pooler:
 		marshal.dump(self.cfg, f, version)
 		marshal.dump(self.conn, f, version)
 		marshal.dump(self.cycles, f, version)
-		self.perm.tofile(f) # TODO p>0
+		self.perm.tofile(f)
 		self.activity.tofile(f)
 		
 	## -------------------------------------------------------------------------
@@ -169,16 +165,9 @@ class spatial_pooler:
 		# update perm
 		if verbose: print('perm',[list(perm[i]) for i in active])
 		for a in active:
-			if not p: # dense perm
-				perm[a][perm[a]>p_dec+1] -= p_dec
-				for i in input:
-					perm[a][i] = min(255,perm[a][i]+p_dec+p_inc)
-			else: # EXPERIMENTAL
-				for i in perm[a]:
-					if i in input:
-						perm[a][i] = min(255,perm[a][i]+p_inc)
-					else:
-						perm[a][i] = max(1,perm[a][i]-p_dec)
+			perm[a][perm[a]>p_dec+1] -= p_dec
+			for i in input:
+				perm[a][i] = min(255,perm[a][i]+p_dec+p_inc)
 		if verbose: print('perm',[list(perm[i]) for i in active])
 		tx.append(time())
 		
@@ -187,11 +176,8 @@ class spatial_pooler:
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
-				if not p: # dense perm
-					conn_a = perm[a].argsort()[-k:] # connect k best neurons
-					# conn_a = [x for x in range(m) if perm[a][x]>=t] # TEST: connect neurons above threshold
-				else: # EXPERIMENTAL
-					conn_a = nlargest(k, perm[a], key=lambda x:perm[a][x]) # connect k best neurons
+				conn_a = perm[a].argsort()[-k:] # connect k best neurons
+				# conn_a = [x for x in range(m) if perm[a][x]>=t] # TEST: connect neurons above threshold
 				conn[a].update(conn_a)
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
