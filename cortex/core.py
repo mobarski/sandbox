@@ -7,8 +7,7 @@ from time import time
 import marshal
 
 # FEATURES:
-## TODO: training data
-## TODO: target function
+## TODO: "health" stats
 ## TODO: TEST dynamic threshold (raise if score>j, lower if score<k)
 ## TODO: TEST dynamic number of connections (connect ALL synapses above threshold vs k-top permanence)
 ## TODO: better boost_factor formula (one way? always>=1 or always<=1)
@@ -119,21 +118,6 @@ class spatial_pooler:
 		score = {x:len(input & conn[x]) for x in conn}
 		return score
 
-	def agg_score(self,input):
-		"calculate aggregated score"
-		k = self.cfg['k']
-		score = self.score(input)
-		top = nlargest(k,score.values())
-		med = top[k//2]
-		return dict(
-			min=min(top),
-			max=max(top),
-			med=med,
-			pct_min=1.0*min(top)/k,
-			pct_max=1.0*max(top)/k,
-			pct_med=1.0*med/k,
-			k=k)
-
 	def learn(self,input,update_conn=True,verbose=False,show_times=False):
 		"learn single input"
 		
@@ -216,4 +200,43 @@ class spatial_pooler:
 		"print execution time"
 		dt = time()-t0 if t1==None else t1-t0
 		print("{:.3f}\t{}".format(dt,label))
+	
+	def agg_score(self,input):
+		"calculate aggregated score"
+		k = self.cfg['k']
+		score = self.score(input)
+		top = nlargest(k,score.values())
+		q1 = top[k//4]
+		q2 = top[k//2]
+		q3 = top[k*3//4]
+		return dict(
+			min=min(top),
+			max=max(top),
+			q1=q1,q2=q2,q3=q3,
+			pct_min=1.0*min(top)/k,
+			pct_max=1.0*max(top)/k,
+			pct_q1=1.0*q1/k,
+			pct_q2=1.0*q2/k,
+			pct_q3=1.0*q3/k,
+			k=k)
+	
+	def agg_activity(self):
+		"calculate aggregate activity"
+		k = self.cfg['k']
+		n = self.cfg['n']
+		activity = self.activity
+		cycles = self.cycles
+		top = sorted(activity.flatten().tolist(),reverse=True)
+		q1 = int(top[k//4])
+		q2 = int(top[k//2])
+		q3 = int(top[k*3//4])
+		gtz = len(activity.nonzero()[0])
+		return dict(
+			nonzero_cnt = gtz,
+			zero_cnt = n-gtz,
+			max = max(activity),
+			min = min(activity),
+			q1=q1,q2=q2,q3=q3,
+			cycles=cycles,
+			n=n)
 	
