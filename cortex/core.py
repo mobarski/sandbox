@@ -7,13 +7,10 @@ from time import time
 import marshal
 
 # FEATURES:
-## TODO: "health" stats
 ## TODO: TEST dynamic threshold (raise if score>j, lower if score<k)
 ## TODO: TEST dynamic number of connections (connect ALL synapses above threshold vs k-top permanence)
 ## TODO: better boost_factor formula (one way? always>=1 or always<=1)
-## TODO: permanence of overlap as tie-breaker in overlap score ??? vs boosting
 ## TODO: better p_inc p_dec formula ???
-## TODO: visualization
 
 # BIG FEATURES:
 ## TODO: sequence prediction
@@ -110,7 +107,7 @@ class spatial_pooler:
 		self.perm.tofile(f)
 		self.activity.tofile(f)
 		
-	## -------------------------------------------------------------------------
+	# ---[ CORE ]---------------------------------------------------------------
 	
 	def score(self,input):
 		"calculate overlap score for every neuron"
@@ -118,7 +115,7 @@ class spatial_pooler:
 		score = {x:len(input & conn[x]) for x in conn}
 		return score
 
-	def learn(self,input,update_conn=True,verbose=False,show_times=False):
+	def learn(self,input,update_conn=True,verbose=False,show_times=False,dynamic=False):
 		"learn single input"
 		
 		k = self.cfg['k']
@@ -159,7 +156,7 @@ class spatial_pooler:
 		
 		# activate
 		by_score = sorted(score.items(),key=lambda x:x[1],reverse=True)
-		active = [x[0] for x in by_score[:k]]
+		active = [x[0] for x in by_score[:k]] # activate k best neurons
 		if verbose: print('activity',activity)
 		if verbose: print('by_score',by_score)
 		if verbose: print('active',active)
@@ -185,8 +182,10 @@ class spatial_pooler:
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
-				conn_a = perm[a].argsort()[-k:] # connect k inputs
-				#conn_a = np.nonzero(perm[a]>=t)[0] # TEST connect synapses above threshold -> 10 x faster
+				if dynamic:
+					conn_a = np.nonzero(perm[a]>=t)[0] # TEST connect synapses above threshold -> 10 x faster
+				else:
+					conn_a = perm[a].argsort()[-k:] # connect k inputs
 				conn[a].update(conn_a)
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
@@ -194,6 +193,8 @@ class spatial_pooler:
 		if show_times:
 			for label,t1,t0 in zip(['score','boost','activate','record activity','update perm','update conn'],tx[1:],tx):
 				self.time('- '+label,t0,t1)
+	
+	# ---[ UTILS ]--------------------------------------------------------------
 	
 	@staticmethod
 	def time(label,t0,t1=None):
@@ -221,18 +222,28 @@ class spatial_pooler:
 			k=k)
 	
 	def agg_activity(self):
-		"calculate aggregate activity"
+		"calculate aggregate stats od neuron activity"
 		k = self.cfg['k']
 		n = self.cfg['n']
 		activity = self.activity
 		cycles = self.cycles
 		top = sorted(activity.flatten().tolist(),reverse=True)
-		q1 = int(top[k//4])
-		q2 = int(top[k//2])
-		q3 = int(top[k*3//4])
-		gtz = len(activity.nonzero()[0])
+		q1 = int(top[n//4])
+		q2 = int(top[n//2])
+		q3 = int(top[n*3//4])
+		nonzero = activity[activity>0]
+		gtz = nonzero.size
+		nonzero_q1 = top[gtz//4]
+		nonzero_q2 = top[gtz//2]
+		nonzero_q3 = top[gtz*3//4]
+		nonzero_min = nonzero.min()
 		return dict(
 			nonzero_cnt = gtz,
+			nonzero_avg = 1.0 * activity.sum() / gtz,
+			nonzero_q1 = nonzero_q1,
+			nonzero_q2 = nonzero_q2,
+			nonzero_q3 = nonzero_q3,
+			nonzero_min = nonzero_min,
 			zero_cnt = n-gtz,
 			max = max(activity),
 			min = min(activity),
@@ -240,3 +251,49 @@ class spatial_pooler:
 			cycles=cycles,
 			n=n)
 	
+	def agg_perm(self):
+		"calculate aggregate stats of synaptic permanence"
+		t = self.cfg['t']
+		n = self.cfg['n']
+		m = self.cfg['m']
+		k = self.cfg['k']
+		u = self.cfg['u']
+		p_dec = self.cfg['p_dec']
+		perm = self.perm
+		conn = self.conn
+		#
+		total = m*n
+		above_cnt = perm[perm>=t].size
+		nonzero_cnt = perm[perm>0].size
+		zero_cnt = perm[perm==0].size
+		max_cnt = perm[perm==255].size
+		min_cnt = perm[perm<=p_dec].size
+		conn_top = sorted([len(conn[i]) for i in range(n)],reverse=True)
+		conn_cnt = sum(conn_top)
+		conn_cnt_min = min(conn_top)
+		conn_cnt_max = max(conn_top)
+		conn_cnt_q1 = conn_top[n//4]
+		conn_cnt_q2 = conn_top[n//2]
+		conn_cnt_q3 = conn_top[n*3//4]
+		conn_sum = sum([perm[i][list(conn[i])].sum() for i in range(n)])
+		conn_avg = 1.0 * conn_sum / conn_cnt
+		all_sum = perm.sum()
+		all_avg = 1.0 * all_sum / total
+		nonzero_avg = 1.0 * all_sum / nonzero_cnt
+		return dict(
+			above_cnt = above_cnt,
+			nonzero_cnt = nonzero_cnt,
+			zero_cnt = zero_cnt,
+			max_cnt = max_cnt,
+			min_cnt = min_cnt,
+			conn_cnt = conn_cnt,
+			conn_cnt_min = conn_cnt_min,
+			conn_cnt_max = conn_cnt_max,
+			conn_cnt_q1 = conn_cnt_q1,
+			conn_cnt_q2 = conn_cnt_q2,
+			conn_cnt_q3 = conn_cnt_q3,
+			total = total,
+			conn_avg = conn_avg,
+			all_avg = all_avg,
+			nonzero_avg = nonzero_avg,
+			t=t,k=k)
