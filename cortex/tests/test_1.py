@@ -26,8 +26,8 @@ if __name__=="__main__":
 	if 1:
 		N = 128*128
 		K = N//50
-		#N = 64
-		#K = 8
+		#N = 16
+		#K = 4
 		a = random_sdr(N,K)
 		t0=time()
 		sp = spatial_pooler(N,K,t=100)
