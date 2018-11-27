@@ -2,25 +2,29 @@ from __future__ import print_function
 import numpy as np
 
 from random import randint,shuffle
+from heapq import nlargest
 from time import time
 import marshal
 
-# TODO: sparsify .perm
+# FEATURES:
+## TODO: training data
+## TODO: target function
+## TODO: TEST dynamic threshold (raise if score>j, lower if score<k)
+## TODO: TEST dynamic number of connections (connect ALL synapses above threshold vs k-top permanence)
+## TODO: better boost_factor formula (one way? always>=1 or always<=1)
+## TODO: permanence of overlap as tie-breaker in overlap score ??? vs boosting
+## TODO: better p_inc p_dec formula ???
+## TODO: visualization
 
-# TODO: better boost_factor formula
-# TODO: permanence of overlap as tie-breaker in overlap score
-# TODO: better p_inc p_dec formula
+# BIG FEATURES:
+## TODO: sequence prediction
 
-# TODO: visualization
-
-# TODO: numba
-# TODO: numba+cuda
-
-# TODO: multiprocessing .learn
-# TODO: multiprocessing .score
-# TODO: multiprocessing .init
-
-# TODO: sequence prediction
+# OPTIMIZATION:
+## TODO: numba
+## TODO: numba+cuda
+## TODO: multiprocessing .learn
+## TODO: multiprocessing .score
+## TODO: multiprocessing .init
 
 def random_sdr(n,k):
 	k = k if type(k)==int else int(k*n)
@@ -30,6 +34,7 @@ def random_sdr(n,k):
 	return out
 
 class spatial_pooler:
+
 	def __init__(self, n, k, m=None, u=0, t=200,
 					boost=True, b_min=0.75, b_max=1.25,
 					p_inc=10, p_dec=6 ):
@@ -113,7 +118,22 @@ class spatial_pooler:
 		conn = self.conn
 		score = {x:len(input & conn[x]) for x in conn}
 		return score
-	
+
+	def agg_score(self,input):
+		"calculate aggregated score"
+		k = self.cfg['k']
+		score = self.score(input)
+		top = nlargest(k,score.values())
+		med = top[k//2]
+		return dict(
+			min=min(top),
+			max=max(top),
+			med=med,
+			pct_min=1.0*min(top)/k,
+			pct_max=1.0*max(top)/k,
+			pct_med=1.0*med/k,
+			k=k)
+
 	def learn(self,input,update_conn=True,verbose=False,show_times=False):
 		"learn single input"
 		
@@ -171,7 +191,7 @@ class spatial_pooler:
 		for a in active:
 			perm[a][perm[a]>p_dec+1] -= p_dec
 			for i in input:
-				if not perm[a][i]: continue
+				if not perm[a][i]: continue # skip unconnectable
 				perm[a][i] = min(255,perm[a][i]+p_dec+p_inc)
 		if verbose: print('perm',[list(perm[i]) for i in active])
 		tx.append(time())
@@ -182,14 +202,14 @@ class spatial_pooler:
 			for a in active:
 				conn[a].clear()
 				conn_a = perm[a].argsort()[-k:] # connect k inputs
-				# conn_a = [x for x in range(m) if perm[a][x]>=t] # TEST: connect neurons above threshold
+				#conn_a = np.nonzero(perm[a]>=t)[0] # TEST connect synapses above threshold -> 10 x faster
 				conn[a].update(conn_a)
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
 		
 		if show_times:
 			for label,t1,t0 in zip(['score','boost','activate','record activity','update perm','update conn'],tx[1:],tx):
-				self.time(label,t0,t1)
+				self.time('- '+label,t0,t1)
 	
 	@staticmethod
 	def time(label,t0,t1=None):

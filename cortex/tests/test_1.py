@@ -24,6 +24,7 @@ if __name__=="__main__":
 		sp.learn(b)
 
 	if 1:
+		from heapq import nlargest
 		N = 128*128
 		K = N//50
 		#N = 16
@@ -38,6 +39,7 @@ if __name__=="__main__":
 		t0=time()
 		sp.score(a)
 		sp.time('score',t0)
+		print(sp.agg_score(a))
 		t0=time()
 		sp.save(open('sp_test.marshal','wb'))
 		sp.time('save',t0)
