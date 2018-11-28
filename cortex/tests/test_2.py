@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys; sys.path.append('..')
-from core import *
+from spatial import *
 
 if __name__=="__main__":
 	if 1:
@@ -8,13 +8,13 @@ if __name__=="__main__":
 		print("TEST agg_score\n")
 		N = 64
 		K = 6
-		sp = spatial_pooler(N,K,u=0.5,p_inc=21,boost=True)
+		sp = spatial_pooler(N,K,boost=True)
 		X1 = [random_sdr(N,K) for _ in range(10)]
 		X2 = [random_sdr(N,K) for _ in range(10)]
 		
-		for _ in range(1000):
+		for _ in range(10):
 			for x in X1:
-				sp.learn(x,dynamic=False)
+				sp.learn(x)
 		print(sp.activity)
 		print()
 

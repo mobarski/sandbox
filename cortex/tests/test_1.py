@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys; sys.path.append('..')
-from core import *
+from spatial import *
 
 if __name__=="__main__":
 	if 0:

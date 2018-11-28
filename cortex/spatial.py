@@ -1,37 +1,39 @@
 from __future__ import print_function
 import numpy as np
 
-from random import randint,shuffle
 from heapq import nlargest
 from time import time
 import marshal
 
-# FEATURES:
+# TODO - FEATURES:
+## TODO: sparse permanence like in the temporal_pooler
+## TODO: boosting: firing uses b_dec boosting_factor, which restores by b_inc per cycle
 ## TODO: TEST dynamic threshold (raise if score>j, lower if score<k)
-## TODO: TEST dynamic number of connections (connect ALL synapses above threshold vs k-top permanence)
 ## TODO: better boost_factor formula (one way? always>=1 or always<=1)
 ## TODO: better p_inc p_dec formula ???
 
-# BIG FEATURES:
-## TODO: sequence prediction
-
-# OPTIMIZATION:
+# TODO - OPTIMIZATION:
 ## TODO: numba
 ## TODO: numba+cuda
 ## TODO: multiprocessing .learn
 ## TODO: multiprocessing .score
 ## TODO: multiprocessing .init
 
+# REFERENCES:
+## https://numenta.org/resources/HTM_CorticalLearningAlgorithms.pdf
+
 def random_sdr(n,k):
 	k = k if type(k)==int else int(k*n)
 	out = set(np.random.randint(0,n,k))
 	while len(out)<k:
-		out.add(randint(0,n-1))
+		missing_cnt = k-len(out)
+		out.update(np.random.randint(0, n, missing_cnt))
 	return out
 
 class spatial_pooler:
 
-	def __init__(self, n, k, m=None, u=0, t=200,
+	def __init__(self, n, k, m=None, u=0, s_min=0,
+					t=100, p_lo=70, p_hi=130,
 					boost=True, b_min=0.75, b_max=1.25,
 					p_inc=10, p_dec=6 ):
 		"""
@@ -42,11 +44,14 @@ class spatial_pooler:
 			m -- number of input neurons (equal to n by default) (:int or None)
 			u -- number of unconnectable synapses per neuron (:int) or proportion of unconnectable synapses (:float)
 			t -- connection threshold (:int)
+			p_lo -- lowest permanence when initializing (:int)
+			p_hi -- highest permanence when initializing (:int)
 			boost -- enable overlap score boosting (:bool)
 			b_min -- minimum boost factor (:int)
 			b_max -- maximum boost factor (:int)
 			p_inc -- permanence increase value (:int)
 			p_dec -- permanence decrease value (:int)
+			s_min -- minimum score (:int)
 		"""
 		m = m or n
 		self.cfg = {}
@@ -57,9 +62,12 @@ class spatial_pooler:
 		self.cfg['u'] = int(u*m) if type(u)==float else u
 		self.cfg['p_inc'] = p_inc
 		self.cfg['p_dec'] = p_dec
+		self.cfg['p_lo'] = p_lo
+		self.cfg['p_hi'] = p_hi
 		self.cfg['b_min'] = b_min
 		self.cfg['b_max'] = b_max
 		self.cfg['boost'] = boost
+		self.cfg['s_min'] = s_min
 		self.activity = np.zeros(n,dtype=np.uint32)
 		self.cycles = 0
 		self.perm = None # synaptic permanence
@@ -73,13 +81,15 @@ class spatial_pooler:
 		m = self.cfg['m']
 		k = self.cfg['k']
 		u = self.cfg['u']
+		p_lo = self.cfg['p_lo']
+		p_hi = self.cfg['p_hi']
 		
 		conn = {x:random_sdr(m,k) for x in range(n)} # TODO: optimize
 		self.conn = conn
 		
-		perm = np.random.randint(1,t-1,(n,m),np.uint8)
+		perm = np.random.randint(p_lo, t-1, (n,m), np.uint8)
 		for i in range(n):
-			perm[i][list(conn[i])] = np.random.randint(t,255,k)
+			perm[i][list(conn[i])] = np.random.randint(t, p_hi, k)
 		self.perm = perm
 		
 		if u:
@@ -111,11 +121,14 @@ class spatial_pooler:
 	
 	def score(self,input):
 		"calculate overlap score for every neuron"
+		s_min = self.cfg['s_min']
 		conn = self.conn
 		score = {x:len(input & conn[x]) for x in conn}
+		if s_min:
+			score = {x:0 if score[x]<s_min else score[x] for x in score}
 		return score
 
-	def learn(self,input,update_conn=True,verbose=False,show_times=False,dynamic=False):
+	def learn(self,input,update_conn=True,verbose=False,show_times=False):
 		"learn single input"
 		
 		k = self.cfg['k']
@@ -182,10 +195,7 @@ class spatial_pooler:
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 			for a in active:
 				conn[a].clear()
-				if dynamic:
-					conn_a = np.nonzero(perm[a]>=t)[0] # TEST connect synapses above threshold -> 10 x faster
-				else:
-					conn_a = perm[a].argsort()[-k:] # connect k inputs
+				conn_a = np.nonzero(perm[a]>=t)[0] # connect synapses above threshold
 				conn[a].update(conn_a)
 			if verbose: print('conn',[list(conn[i]) for i in range(n)])
 		tx.append(time())
