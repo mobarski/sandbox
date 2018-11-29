@@ -7,16 +7,18 @@ from common import *
 
 # TODO - FEATURES:
 ## negative connections - jak nie bedzie w in to trafia do neg, jak znowu nie bedzie to wypada
-## medium connections - sygnal silny gdy wartosci blisko srodka
+## avg connections - sygnal silny gdy mala odleglosc od sredniej
 
 # TODO - OPTIMIZE:
 ## score - multiprocessing
 ## score - numba
 ## score - numba+cuda
 
+# ------------------------------------------------------------------------------
+
 class onn:
 	"""
-	Olfaction based random Neural Network with inhibition and binary weights
+	Olfaction based Sparse/Random Neural Network with target values on neurons and k-winners
 	"""
 	def __init__(self, n_in, n_out, density=1.0, p_lo=10, p_hi=100):
 		self.cfg = {}
@@ -28,6 +30,7 @@ class onn:
 		self.cfg['density'] = density # remove ???
 		self.conn = None # [i_out] -> set([i_in...])
 		self.perm = None # [i_out][i_in] -> connection permanence
+		self.targ = None 
 		self.init()
 	
 	def init(self):
@@ -45,26 +48,21 @@ class onn:
 		self.conn = conn
 		
 		# perm
-		if 0:
-			perm = {}
-			for i in conn:
-				perm[i] = {j:p for j,p in zip(conn[i],random_vector(p_lo, p_hi, n_conn))}
-			self.perm = perm
-		else:
-			perm = np.zeros((n_out,n_in),np.uint8)
-			for i in conn:
-				perm[i][list(conn[i])] = random_vector(p_lo, p_hi, n_conn)
-			self.perm = perm
+		perm = np.zeros((n_out,n_in),np.uint8)
+		for i in conn:
+			perm[i][list(conn[i])] = random_vector(p_lo, p_hi, n_conn)
+		self.perm = perm
+		
+		# targ
+		self.targ = random_vector(0, 255, n_out)
 	
 	def save(self,f):
 		version = 2
 		p0 = f.tell()
 		marshal.dump(self.cfg,  f, version)
 		marshal.dump(self.conn, f, version)
-		if 0:
-			marshal.dump(self.perm, f, version)
-		else:
-			self.perm.tofile(f)
+		self.perm.tofile(f)
+		self.targ.tofile(f)
 		return f.tell()-p0
 	
 	@staticmethod
@@ -75,14 +73,20 @@ class onn:
 	
 	def score(self, input):
 		conn = self.conn
+		targ = self.targ
+		n_conn = self.cfg['n_conn']
 		score = {}
 		for i in conn:
-			score[i] = input[list(conn[i])].sum()
+			value = input[list(conn[i])].sum()
+			avg = int(1.0*value/n_conn)
+			score[i] = 255-abs(targ[i]-avg)
 		return score
 	
+	# TODO
 	def learn(self, input, k, p_inc=10, p_dec=5, p_min=20, p_lo=21, p_hi=40):
 		cfg = self.cfg
 		conn = self.conn
+		targ = self.targ
 		perm = self.perm
 		n_in = cfg['n_in']
 		n_conn = cfg['n_conn']
@@ -90,42 +94,41 @@ class onn:
 		score = self.score(input)
 		# k winners take all
 		winners = top(k, score)
+		vt = targ[winners].astype(np.int16)
+		vs = np.array([score[w] for w in winners])
+		delta = vt-vi
+		error = abs(delta)
+		exit()
 		for w in winners:
-			# update perm
-			avg = 1.0*score[w]/n_conn
-			for i in conn[w]:
-				perm[w][i] += p_inc if input[i] else -p_dec
-				# TODO TEST only x best inputs improves perm
-				# TODO TEST only x random inputs improves perm
-				# TODO TEST only inputs above average improves perm, x random below average degrades perm
-			# remove conn
-			old = perm[w][perm[w]<p_min].nonzero()[0].tolist()
-			perm[w][old] = 0
-			conn[w].difference_update(old)
-			# add new conn
-			if old:
-				new = set(combinations(n_in,len(old)))
-				new.difference_update(conn[w])
-				perm[w][list(new)] = random_vector(p_lo,p_hi,len(new))
-				conn[w].update(new)
+			selected = list(conn[w])
+			for i in selected
+	
+			# TODO update term
+			
+			# TODO update perm
+			#perm[w][sel[error <= avg_error]] += p_inc
+			#perm[w][sel[error >  avg_error]] -= p_dec
+			
+			# # TODO remove conn
+			# old = perm[w][perm[w]<p_min].nonzero()[0].tolist()
+			# perm[w][old] = 0
+			# conn[w].difference_update(old)
+			
+			# # TODO add new conn
+			# if old:
+				# new = set(combinations(n_in,len(old)))
+				# new.difference_update(conn[w])
+				# perm[w][list(new)] = random_vector(p_lo,p_hi,len(new))
+				# conn[w].update(new)
 
 if __name__=="__main__":
-	def fam(nn,x):
-		s = sum(top(50,nn.score(x),values=True))
-		return max(0,1000+s)/1000
-	NI = 40
-	NN = 1000
-	nn = onn(NI,NN,0.2)
-	x = random_sparse_vector(0,255,NI,0.3)
-	print(top(10,nn.score(x),items=True))
+	NI = 10
+	NN = 500
+	nn = onn(NI,NN,0.5)
+	x = random_vector(0,255,NI)
 	print(sum(top(50,nn.score(x),values=True)))
-	exit()
-	print(fam(nn,x))
-	for _ in range(20):
+	for _ in range(100):
 		nn.learn(x,50)
 	print(sum(top(50,nn.score(x),values=True)))
-	print(fam(nn,x))
-	nn.save(open('data/v1.onn','wb'))
-	nn2=nn.load(open('data/v1.onn','rb'))
-	exit()
-	print(fam(nn2,x))
+	
+	
