@@ -136,3 +136,6 @@ class disk_cache:
 			print('{}\t{:.2f} s\t{:.1f} MB\t{}'.format(key, time()-t0, 1.0*size/2**20, mode))
 		return obj
 	
+	def get_item(self, key, column, default=None):
+		m = self.get_map(key,[column])
+		return m.values()[0]

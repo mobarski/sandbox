@@ -503,7 +503,11 @@ def vectorize_part(kwargs):
 	if typecode:
 		from array import array
 
-	if hasattr(vocabulary,'items'):
+	if vocabulary==None:
+		pass
+	elif callable(vocabulary):
+		pass
+	elif hasattr(vocabulary,'items'):
 		vocab_dict = vocabulary
 		vocab_len = max(vocab_dict.values()) + 1
 	else:
@@ -515,16 +519,15 @@ def vectorize_part(kwargs):
 		# TODO filter tokens - keep only vocabulary -> here or after ngrams ???
 				
 		# output
-		if sparse:
-			if binary:
-				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
-				if dtype:
-					v = np.array(v,dtype=dtype)
-				if typecode:
-					v = array(typecode,v)
-			elif stream:
-				v = []
-				empty = True
+		if stream:
+			v = []
+			if vocabulary==None:
+				v.extend(tokens)
+			elif callable(vocabulary):
+				for t in tokens:
+					v.append(vocabulary(t))
+			else:
+				empty = True # detection and removal of empty tokens combos
 				for t in tokens:
 					if t not in vocab_dict:
 						continue # XXX
@@ -536,6 +539,13 @@ def vectorize_part(kwargs):
 						t_id = vocab_dict[t]
 						v.append(t_id)
 						empty = False
+			if dtype:
+				v = np.array(v,dtype=dtype)
+			if typecode:
+				v = array(typecode,v)
+		elif sparse:
+			if binary:
+				v = [vocab_dict[t] for t in set(tokens) if t in vocab_dict]
 				if dtype:
 					v = np.array(v,dtype=dtype)
 				if typecode:
@@ -587,9 +597,10 @@ def vectorize(X, vocabulary, workers=4, partitions=None,
 	   encoding=None, lowercase=True,
 	   analyzer='word', tokenizer=None, preprocessor=None,
 	   decode_error='strict', stop_words=None, mp_pool=None,
-	   ngram_range=None, postprocessor=None, ngram_words=None,
+	   ngram_range=None, ngram_words=None,
+	   postprocessor=None, postprocessor2=None, 
 	   binary=False, sparse=True, upper_limit=0,
-	   dtype=None,typecode=None,
+	   dtype=None, typecode=None,
 	   partitioned=False,
 	   stream=False):
 	"""Convert a collection of text documents into a collection of token counts
@@ -599,7 +610,7 @@ def vectorize(X, vocabulary, workers=4, partitions=None,
 	
 	X : iterable
 	
-	vocabulary : iterable or mapping
+	vocabulary : iterable or mapping or function
 		TODO
 	
 	binary : boolean, default=False
@@ -607,6 +618,20 @@ def vectorize(X, vocabulary, workers=4, partitions=None,
 	
 	sparse : boolean, default=True
 		TODO
+		
+	stream : boolean, default=False
+		TODO
+	
+	preprocessor: callable, list of callable or None (default)
+		Function or list of functions which transforms text before tokenization.
+
+	postprocessor: callable, list of callable or None (default)
+		Function(s) or list of functions which transforms list of tokens (before n-gram
+		generation)
+
+	postprocessor2: callable, list of callable or None (default)
+		Function(s) or list of functions which transforms list of tokens (after n-gram
+		generation)
 	
 	upper_limit : int, default=0
 		Upper limit for token counts in the vector
@@ -640,6 +665,7 @@ def vectorize(X, vocabulary, workers=4, partitions=None,
 				,decode_error = decode_error
 				,stop_words = stop_words
 				,postprocessor = postprocessor
+				,postprocessor2 = postprocessor2
 				,ngram_words = ngram_words
 				
 				,vocabulary = vocabulary
@@ -939,6 +965,7 @@ def iter_tokens_part(kwargs):
 	preprocessor = kwargs['preprocessor']
 	tokenizer = kwargs['tokenizer']
 	postprocessor = kwargs['postprocessor']
+	postprocessor2 = kwargs.get('postprocessor2')
 	
 	ngram_range = kwargs.get('ngram_range')
 	ngram_words = kwargs.get('ngram_words')
@@ -984,17 +1011,17 @@ def iter_tokens_part(kwargs):
 			tokens = [t for t in tokens if t not in stop_words_set]
 		if stop_hashes:
 			tokens = [t for t in tokens if hash_fun(t) not in stop_hashes_set]
-
+		
 		if ngram_range:
 			lo,hi = ngram_range
 			ngrams = []
 			if analyzer=='word':
-				for i in range(len(tokens)-lo): # TEST off-by-one
+				for i in range(len(tokens)-lo+1):
 					for n in range(lo,hi+1):
-						if i+n>len(tokens): break # TEST off-by-one
+						if i+n>len(tokens): break
 						ngram = tuple(tokens[i:i+n])
 						if ngram_words_set and not ngram_words_set&set(ngram): continue
-						ngrams.append(ngram) # TODO tuple vs string
+						ngrams.append(ngram) # ngram as tuple is easier to postprocess
 			elif analyzer=='char':
 				for t in tokens:
 					for n in range(lo,hi+1):
@@ -1005,6 +1032,13 @@ def iter_tokens_part(kwargs):
 							for i in range(len(t)-n+1):
 								ngrams.append(t[i:i+n])
 			tokens = ngrams
+
+		if postprocessor2:
+			if callable(postprocessor2):
+				tokens = postprocessor2(tokens)
+			else:
+				for p in postprocessor2:
+					tokens = p(tokens)
 
 		yield tokens
 
