@@ -1,0 +1,87 @@
+https://love2d.org/wiki/love
+
+-- MAIN
+
+
+[x] palette
+[ ] transparency
+[ ] spr_from_text
+[ ] map_from_text
+[ ] engine.lua + load()
+[ ] font_from_gfx/text
+
+[ ] LOAD
+[ ] DRAW
+[ ] UPDATE
+
+-- GFX
+[x] spr
+[x] cls
+[x] rect
+[x] circ
+[x][ ] pix
+[x] line
+[x] tri
+[x] rectb
+[x] circb
+[x] print
+[ ] font -> inne api?
+[x] clip
+[x] ++ cam -> TODO jako push / pop
+[x] ++ trib
+[ ] ++ spix - sprite pixel
+[ ] ++ pal - change palette
+[ ] ++ palt - set transparency color
+
+-- MAP
+[ ] map
+[ ] mset
+[ ] mget
+
+-- INPUT
+[x] mouse
+[x] key
+[ ] btn
+[ ] btnp
+[ ] keyp
+[ ] ++ touch
+
+-- OTHER
+[ ] time
+[ ] trace
+
+-- EXTENSION
+
+[ ] love.system.getClipboardText/setClipboardText
+[ ] love.data.encode/decode
+[ ] love.data.compress/decompress
+[ ] love.filesystem.*
+[ ] love.audio
+
+[ ] png encode / decode
+[ ] save screenshot
+[ ] gif save
+
+--........ ........ ........ ........ ........ ........ ........ ........
+--.... .... .... .... .... .... .... .... .... .... .... .... .... .... ....
+" xxxx                                                                       "..
+" x                                                                          "..
+" xxx                                                                        "..
+" x                                                                          "..
+" xxxx                                                                       "..
+--.... .... .... .... .... .... .... .... .... .... .... .... .... .... ....
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+--.... .... .... .... .... .... .... .... .... .... .... .... .... .... ....
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+"                                                                            "..
+" 
