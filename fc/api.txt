@@ -2,20 +2,22 @@ https://love2d.org/wiki/love
 
 -- MAIN
 
-
 [x] palette
-[ ] transparency
-[ ] spr_from_text
+[x][x] colorkey
+[x] upscale/downscale screen
+[x][ ] screenshot
+[ ] hot-swap palette
 [ ] map_from_text
-[ ] engine.lua + load()
-[ ] font_from_gfx/text
+[ ] draw map
+[x] img_from_text
+[ ] rotate screen
+[ ] scale screen
+[ ] font_from_gfx
 
-[ ] LOAD
-[ ] DRAW
-[ ] UPDATE
+[x] INIT/MAIN/DRAW
 
 -- GFX
-[x] spr
+[x][ ][ ][ ] spr
 [x] cls
 [x] rect
 [x] circ
@@ -24,14 +26,15 @@ https://love2d.org/wiki/love
 [x] tri
 [x] rectb
 [x] circb
-[x] print
+[x][ ] print
 [ ] font -> inne api?
 [x] clip
-[x] ++ cam -> TODO jako push / pop
+[x] ++ cam -> TODO jako push / pop ???
 [x] ++ trib
-[ ] ++ spix - sprite pixel
 [ ] ++ pal - change palette
 [ ] ++ palt - set transparency color
+[ ] color
+[ ] ++ spix - sprite pixel
 
 -- MAP
 [ ] map
@@ -48,7 +51,8 @@ https://love2d.org/wiki/love
 
 -- OTHER
 [ ] time
-[ ] trace
+[x] trace
+[ ] cursor
 
 -- EXTENSION
 
@@ -59,29 +63,24 @@ https://love2d.org/wiki/love
 [ ] love.audio
 
 [ ] png encode / decode
-[ ] save screenshot
 [ ] gif save
 
---........ ........ ........ ........ ........ ........ ........ ........
---.... .... .... .... .... .... .... .... .... .... .... .... .... .... ....
-" xxxx                                                                       "..
-" x                                                                          "..
-" xxx                                                                        "..
-" x                                                                          "..
-" xxxx                                                                       "..
---.... .... .... .... .... .... .... .... .... .... .... .... .... .... ....
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
---.... .... .... .... .... .... .... .... .... .... .... .... .... .... ....
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-"                                                                            "..
-" 
+
+NES 256x240
+SEGA-1000 256x192
+SEGA-MS 256x192/5
+ATARI-7800 160x200/8 320x200/8?
+
+AMSTRAD CPC 160x200/4 320x200/2 640x200/1
+ZX81 256x192/1per8x8
+TIMEX 2068 JW + 1per8x1 + 512x192 mono
+C64 160x200/2per8x8 320x200/1per8x8
+BBC MICRO 640x256/3
+
+GB/GBC 160x144/2
+LYNX 160x102/4
+GAME GEAR 160x144/5
+TURBO EXPRESS 400x270/8+
+GBA 240x160
+
+
