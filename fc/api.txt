@@ -1,18 +1,29 @@
 https://love2d.org/wiki/love
 
--- MAIN
+-- FEATURES
+
+colorkey -> pico8 palt, domyslny 0, RENAME
+	-> v1: tylko 0 moze byc
+	-> v2: jeden dowolny moze byc
+	-> v3: kilka moze byc
+spr -> kolejnosc pico8
+
+uproscic spr -> bez przeksztalcen i z nimi
+pix -> pget pset / sget sset
 
 [x] palette
 [x][x] colorkey
 [x] upscale/downscale screen
 [x][ ] screenshot
-[ ] hot-swap palette
-[ ] map_from_text
-[ ] draw map
+[x] map_from_text
+[x] draw map
 [x] img_from_text
+[x] scale screen
+[ ] font_from_gfx + font/print
 [ ] rotate screen
-[ ] scale screen
-[ ] font_from_gfx
+[x] hot-swap palette
+[ ] letterbox
+[ ] gif recorder
 
 [x] INIT/MAIN/DRAW
 
@@ -21,35 +32,37 @@ https://love2d.org/wiki/love
 [x] cls
 [x] rect
 [x] circ
-[x][ ] pix
+[x][x] pix
 [x] line
 [x] tri
 [x] rectb
 [x] circb
-[x][ ] print
-[ ] font -> inne api?
+[x][ ] print / font -> inne api?
 [x] clip
-[x] ++ cam -> TODO jako push / pop ???
+[x] ++ camera -> TODO jako push / pop ???
 [x] ++ trib
-[ ] ++ pal - change palette
+[x] ++ pal - change palette
 [ ] ++ palt - set transparency color
-[ ] color
+[x] color
 [ ] ++ spix - sprite pixel
+[ ] ++ batch? -> for bullets
 
 -- MAP
-[ ] map
-[ ] mset
-[ ] mget
+[x] map
+[x] mset
+[x] mget
 
 -- INPUT
 [x] mouse
 [x] key
+[ ] keyp
 [ ] btn
 [ ] btnp
-[ ] keyp
 [ ] ++ touch
 
 -- OTHER
+[ ] fget
+[ ] fset
 [ ] time
 [x] trace
 [ ] cursor

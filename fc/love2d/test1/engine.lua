@@ -2,6 +2,7 @@
 function get_tile(b,s,w,h,colorkey,raw)
 	w=w or 1
 	h=h or 1
+	colorkey=colorkey or COLORKEY
 	local bw = math.floor(banks[b]:getWidth()/8)
 	local x,y = s%bw, math.floor(s/bw)
 	local tile = love.image.newImageData(w*8,h*8)
@@ -13,7 +14,7 @@ function get_tile(b,s,w,h,colorkey,raw)
 		function use_colorkey(x,y,r,g,b,a)
 			rk,gk,bk = col_to_rgb(colorkey)
 			if r==rk and g==gk and b==bk
-				then trace('ok',x,y) return 0,0,0,0
+				then return 0,0,0,0
 				else return r,g,b,1
 			end
 		end
@@ -46,8 +47,15 @@ function col_to_rgb(c)
 	return col[1]/255,col[2]/255,col[3]/255
 end
 
+function rgb_to_col(r,g,b)
+	for c,col in pairs(colors) do
+		if col[1]/255==r and col[2]/255==g and col[3]/255==b then return c-1 end
+	end
+end
+
 function set_col(c)
-	if c then love.graphics.setColor(col_to_rgb(c)) end
+	c=c or COLOR
+	love.graphics.setColor(col_to_rgb(c))
 end
 
 function img_from_text(text,w,h,colormap)
@@ -74,7 +82,7 @@ end
 
 function map_from_text(text,w,h,chars,values)
 	local val = {}
-	local map = {}
+	local out = {}
 	local j = 0
 	local t,ch
 	for i=1,#chars do
@@ -86,11 +94,13 @@ function map_from_text(text,w,h,chars,values)
 		if t then
 			y = math.floor(j/w)
 			x = j%w
-			map[y*w+x] = t
+			out[y*w+x] = t
 			j=j+1
 		end
 	end
-	return map
+	out['w']=w
+	out['h']=h
+	return out
 end
 
 -- w can be filename
@@ -98,23 +108,57 @@ function set_bank(b,w,h)
 	banks[b] = love.image.newImageData(w,h)
 end
 
---------------------------------------------------------------------------------
+function img_from_page(p,b)
+	b=b or BANK
+	p=p or PAGE
+	local _draw = love.graphics.draw
+	local key = PAGE -- TODO key=p+b
+	local img = map_cache[key]
+	if not img then
+		local t,tile
+		local w = pages[PAGE]['w']
+		local h = pages[PAGE]['h']
+		img = love.image.newImageData(w*8,h*8)
+		for x = 0,w-1 do
+			for y = 0,h-1 do
+				t = pages[PAGE][y*w+x]
+				if t then 
+					tile = get_tile(b,t,1,1,nil,true)
+					img:paste(tile,x*8,y*8,0,0,8,8)
+				end
+			end
+		end
+		map_cache[key] = img
+	end
+	return img
+end
+
+---[ API ]----------------------------------------------------------------------
 
 function bank(b) BANK=b end
+function page(p) PAGE=p end
+function camera(x,y)
+	camx = x
+	camy = y
+end
+function color(c)
+	COLOR=c
+	set_col(c)
+end
 
 -- draw sprite by id, can scale, flip, rotate and sheer
-function spr(s,x,y, colorkey,w,h, scale,flip,rotate,sx,sy, b)
+function spr(s,x,y, w,h, scale,flip,rotate,sx,sy, b)
 	w = w or 1
 	h = h or 1
 	b = b or BANK
 	flip = flip or 0
 	rotate = rotate or 0
 	
-	local key = table.concat({b,s,colorkey or -1,w,h},':')
-	local img = sprite_cache[key]
+	local key = table.concat({b,s,COLORKEY,w,h},':')
+	local img = spr_cache[key]
 	if not img then
-		img = get_tile(b,s,w,h,colorkey)
-		sprite_cache[key] = img
+		img = get_tile(b,s,w,h,COLORKEY)
+		spr_cache[key] = img
 	end
 
 	local ori_x = 0
@@ -167,10 +211,17 @@ function circb(x,y,r,c)
 	love.graphics.circle('line',x+camx,y+camy,r)
 end
 
--- TODO get color
 function pix(x,y,c)
-	set_col(c)
-	love.graphics.points(x+camx,y+camy)
+	if c then 
+		set_col(c)
+		love.graphics.points(x+camx,y+camy)
+	else
+		love.graphics.setCanvas()
+		local img = scr:newImageData(nil,nil,x,y,1,1)
+		love.graphics.setCanvas(scr)		
+		local r,g,b,a = img:getPixel(0,0)
+		return rgb_to_col(r,g,b)
+	end
 end
 
 function line(x0,y0,x1,y1,c)
@@ -201,36 +252,12 @@ function cls(c)
 	love.graphics.clear(col_to_rgb(c))
 end
 
-function cam(x,y)
-	camx = x
-	camy = y
-end
-
 function clip(x,y,w,h)
-	love.graphics.setScissor(x,y,w,h) -- camx camy ???
-end
-
-function map(mx,my,w,h,sx,sy)
-	local t,img
-	local _draw = love.graphics.draw
-	local key = table.concat({mx,my,w,h},":")
-	local img = map_cache[key]
-	local tile
-	if not img then
-		img = love.image.newImageData(w*8,h*8)
-		for x=0,w-1 do
-			for y=0,h-1 do
-				t = pages[1][y*8+x]
-				if t then 
-					tile = get_tile(2,t,w,h,nil,true)
-					img:paste(tile,x*8,y*8,0,0,8,8)
-				end
-			end
-		end
-		map_cache[key] = img
+	if x then 
+		love.graphics.setScissor(x,y,w,h) -- camx camy ???
+	else
+		love.graphics.setScissor(0,0,scrw,scrh)
 	end
-	love.graphics.setColor(1,1,1,1)
-	love.graphics.draw(love.graphics.newImage(img),sx+8*x,sy+8*y)
 end
 
 function screen(w,h,s)
@@ -242,6 +269,51 @@ end
 
 function fps()
 	return love.timer.getFPS()
+end
+
+
+function pal(c,r,g,b)
+	local col = colors[c+1]
+	local r0=col[1]/255
+	local g0=col[2]/255
+	local b0=col[3]/255
+	colors[c+1] = {r,g,b}
+	-- invalidate cache
+	map_cache = {}
+	spr_cache = {}
+	-- recode banks
+	for i,bank in pairs(banks) do
+		banks[i]:mapPixel(
+			function (x,y,rr,gg,bb,aa)
+				if rr==r0 and gg==g0 and bb==b0
+					then return r/255,g/255,b/255,1
+					else return rr,gg,bb,1
+				end
+			end
+		)
+	end
+end
+
+function map(x,y,b,p)
+	x=x or 0
+	y=y or 0
+	b=b or BANK
+	p=p or PAGE
+	img = img_from_page(p,b)
+	love.graphics.setColor(1,1,1,1)
+	love.graphics.draw(love.graphics.newImage(img),x+camx,y+camy)
+end
+
+function mget(mx,my)
+	local w = pages[PAGE]['w']
+	return pages[PAGE][my*w+mx]
+end
+
+function mset(mx,my,t)
+	local w = pages[PAGE]['w']
+	pages[PAGE][my*w+mx] = t
+	-- invalidate cache TODO key=p+b
+	map_cache[PAGE] = nil
 end
 
 ---[ INPUT ]--------------------------------------------------------------------
@@ -256,6 +328,8 @@ function mouse()
 	b2 = love.mouse.isDown(2)
 	b3 = love.mouse.isDown(3)
 	mx,my = love.mouse.getPosition() 
+	mx = math.floor(mx/scrs)
+	my = math.floor(my/scrs)
 	return {mx,my,b1,b2,b3}
 end
 
@@ -311,15 +385,18 @@ function MAIN() end
 function DRAW() end
 
 function love.load()
+	BANK = 1
+	PAGE = 1
+	COLORKEY = 0
+	COLOR = 6
 	camx,camy = 0,0
 	scrw,scrh = 240,240
 	scrs = 3
-	sprite_cache={}
+	spr_cache={}
 	map_cache={}
 	banks={}
 	pages={}
 	colors=pal_pico8
-	BANK = 1
 	love.graphics.setLineStyle('rough')
 	love.graphics.setDefaultFilter('nearest','nearest')
 	

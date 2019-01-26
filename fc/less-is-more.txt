@@ -1,0 +1,10 @@
+bez scrollowania -> "pokoje" daja poczucie ukonczenia czegos
+4/8/16 kolorow -> im wiecej tym wiekszy naklad pracy na gfx
+sprite-y 8x8 8x16 16x16 24x24? 32x32??-> im wieksze tym wiekszy naklad pracy na gfx
+joy -> dpad + ab + ewentualnie start i/lub select (NES)
+limit stron spritow -> 
+ladowanie danych z tekstu ->
+music -> na poczatek trackery z love
+map tile 0 = empty -> ulatwia
+bank zawsze 16x16 tile = 128x128px = 8kb
+strona mapy nie wieksza niz ekran
