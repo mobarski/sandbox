@@ -156,6 +156,7 @@ function font_from_text(text,w,h,fg,bg,eol)
 		if ch==fg then
 			img:setPixel(x,y,col_to_rgb(COLOR))
 			font_width[s] = math.max(font_width[s], 1+x%8)
+			font_height[s] = math.max(font_width[s], 1+x%8)
 			x=x+1
 			if x%8 >= w then x = x + 8-x%8 end
 		elseif ch==bg then

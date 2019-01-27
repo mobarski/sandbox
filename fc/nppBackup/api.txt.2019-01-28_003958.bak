@@ -20,18 +20,12 @@ pix -> pget pset / sget sset
 [x] draw map
 [x] img_from_text
 [x] scale screen
-[x] font
-
-[ ] font color
-[ ] spix (vs cache)
-
+[x][ ][x][ ] font (color,spacing,refactor)
 [ ] rotate screen
 [ ] hot-swap whole palette
 [ ] letterbox / fullscreen
 [ ] gif recorder
 [ ] paleta jako shader, wewnetrznie jako szarosci
-[ ] mouse cursor
-[ ] refactor / clean API
 
 [x] INIT/MAIN/DRAW
 

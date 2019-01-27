@@ -148,6 +148,7 @@ function font_from_text(text,w,h,fg,bg,eol)
 	local img = cnv:newImageData()
 	local j,x,y,s = 0,0,0
 	font_width = {} -- GLOBAL
+	font_height = {} -- GLOBAL
 	for i=0,255 do font_width[i]=0 end
 	local ch
 	for i = 1,#text do

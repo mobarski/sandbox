@@ -21,10 +21,8 @@ pix -> pget pset / sget sset
 [x] img_from_text
 [x] scale screen
 [x] font
-
 [ ] font color
 [ ] spix (vs cache)
-
 [ ] rotate screen
 [ ] hot-swap whole palette
 [ ] letterbox / fullscreen

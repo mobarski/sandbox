@@ -150,6 +150,7 @@ function font_from_text(text,w,h,fg,bg,eol)
 	font_width = {} -- GLOBAL
 	for i=0,255 do font_width[i]=0 end
 	local ch
+	-- TODO: automate width detection
 	for i = 1,#text do
 		ch = text:sub(i,i)
 		s = math.floor(x/8) + math.floor(y/8)*16

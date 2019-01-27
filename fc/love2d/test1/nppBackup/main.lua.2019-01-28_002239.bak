@@ -27,7 +27,7 @@ function INIT()
 	
 	banks[4] = font_from_text(moki4x,5,5,'X','.','-')
 	for s = 0,255 do
-		trace(s,string.char(s),font_width[s])
+		trace(s,font_width[s])
 	end
 	screen(250,250,3)
 end
