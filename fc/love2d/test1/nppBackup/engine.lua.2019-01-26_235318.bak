@@ -106,25 +106,18 @@ function map_from_text(text,w,h,chars,values)
 	return out
 end
 
-function font_from_text(text,w,h,fg,bg,eol)
+function font_from_text(text,w,h,fg,eol)
 	local img = love.image.newImageData(128,128)
 	local j,x,y = 0,0,0
 	local ch
 	for i = 1,#text do
 		ch = text:sub(i,i)
 		if ch==fg then
-			img:setPixel(x,y,col_to_rgb(1))
-			x=x+1
-			if x%8 >= w then x = x + 8-x%8 end
-		elseif ch==bg then
-			x=x+1
-			if x%8 >= w then x = x + 8-x%8 end
+
 		elseif ch==eol then
 			y=y+1
-			x=0
 		end
 	end
-	return img
 end
 
 -- w can be filename
@@ -158,26 +151,6 @@ function img_from_page(p,b)
 end
 
 ---[ API ]----------------------------------------------------------------------
-
--- NEW
-function font(text,x,y)
-	local ch
-	local s
-	text=string.upper(text)
-	for i=1,#text do
-		ch = text:sub(i,i)
-		s = string.byte(ch)
-		trace(i,ch,s)
-		if s then
-			spr(s,x,y, 1,1,1,0,0,0,0, 4)
-			if ch=='I' then x=x+2
-			elseif ch=='M' or ch=='W' then x=x+6
-			else x=x+5 end
-		else
-			x=x+5
-		end
-	end
-end
 
 function bank(b) BANK=b end
 function page(p) PAGE=p end

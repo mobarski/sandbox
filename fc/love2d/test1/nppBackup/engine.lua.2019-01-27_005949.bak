@@ -170,9 +170,9 @@ function font(text,x,y)
 		trace(i,ch,s)
 		if s then
 			spr(s,x,y, 1,1,1,0,0,0,0, 4)
-			if ch=='I' then x=x+2
-			elseif ch=='M' or ch=='W' then x=x+6
-			else x=x+5 end
+			if ch=='I' then x=x+2+1
+			elseif ch=='M' or ch=='W' then x=x+6+1
+			else x=x+5+1 end
 		else
 			x=x+5
 		end

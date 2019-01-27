@@ -24,8 +24,9 @@ function INIT()
 		
 	]],8,5,'.#',{0,1})
 	pages[1]=map
+	banks[3] = img_from_text(moki0,32,20,'.----x')
 	
-	banks[4] = font_from_text(moki4x,5,5,'X','.','-')
+	banks[4] = font_from_text(moki4,5,5,'X','.','-')
 	
 	screen(250,250,3)
 end
@@ -60,9 +61,13 @@ function DRAW()
 		map(80,120)
 	end
 	if true then
+		bank(3)
+		spr(0,10,164,20,5, 1)
+	end
+	if true then
 		bank(4)
 		spr(0,10,0,16,16)
-		font("wow the is airplane hit low fuel eject now",10,200)
+		font("low fuel eject now",10,200)
 	end
 	print(m[1].." "..m[2],0,0)
 	print(fps(),200,0)

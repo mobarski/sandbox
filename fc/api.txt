@@ -19,7 +19,7 @@ pix -> pget pset / sget sset
 [x] draw map
 [x] img_from_text
 [x] scale screen
-[ ] font_from_gfx + font/print
+[x][ ][ ][ ] font (color,spacing,bank)
 [ ] rotate screen
 [x] hot-swap palette
 [ ] letterbox

@@ -159,23 +159,24 @@ end
 
 ---[ API ]----------------------------------------------------------------------
 
+xxx={}
+for i=0,12 do
+	xxx[string.char(string.byte('a')+i)] = 16+i
+	xxx[string.char(string.byte('m')+i)] = 32+i
+end
 -- NEW
 function font(text,x,y)
 	local ch
 	local s
-	text=string.upper(text)
 	for i=1,#text do
 		ch = text:sub(i,i)
-		s = string.byte(ch)
+		s = xxx[ch]
 		trace(i,ch,s)
-		if s then
-			spr(s,x,y, 1,1,1,0,0,0,0, 4)
-			if ch=='I' then x=x+2
-			elseif ch=='M' or ch=='W' then x=x+6
-			else x=x+5 end
+		if s==nil then
 		else
-			x=x+5
+			spr(s,x,y, 1,1,1,0,0,0,0, 4)
 		end
+		x=x+4
 	end
 end
 

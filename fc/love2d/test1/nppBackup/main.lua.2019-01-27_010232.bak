@@ -24,6 +24,7 @@ function INIT()
 		
 	]],8,5,'.#',{0,1})
 	pages[1]=map
+	banks[3] = img_from_text(moki0,32,20,'.----x')
 	
 	banks[4] = font_from_text(moki4x,5,5,'X','.','-')
 	
@@ -58,6 +59,10 @@ function DRAW()
 		map(84,36)
 		map(80,80)
 		map(80,120)
+	end
+	if true then
+		bank(3)
+		spr(0,10,164,20,5, 1)
 	end
 	if true then
 		bank(4)
