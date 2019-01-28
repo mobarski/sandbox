@@ -14,8 +14,8 @@ function get_tile(b,s,w,h,colorkey,raw)
 		
 		-- TODO wybrac szybsza metode
 		
+		rk,gk,bk = col_to_rgb(colorkey)
 		function use_colorkey(x,y,r,g,b,a)
-			rk,gk,bk = col_to_rgb(colorkey)
 			if r==rk and g==gk and b==bk
 				then return 0,0,0,0
 				else return r,g,b,1
@@ -140,10 +140,11 @@ function img_from_page(p,b)
 	return img
 end
 
+-- TODO separate calc_width function
 function font_from_text(text,w,h,fg,bg,eol)
 	local cnv = love.graphics.newCanvas(128,128)
 	cnv:renderTo(function ()
-					love.graphics.clear(col_to_rgb(COLORKEY))
+					love.graphics.clear({0,0,0,0}) -- TODO colorkey
 				end)
 	local img = cnv:newImageData()
 	local j,x,y,s = 0,0,0
@@ -154,7 +155,7 @@ function font_from_text(text,w,h,fg,bg,eol)
 		ch = text:sub(i,i)
 		s = math.floor(x/8) + math.floor(y/8)*16
 		if ch==fg then
-			img:setPixel(x,y,col_to_rgb(COLOR))
+			img:setPixel(x,y,{1,1,1,1}) -- TODO color
 			font_width[s] = math.max(font_width[s], 1+x%8)
 			x=x+1
 			if x%8 >= w then x = x + 8-x%8 end
@@ -172,7 +173,11 @@ end
 ---[ API ]----------------------------------------------------------------------
 
 -- NEW
-function font(text,x,y)
+-- TODO ARGS fixed scale
+trace=print
+function print(text,x,y,c,b)
+	c=c or COLOR
+	b=b or FONT_BANK
 	local ch
 	local s
 	text=string.upper(text)
@@ -181,7 +186,7 @@ function font(text,x,y)
 		s = string.byte(ch)
 		--trace(i,ch,s)
 		if s then
-			spr(s,x,y, 1,1,1,0,0,0,0, 4)
+			shadow(s,x,y,c,1,1,b)
 			local w = font_width[s]
 			if w==0 then w=5 else w=w+1 end
 			x=x+w
@@ -197,10 +202,30 @@ function camera(x,y)
 	camx = x
 	camy = y
 end
-function color(c)
-	COLOR=c
-	set_col(c)
-end
+
+-- TODO rest of args
+function shadow(s,x,y,c, w,h, b)
+	w=w or 1
+	h=h or 1
+	b=b or BANK
+	cr,cg,cb = col_to_rgb(c or COLOR)
+	
+	-- get_shadow TODO refactor
+	local bw = math.floor(banks[b]:getWidth()/8)
+	local bx,by = s%bw, math.floor(s/bw)
+	local tile = love.image.newImageData(w*8,h*8)
+	tile:paste(banks[b],0,0,bx*8,by*8,w*8,h*8)
+	function use_colorkey(x,y,r,g,b,a)
+		if a>0
+			then return cr,cg,cb,1
+			else return 0,0,0,0
+		end
+	end
+	tile:mapPixel(use_colorkey)
+	
+	love.graphics.setColor(1,1,1,1) -- required for colors to be ok
+	love.graphics.draw(love.graphics.newImage(tile), x+camx, y+camy)
+end 
 
 -- draw sprite by id, can scale, flip, rotate and sheer
 function spr(s,x,y, w,h, scale,flip,rotate,sx,sy, b)
@@ -249,35 +274,37 @@ function spr(s,x,y, w,h, scale,flip,rotate,sx,sy, b)
 		ori_x, ori_y, sx, sy)
 end
 
-function rect(x,y,w,h,c)
+function rectfill(x,y,w,h,c)
 	set_col(c)
 	love.graphics.rectangle('fill',x+camx,y+camy,w,h)
 end
-function rectb(x,y,w,h,c)
+function rect(x,y,w,h,c)
 	set_col(c)
 	love.graphics.rectangle('line',x+camx,y+camy,w,h)
 end
 
-function circ(x,y,r,c)
+function circfill(x,y,r,c)
 	set_col(c)
 	love.graphics.circle('fill',x+camx,y+camy,r)
 end
-function circb(x,y,r,c)
+function circ(x,y,r,c)
 	set_col(c)
 	love.graphics.circle('line',x+camx,y+camy,r)
 end
 
-function pix(x,y,c)
-	if c then 
-		set_col(c)
-		love.graphics.points(x+camx,y+camy)
-	else
-		love.graphics.setCanvas()
-		local img = scr:newImageData(nil,nil,x,y,1,1)
-		love.graphics.setCanvas(scr)		
-		local r,g,b,a = img:getPixel(0,0)
-		return rgb_to_col(r,g,b)
-	end
+-- TODO bank 0 or nil = screen
+function pget(x,y,b)
+	love.graphics.setCanvas()
+	local img = scr:newImageData(nil,nil,x,y,1,1)
+	love.graphics.setCanvas(scr)		
+	local r,g,b,a = img:getPixel(0,0)
+	return rgb_to_col(r,g,b)
+end
+
+-- TODO bank 0 or nil = screen
+function pset(x,y,c)
+	set_col(c)
+	love.graphics.points(x+camx,y+camy)
 end
 
 function line(x0,y0,x1,y1,c)
@@ -285,23 +312,15 @@ function line(x0,y0,x1,y1,c)
 	love.graphics.line(x0+camx,y0+camy,x1+camx,y1+camy)
 end
 
-function tri(x1,y1,x2,y2,x3,y3,c)
+function trifill(x1,y1,x2,y2,x3,y3,c)
 	set_col(c)
 	love.graphics.polygon('fill',x1+camx,y1+camy,x2+camx,y2+camy,x3+camx,y3+camy)
 end
-function trib(x1,y1,x2,y2,x3,y3,c)
+function tri(x1,y1,x2,y2,x3,y3,c)
 	set_col(c)
 	love.graphics.polygon('line',x1+camx,y1+camy,x2+camx,y2+camy,x3+camx,y3+camy)
 end
 
--- TODO font
--- TODO rest
-trace = print
-function print(text,x,y,c,fixed,scale,smallfont)
-	scale=scale or 1
-	set_col(c)
-	love.graphics.print(text,x+camx,y+camy,0,scale,scale)
-end
 
 function cls(c)
 	local c = c or 0
@@ -350,6 +369,18 @@ function pal(c,r,g,b)
 	end
 end
 
+function color(c)
+	COLOR=c
+	set_col(c)
+end
+
+-- TODO invalidate cache
+function transparent(c)
+	COLORKEY=c
+end
+
+---[ MAP ]----------------------------------------------------------------------
+
 function map(x,y,b,p)
 	x=x or 0
 	y=y or 0
@@ -392,6 +423,7 @@ end
 
 -------------------------------------------------------------------------
 -------------------------------------------------------------------------
+-------------------------------------------------------------------------
 
 -- TODO love.graphics.setBackgroundColor
 
@@ -411,6 +443,7 @@ function love.load()
 	map_cache={}
 	banks={}
 	pages={}
+	FONT_BANK = 4 -- TODO
 	colors=pal_chromatic -- TODO upper
 	love.graphics.setLineStyle('rough')
 	love.graphics.setDefaultFilter('nearest','nearest')

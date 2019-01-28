@@ -49,7 +49,7 @@ function DRAW()
 	r2 = math.random(-2,2)
 	--camera(r1,r2)
 
-	rect(130,140,20,20,1)
+	rectfill(130,140,20,20,1)
 	if false then
 		bank(2)
 		map(0,0)
@@ -63,16 +63,17 @@ function DRAW()
 	end
 	if true then
 		for i=0,15 do
-			rect(10+i*14,80,12,12,i)
+			rectfill(10+i*14,80,12,12,i)
 		end
 	end
+	color(11)
 	if true then
 		bank(4)
-		spr(0,10,0,16,16)
-		font("wow the is airplane hit low fuel eject now",10,200)
+		shadow(0,10,0,6, 16,16)
+		print("wow the is airplane hit low fuel eject now",10,200,5)
 	end
 	print(m[1].." "..m[2],0,0)
 	print(fps(),200,0)
-	print(pix(m[1],m[2]) or 0,100,0)
+	print(pget(m[1],m[2]) or 0,100,0)
 end
 

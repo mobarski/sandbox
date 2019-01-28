@@ -2,15 +2,25 @@ https://love2d.org/wiki/love
 
 -- FEATURES
 
+!!! LESS-IS-MORE !!!
+
+kompatybilne bardziej z pico8 bo bardziej popularne -> wiecej przykladow
+
 colorkey -> pico8 palt, domyslny 0, RENAME
 	-> v1: tylko 0 moze byc
 	-> v2: jeden dowolny moze byc
 	-> v3: kilka moze byc
 spr -> kolejnosc pico8
 spr -> rozmiary jako wielokrotnosci 8 czy px ???
-
+scale -> scalex scaley
+kolor domyslny ala pico8 ???
 uproscic spr -> bez przeksztalcen i z nimi
-pix -> pget pset / sget sset
+color/colorkey -> ink/paper
+fps -> stat x ala pico8
+pset,pget -> plot,point ??? 
+
+banki: screen(0),spr(1),map(2),font(3),scratch?(4)
+polecenie bank podmienia konkretny bank na inny
 
 [x] palette
 [x][x] colorkey
@@ -22,14 +32,19 @@ pix -> pget pset / sget sset
 [x] scale screen
 [x] font
 
-[ ] font color
-[ ] spix (vs cache)
+[x] font color via shadow/stamp/bitmask(wszystko poza 1 jako 1 kolor)
+[ ] sget sset vs pget pset + bank
+[x][ ] transparent (palt - only 0/1 colors)
+[ ] export bank as image
+[ ] readme.md
 
 [ ] rotate screen
-[ ] hot-swap whole palette
 [ ] letterbox / fullscreen
+
+[ ] banki jako szarosci, kolory pozniej, umozliwia zrobienie funkcji co scanline
+[ ] hot-swap whole palette
 [ ] gif recorder
-[ ] paleta jako shader, wewnetrznie jako szarosci
+[ ] paleta jako shader
 [ ] mouse cursor
 [ ] refactor / clean API
 
@@ -40,17 +55,18 @@ pix -> pget pset / sget sset
 [x] cls
 [x] rect
 [x] circ
-[x][x] pix
+[x][x] pix -> rename ala pico8
 [x] line
 [x] tri
 [x] rectb
 [x] circb
-[x][ ] print / font -> inne api?
+[x][ ] print uzywa font, carriage return, vertical scroll??, zmiana koloru w tekscie
 [x] clip
+[ ] cursor
 [x] ++ camera -> TODO jako push / pop ???
 [x] ++ trib
 [x] ++ pal - change palette
-[ ] ++ palt - set transparency color
+[ ] ++ palt - set transparency color -> rename to transparent
 [ ] ++ named palette
 [x] color
 [ ] ++ spix - sprite pixel
@@ -70,8 +86,7 @@ pix -> pget pset / sget sset
 [ ] ++ touch
 
 -- OTHER
-[ ] fget
-[ ] fset
+[ ] fget/fset
 [ ] time
 [x] trace
 [ ] cursor
@@ -104,5 +119,7 @@ LYNX 160x102/4
 GAME GEAR 160x144/5
 TURBO EXPRESS 400x270/8+
 GBA 240x160
+
+https://en.wikipedia.org/wiki/List_of_8-bit_computer_hardware_graphics
 
 
