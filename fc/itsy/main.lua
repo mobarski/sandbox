@@ -1,4 +1,5 @@
 require "pal"
+require "font"
 
 --------------------------------------------------------------------------------
 
@@ -115,12 +116,13 @@ function set_bank(b,w,h)
 	banks[b] = love.image.newImageData(w,h)
 end
 
-function img_from_page(p,b)
+function img_from_page(p,b,remap)
 	b=b or BANK
 	p=p or PAGE
 	local _draw = love.graphics.draw
 	local key = PAGE -- TODO key=p+b
 	local img = map_cache[key]
+	if remap then img = nil end
 	if not img then
 		local t,tile
 		local w = pages[PAGE]['w']
@@ -129,6 +131,9 @@ function img_from_page(p,b)
 		for x = 0,w-1 do
 			for y = 0,h-1 do
 				t = pages[PAGE][y*w+x]
+				if remap then
+					t = remap(t,x,y)
+				end
 				if t then 
 					tile = get_tile(b,t,1,1,nil,true)
 					img:paste(tile,x*8,y*8,0,0,8,8)
@@ -149,6 +154,7 @@ function font_from_text(text,w,h,fg,bg,eol)
 	local img = cnv:newImageData()
 	local j,x,y,s = 0,0,0
 	font_width = {} -- GLOBAL
+	font_height = h
 	for i=0,255 do font_width[i]=0 end
 	local ch
 	for i = 1,#text do
@@ -175,24 +181,60 @@ end
 -- NEW
 -- TODO ARGS fixed scale
 trace=print
-function print(text,x,y,c,b)
+function print(text,x,y,c,xmax,xmin)
 	c=c or COLOR
-	b=b or FONT_BANK
-	local ch
+	x=x or CURX
+	y=y or CURY
+	xmin=xmin or x
+	xmax=xmax or scrw
+	local ch,ch2
 	local s
+	local skip = 0
+	local c_orig = c
 	text=string.upper(text)
 	for i=1,#text do
+		if skip>0 then
+			skip=skip-1
+			goto continue
+		end
 		ch = text:sub(i,i)
 		s = string.byte(ch)
-		--trace(i,ch,s)
-		if s then
-			shadow(s,x,y,c,1,1,b)
+		if ch=='\n' then -- EOL
+			x=xmin
+			y=y+font_height+2
+		elseif ch=='^' then
+			ch2=text:sub(i+1,i+1)
+			if ch2>='0' and ch2<='9' then
+				c = tonumber(ch2)
+				skip = 1
+			elseif ch2=='^' then 
+				c = c_orig
+				skip = 1
+			end
+		elseif s then
 			local w = font_width[s]
+			if x > xmax or x+w > xmax then
+				x=xmin
+				y=y+font_height+2
+			end
+			shadow(s,x,y,c,1,1,FONT_BANK)
 			if w==0 then w=5 else w=w+1 end
 			x=x+w
 		else
 			x=x+5
 		end
+		CURX = x
+		::continue::
+		-- TODO CURY
+	end
+end
+
+function cursor(x,y)
+	if x==nil and y==nil then
+		CURX,CURY = 0,0
+	else
+		if x then CURX=x end
+		if y then CURY=y end
 	end
 end
 
@@ -325,6 +367,8 @@ end
 function cls(c)
 	local c = c or 0
 	love.graphics.clear(col_to_rgb(c))
+	cursor()
+	clip()
 end
 
 function clip(x,y,w,h)
@@ -381,12 +425,11 @@ end
 
 ---[ MAP ]----------------------------------------------------------------------
 
-function map(x,y,b,p)
+function map(x,y,p,remap)
 	x=x or 0
 	y=y or 0
-	b=b or BANK
 	p=p or PAGE
-	img = img_from_page(p,b)
+	img = img_from_page(p,MAP_BANK,remap)
 	love.graphics.setColor(1,1,1,1)
 	love.graphics.draw(love.graphics.newImage(img),x+camx,y+camy)
 end
@@ -430,12 +473,16 @@ end
 function INIT(args,raw_args) end
 function MAIN() end
 function DRAW() end
+function OVER() end -- TODO
+function SCAN() end -- TODO
+function POST() end -- TODO
 
 function love.load(args,raw_args)
 	BANK = 1
 	PAGE = 1
 	COLORKEY = 0
 	COLOR = 1
+	CURX,CURY = 0,0 -- cursor
 	camx,camy = 0,0 -- TODO upper
 	scrw,scrh = 320,200 -- TODO upper
 	scrs = 2 -- TODO upper
@@ -444,13 +491,14 @@ function love.load(args,raw_args)
 	map_cache={}
 	banks={}
 	pages={}
-	FONT_BANK = 4 -- TODO
+	SPR_BANK = 1
+	MAP_BANK = 2
+	FONT_BANK = 3
+	banks[FONT_BANK] = font_from_text(moki4x,5,5,'X','.','-')
 	colors=pal_chromatic -- TODO upper
 	love.graphics.setLineStyle('rough')
 	love.graphics.setDefaultFilter('nearest','nearest')
 	
-	INIT(args,raw_args)
-
 	for i,arg in pairs(args) do
 		trace('arg',i,arg)
 	end
@@ -459,7 +507,9 @@ function love.load(args,raw_args)
 		package.path = package.path .. ";..;?.lua"
 		require(mod)
 	end
-
+	
+	INIT(args,raw_args)
+	
 	scr = love.graphics.newCanvas(scrw,scrh)
 end
 
@@ -477,6 +527,7 @@ function love.draw()
 	love.graphics.setCanvas()
 	love.graphics.setColor(1,1,1,1) -- TODO store+restore color
 	love.graphics.draw(scr,0,0,0, scrs,scrs)
+	POST()
 	
 	if key("f6") then love.graphics.captureScreenshot('screen.png') end
 end

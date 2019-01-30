@@ -7,9 +7,18 @@
 ```
 	INIT
 	
+		...
+	
 	MAIN
 	
+		...
+	
+	
 	DRAW
+	
+		...
+	
+
 ```
 
 ### Graphics
@@ -19,20 +28,31 @@
 		Set screen resolution to width w and height h
 		then upscale by integer factor
 
-	spr s x y [w h] [flip_x] [flip_y]
+	spr s x y [w=1 h=1] {transformations}
 
-		Draw sprite number s at position x,y
-		width w and height h 
+		Draw sprite number s (width w and height h) at position x,y
+		and perform transformations
+			fx - flip x
+			fy - flip y
+			sx - scale x
+			sy - scale y
+			shx - shear x
+			shy - shear y
+			rot - rotate (1: 90deg, 2: 180 deg, 3: 270 deg)
 
-
-	print text [x y] [c]
+	print text [x y] [c] [sx=1 sy=1]
 
 		Print text at x,y with color c
 			
 
+	cursor [x y]
+	
+		Move text cursor to x,y (pixels)
+
+
 	cls [c]
 
-		Clear the screen and reset the clipping rectangle
+		Clear the screen, reset the clipping rectangle and text cursor
 
 
 	color c
@@ -73,7 +93,7 @@
 	
 	camera [x y]
 
-		Set screen offset to x,y
+		Set screen offset to -x,-y
 		camera() to reset
 
 
@@ -94,21 +114,26 @@
 ### Map
 
 ```
-	map x y p
+	map x y [p] [remap=nil]
 	
-		Draw map at position x,y
-		
+		Draw map page p at position x,y
+		remap: function that will be 
+			remap tile x y -> tile 
 	
-	mget mx my
+	
+	mget mx my [r]
 	
 		Get map tile at position mx,my
 			
 			
-	mset mx my v
+	mset mx my v [r]
 	
 		Set map tile at cell mx,my to value v
 	
 	
+	page p
+	
+		Set map page
 	
 ```
 
@@ -128,6 +153,11 @@
 ```
 
 ### Audio
+
+```
+```
+
+### Assets
 
 ```
 ```
