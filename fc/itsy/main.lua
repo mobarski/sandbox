@@ -1,8 +1,11 @@
 require "pal"
+require "font"
+
+-- TODO REFACTOR 128 (bank width)
 
 --------------------------------------------------------------------------------
 
-function get_tile(b,s,w,h,colorkey,raw)
+function get_tile_old(b,s,w,h,colorkey,raw)
 	w=w or 1
 	h=h or 1
 	colorkey=colorkey or COLORKEY
@@ -44,13 +47,47 @@ function get_tile(b,s,w,h,colorkey,raw)
 	end
 end
 
+function get_tile(b,s,w,h,colorkey,raw)
+	w=w or 1
+	h=h or 1
+	colorkey=colorkey or COLORKEY
+	local bw = math.floor(banks[b]:getWidth()/8)
+	local x,y = s%bw, math.floor(s/bw)
+	local tile = love.image.newImageData(w*8,h*8)
+	tile:paste(banks[b],0,0,x*8,y*8,w*8,h*8)
+	--tile:encode('png','xxx.png')
+	
+	function use_pal(x,y,r,g,b,a)
+		local c
+		local rr,gg,bb
+		if r==g and g==b and a==1 then
+			c = r*MAX_COLOR
+			if c==colorkey then
+				return 0,0,0,0
+			else
+				rr,gg,bb = col_to_rgb(c)
+				return rr,gg,bb,1
+			end
+		else
+			return 1,0,0,1
+		end
+	end
+	tile:mapPixel(use_pal)
+			
+	if raw then
+		return tile
+	else
+		return love.graphics.newImage(tile)
+	end
+end
+
 function col_to_rgb(c)
 	local c = c or 1
 	local col = colors[c+1]
 	if col then
 		return col[1]/255,col[2]/255,col[3]/255
 	else
-		return 0,0,0,0
+		return 1,0,0,0 -- XXX
 	end
 end
 
@@ -65,7 +102,7 @@ function set_col(c)
 	love.graphics.setColor(col_to_rgb(c))
 end
 
-function img_from_text(text,w,h,colormap)
+function img_from_text_old(text,w,h,colormap)
 	local img = love.image.newImageData(w,h)
 	local c,ch
 	local map={}
@@ -87,22 +124,54 @@ function img_from_text(text,w,h,colormap)
 	return img
 end
 
-function map_from_text(text,w,h,chars,values)
+-- TODO REFACTOR
+function bank_from_text(b,text,chars,values,w,h,eol)
+	w=w or 128
+	h=h or 128
+	eol=eol or ';'
+	local img = love.image.newImageData(w,h)
+	local c,ch,bc
+	local x,y = 0,0
+	local val = {}
+	for i = 1,#chars do
+		val[chars:sub(i,i)] = values[i]
+	end
+	for i = 1,#text do
+		ch = text:sub(i,i)
+		if ch==eol then
+			y=y+1
+			x=0
+		end
+		c = val[ch]
+		if c then 
+			bc = c / MAX_COLOR
+			img:setPixel(x,y,bc,bc,bc,1)
+			x=x+1
+		end
+	end
+	banks[b]=img
+end
+
+-- TODO REFACTOR
+function map_from_text(text,chars,values,w,h,eol)
+	eol=eol or ';'
 	local val = {}
 	local out = {}
-	local j = 0
+	local x,y = 0,0
 	local t,ch
 	for i=1,#chars do
 		val[chars:sub(i,i)] = values[i]
 	end
 	for i = 1,#text do
 		ch = text:sub(i,i)
+		if ch==eol then
+			y=y+1
+			x=0
+		end
 		t = val[ch]
 		if t then
-			y = math.floor(j/w)
-			x = j%w
 			out[y*w+x] = t
-			j=j+1
+			x=x+1
 		end
 	end
 	out['w']=w
@@ -110,17 +179,14 @@ function map_from_text(text,w,h,chars,values)
 	return out
 end
 
--- w can be filename
-function set_bank(b,w,h)
-	banks[b] = love.image.newImageData(w,h)
-end
 
-function img_from_page(p,b)
+function img_from_page(p,b,remap)
 	b=b or BANK
 	p=p or PAGE
 	local _draw = love.graphics.draw
 	local key = PAGE -- TODO key=p+b
 	local img = map_cache[key]
+	if remap then img = nil end
 	if not img then
 		local t,tile
 		local w = pages[PAGE]['w']
@@ -129,6 +195,9 @@ function img_from_page(p,b)
 		for x = 0,w-1 do
 			for y = 0,h-1 do
 				t = pages[PAGE][y*w+x]
+				if remap then
+					t = remap(t,x,y)
+				end
 				if t then 
 					tile = get_tile(b,t,1,1,nil,true)
 					img:paste(tile,x*8,y*8,0,0,8,8)
@@ -149,6 +218,7 @@ function font_from_text(text,w,h,fg,bg,eol)
 	local img = cnv:newImageData()
 	local j,x,y,s = 0,0,0
 	font_width = {} -- GLOBAL
+	font_height = h
 	for i=0,255 do font_width[i]=0 end
 	local ch
 	for i = 1,#text do
@@ -170,41 +240,124 @@ function font_from_text(text,w,h,fg,bg,eol)
 	return img
 end
 
+function export_bank_old(b,path)
+	local img = love.image.newImageData(128,128) -- TODO dim
+	img:paste(banks[b],0,0,0,0,128,128) -- TODO dim
+	function f(x,y,r,g,b,a)
+		local c = rgb_to_col(r,g,b)
+		local nc = COLORKEY
+		local d = MAX_COLOR
+		if c then
+			return c/d,c/d,c/d,1
+		else
+			return nc/d,nc/d,nc/d,1 -- nocolor/colorkey???
+		end
+	end
+	img:mapPixel(f)
+	img:encode('png',path)
+end
+
+function import_bank_old(b,path)
+	local img = love.image.newImageData(path)
+	function f(x,y,r,g,b,a)
+		local rr,gg,bb
+		local d = MAX_COLOR
+		if a==1 and r==g and g==b then
+			rr,gg,bb = col_to_rgb(r*d)
+			return rr,gg,bb,1
+		else
+			return 0,0,0,1
+		end
+	end
+	trace('before',img:getPixel(0,0))
+	img:mapPixel(f)
+	trace('after',img:getPixel(0,0))
+	banks[b] = img
+end
+
+function export_bank(b,path)
+	banks[b]:encode('png',path)
+end
+
+function import_bank(b,path)
+	local bank = love.image.newImageData(128,128)
+	local img = love.image.newImageData(path)
+	bank:paste(img,0,0,0,0,128,128)
+	banks[b] = bank
+end
+
 ---[ API ]----------------------------------------------------------------------
 
--- NEW
--- TODO ARGS fixed scale
+-- TODO KWARGS fixed scale sim xspace yspace
+-- TODO return value
 trace=print
-function print(text,x,y,c,b)
+function print(text,x,y,c,xmax,xmin,sim)
 	c=c or COLOR
-	b=b or FONT_BANK
-	local ch
+	x=x or CURX
+	y=y or CURY
+	xmin=xmin or x
+	xmax=xmax or scrw
+	local ch,ch2
 	local s
+	local skip = 0
+	local c_orig = c
 	text=string.upper(text)
 	for i=1,#text do
+		if skip>0 then
+			skip=skip-1
+			goto continue
+		end
 		ch = text:sub(i,i)
 		s = string.byte(ch)
-		--trace(i,ch,s)
-		if s then
-			shadow(s,x,y,c,1,1,b)
+		if ch=='\n' then -- EOL
+			x=xmin
+			y=y+font_height+2
+		elseif ch=='^' then
+			ch2=text:sub(i+1,i+1)
+			if ch2>='0' and ch2<='9' then
+				c = tonumber(ch2)
+				skip = 1
+			elseif ch2=='^' then 
+				c = c_orig
+				skip = 1
+			end
+		elseif s then
 			local w = font_width[s]
+			if x > xmax or x+w > xmax then
+				x=xmin
+				y=y+font_height+2
+			end
+			shadow(s,x,y,1,1,c,FONT_BANK)
 			if w==0 then w=5 else w=w+1 end
 			x=x+w
 		else
 			x=x+5
 		end
+		CURX = x
+		::continue::
+		-- TODO CURY
+	end
+	return x,y+font_height+1
+end
+
+function cursor(x,y)
+	if x==nil and y==nil then
+		CURX,CURY = 0,0
+	else
+		if x then CURX=x end
+		if y then CURY=y end
 	end
 end
 
 function bank(b) BANK=b end
 function page(p) PAGE=p end
 function camera(x,y)
-	camx = x
-	camy = y
+	camx = -x
+	camy = -y
 end
 
 -- TODO rest of args
-function shadow(s,x,y,c, w,h, b)
+function shadow(s,x,y, w,h, c,b)
 	w=w or 1
 	h=h or 1
 	b=b or BANK
@@ -325,20 +478,27 @@ end
 function cls(c)
 	local c = c or 0
 	love.graphics.clear(col_to_rgb(c))
+	cursor()
+	clip()
 end
 
 function clip(x,y,w,h)
-	if x then 
-		love.graphics.setScissor(x,y,w,h) -- camx camy ???
-	else
-		love.graphics.setScissor(0,0,scrw,scrh)
+	if true then return else
+		-- ERROR
+		if x then 
+			love.graphics.setScissor(x*scrs,(scrh-y-h)*scrs,w*scrs,h*scrs) -- camx camy ???
+		else
+			love.graphics.setScissor(0,0,scrw*scrs,scrh*scrs)
+		end
 	end
 end
 
-function screen(w,h,s)
+function screen(w,h,s,c)
 	s=s or 1
+	c=c or 16
 	scrw,scrh = w,h
 	scrs = s
+	MAX_COLOR = c-1
 	love.window.setMode(w*s,h*s)
 end
 
@@ -381,12 +541,11 @@ end
 
 ---[ MAP ]----------------------------------------------------------------------
 
-function map(x,y,b,p)
+function map(x,y,p,remap)
 	x=x or 0
 	y=y or 0
-	b=b or BANK
 	p=p or PAGE
-	img = img_from_page(p,b)
+	img = img_from_page(p,MAP_BANK,remap)
 	love.graphics.setColor(1,1,1,1)
 	love.graphics.draw(love.graphics.newImage(img),x+camx,y+camy)
 end
@@ -430,12 +589,16 @@ end
 function INIT(args,raw_args) end
 function MAIN() end
 function DRAW() end
+function OVER() end -- TODO
+function SCAN() end -- TODO
+function POST() end -- TODO
 
 function love.load(args,raw_args)
 	BANK = 1
 	PAGE = 1
 	COLORKEY = 0
 	COLOR = 1
+	CURX,CURY = 0,0 -- cursor
 	camx,camy = 0,0 -- TODO upper
 	scrw,scrh = 320,200 -- TODO upper
 	scrs = 2 -- TODO upper
@@ -444,13 +607,15 @@ function love.load(args,raw_args)
 	map_cache={}
 	banks={}
 	pages={}
-	FONT_BANK = 4 -- TODO
+	SPR_BANK = 1
+	MAP_BANK = 2
+	FONT_BANK = 3
+	MAX_COLOR = 15 -- number of colors-1
+	banks[FONT_BANK] = font_from_text(moki4x,5,5,'X','.','-')
 	colors=pal_chromatic -- TODO upper
 	love.graphics.setLineStyle('rough')
 	love.graphics.setDefaultFilter('nearest','nearest')
 	
-	INIT(args,raw_args)
-
 	for i,arg in pairs(args) do
 		trace('arg',i,arg)
 	end
@@ -459,7 +624,9 @@ function love.load(args,raw_args)
 		package.path = package.path .. ";..;?.lua"
 		require(mod)
 	end
-
+	
+	INIT(args,raw_args)
+	
 	scr = love.graphics.newCanvas(scrw,scrh)
 end
 
@@ -477,6 +644,7 @@ function love.draw()
 	love.graphics.setCanvas()
 	love.graphics.setColor(1,1,1,1) -- TODO store+restore color
 	love.graphics.draw(scr,0,0,0, scrs,scrs)
+	POST()
 	
 	if key("f6") then love.graphics.captureScreenshot('screen.png') end
 end
