@@ -10,7 +10,6 @@ function DRAW()
 	print('to jest bardzo ^5dlugi^2 tekst ktory\npowinien\n^^zlamac\nlinie',100,100)
 end
 
-
 function POST()
 	love.graphics.setColor(0,0,0,1)
 	if false then for y = 4,scrh*scrs,4 do

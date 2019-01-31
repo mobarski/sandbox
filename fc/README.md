@@ -47,12 +47,13 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 	MAIN
 	
 		Main function that will be called at 60 fps.
+
 	
 	
 	DRAW
-	
+
 		Function called once per visible frame.
-	
+
 	
 ```
 
@@ -63,7 +64,6 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 		Set screen resolution to width w and height h
 		then upscale by integer factor.
 		Set number of colors.
-
 
 	spr s x y [w=1 h=1] {transformations}
 
@@ -77,7 +77,6 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 			shx - shear x
 			shy - shear y
 			rot - rotate (1: 90 deg, 2: 180 deg, 3: 270 deg)
-
 
 	shadow s x y [w=1 h=1] [c] [b]
 	
@@ -175,7 +174,7 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 		remap: function that will be 
 			remap tile x y -> tile 
 	
-	
+
 	mget mx my [r]
 	
 		Get map tile at position mx,my
@@ -236,11 +235,9 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 		...
 	
 	
-	
 ```
 
 ### Audio
 
 ```
 ```
-
