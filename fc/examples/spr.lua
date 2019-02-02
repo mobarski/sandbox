@@ -4,10 +4,10 @@ function INIT()
 	bank_from_text(1,[[
 		xxxxxxxx ######## ;
 		x......x #......# ;
-		x......x #.o..o.# ;
+		x.o..o.x #.x..o.# ;
 		x..xx..x #......# ;
 		x..xx..x #.x..x.# ;
-		x......x #.oooo.# ;
+		x.o....x #.oooo.# ;
 		x......x #......# ;
 		xxxxxxxx ######## ;
 		
@@ -19,6 +19,9 @@ end
 
 function DRAW()
 	cls()
-	spr(0,100,100,1,1,6)
-	spr(1,200,100,1,1,6)
+	local f = 0
+	if key('left') then f=1 end
+	if key('up') then f=f+2 end
+	spr(0, 100,100, 1,1, f,6)
+	spr(1, 200,100, 1,1, f,6)
 end

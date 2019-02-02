@@ -13,22 +13,21 @@
 
 - graphics API
 	- banks as greyscale -> [x]spr [x]map [ ]font
+	- draw greyscale colors in shader
 	- all banks are equal (font vs map/spr)
-	- get/set pixel
+	- get/set pixel [x]screen [ ]bank
 	- shadow options
-	- spr options
-	- screen options (#colors,pal_from_str)
 	- pal as in pico ?
-	- print options
+	- print options -> remove ^x
 	- fillp
 - map API
 - input API
 - sprite editor
+- audio API
 - map editor
 - shell
 - gif recorder
 - code editor
-- audio API
 - sfx editor
 - net API
 
@@ -49,7 +48,6 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 		Main function that will be called at 60 fps.
 
 	
-	
 	DRAW
 
 		Function called once per visible frame.
@@ -65,18 +63,15 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 		then upscale by integer factor.
 		Set number of colors.
 
-	spr s x y [w=1 h=1] {transformations}
+	spr s x y [w=1 h=1] [flip=0 scale=1]
 
-		Draw sprite number s (width w and height h) at position x,y
+		Draw sprite number s at position x,y
 		
-		Perform transformations:
-			fx - flip x
-			fy - flip y
-			sx - scale x
-			sy - scale y
-			shx - shear x
-			shy - shear y
-			rot - rotate (1: 90 deg, 2: 180 deg, 3: 270 deg)
+		Options:
+			w - width (in 8px units)
+			h - height (in 8px units)
+			flip - flip (1:horizontal, 2:vertical, 3:both)
+		
 
 	shadow s x y [w=1 h=1] [c] [b]
 	
@@ -196,8 +191,13 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 ```
 	key name -> pressed
 	
-		Check key state in current frame
-			
+		Check if key is pressed in the current frame
+	
+	
+	keyp name -> pressed
+	
+		Check if key is pressed and was not pressed in the previous frame
+	
 	
 	mouse -> x,y,b1,b2,b3
 	

@@ -381,12 +381,12 @@ function shadow(s,x,y, w,h, c,b)
 end 
 
 -- draw sprite by id, can scale, flip, rotate and sheer
-function spr(s,x,y, w,h, scale,flip,rotate,sx,sy, b)
+function spr(s,x,y, w,h, flip,scale, b)
 	w = w or 1
 	h = h or 1
 	b = b or BANK
 	flip = flip or 0
-	rotate = rotate or 0
+	scale = scale or 1
 	
 	local key = table.concat({b,s,COLORKEY,w,h},':')
 	local img = spr_cache[key]
@@ -395,36 +395,20 @@ function spr(s,x,y, w,h, scale,flip,rotate,sx,sy, b)
 		spr_cache[key] = img
 	end
 
-	local ori_x = 0
-	local ori_y = 0
-
-	local scale_x = scale or 1
-	local scale_y = scale or 1
+	local scale_x,scale_y = scale,scale
+	local ori_x,ori_y = 0,0
 	if flip==1 or flip==3 then
-		ori_x = w*8
-		scale_x = -scale_x
+		scale_x = -scale
+		ori_x = 8*w
 	end
-	if flip==2 or flip==3 then 
-		ori_y = h*8
-		scale_y = -scale_y
-	end
-
-	if rotate==1 then
-		if ori_y>0 then ori_y=0 else ori_y=h*8 end
-		rotate = math.pi/2
-	elseif rotate==2 then
-		if ori_y>0 then ori_y=0 else ori_y=h*8 end
-		if ori_x>0 then ori_x=0 else ori_x=w*8 end
-		rotate = math.pi
-	elseif rotate==3 then
-		if ori_x>0 then ori_x=0 else ori_x=w*8 end
-		rotate = math.pi*3/2
+	if flip==2 or flip==3 then
+		scale_y = -scale
+		ori_y = 8*h
 	end
 
 	love.graphics.setColor(1,1,1,1) -- required for colors to be ok
 	love.graphics.draw(img, x+camx, y+camy,
-		rotate, scale_x, scale_y,
-		ori_x, ori_y, sx, sy)
+		0, scale_x, scale_y, ori_x, ori_y)
 end
 
 function rectfill(x,y,w,h,c)
@@ -445,8 +429,7 @@ function circ(x,y,r,c)
 	love.graphics.circle('line',x+camx,y+camy,r)
 end
 
--- TODO bank 0 or nil = screen
-function pget(x,y,b)
+function pget(x,y)
 	love.graphics.setCanvas()
 	local img = scr:newImageData(nil,nil,x,y,1,1)
 	love.graphics.setCanvas(scr)		
@@ -454,7 +437,6 @@ function pget(x,y,b)
 	return rgb_to_col(r,g,b)
 end
 
--- TODO bank 0 or nil = screen
 function pset(x,y,c)
 	set_col(c)
 	love.graphics.points(x+camx,y+camy)
@@ -493,12 +475,22 @@ function clip(x,y,w,h)
 	end
 end
 
-function screen(w,h,s,c)
+function screen(w,h,s,pal)
 	s=s or 1
-	c=c or 16
 	scrw,scrh = w,h
 	scrs = s
-	MAX_COLOR = c-1
+	if pal then
+		colors = {}
+		local c=1
+		local r,g,b
+		for r,g,b in string.gmatch(pal,'#(%w%w)(%w%w)(%w%w)') do
+			trace(c,r,g,b)
+			colors[c] = {tonumber(r,16),tonumber(g,16),tonumber(b,16)}
+			c=c+1
+		end
+		MAX_COLOR = c
+		trace(MAX_COLOR)
+	end
 	love.window.setMode(w*s,h*s)
 end
 
@@ -568,6 +560,18 @@ function key(k)
 	return love.keyboard.isDown(k)
 end
 
+function keyp(k)
+	local d = love.keyboard.isDown(k)
+	local p = PRESSED[k] 
+	if d and not p then
+		PRESSED[k] = 1
+		return true
+	elseif p and not d then
+		PRESSED[k] = nil
+	end
+	return false
+end
+
 function mouse()
 	local mx,my,b1,b2,b3
 	b1 = love.mouse.isDown(1)
@@ -607,6 +611,7 @@ function love.load(args,raw_args)
 	map_cache={}
 	banks={}
 	pages={}
+	PRESSED={}
 	SPR_BANK = 1
 	MAP_BANK = 2
 	FONT_BANK = 3
