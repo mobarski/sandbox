@@ -11,7 +11,7 @@ function INIT()
 		x......x #......# ;
 		xxxxxxxx ######## ;
 		
-	]],'.xo#',{0,10,1,12})
+	]],'.xo#',{0,10,4,12})
 	export_bank(1,'spr.png')
 	get_tile(1,1,1,1,0,true):encode('png','tile.png')
 	export_bank(3,'font.png')

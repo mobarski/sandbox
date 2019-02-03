@@ -72,7 +72,7 @@ function get_tile(b,s,w,h,colorkey,raw)
 			return 1,0,0,1
 		end
 	end
-	tile:mapPixel(use_pal)
+	tile:mapPixel(use_pal) -- TODO REMAP COLORS IN SHADER
 			
 	if raw then
 		return tile
@@ -81,6 +81,7 @@ function get_tile(b,s,w,h,colorkey,raw)
 	end
 end
 
+-- TODO REMAP COLORS IN SHADER
 function col_to_rgb(c)
 	local c = c or 1
 	local col = colors[c+1]
@@ -476,7 +477,9 @@ function clip(x,y,w,h)
 end
 
 function screen(w,h,s,pal)
-	s=s or 1
+	s=s or scrs
+	w=w or scrw
+	h=h or scrh
 	scrw,scrh = w,h
 	scrs = s
 	if pal then

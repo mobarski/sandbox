@@ -13,17 +13,20 @@
 
 - graphics API
 	- banks as greyscale -> [x]spr [x]map [ ]font
-	- draw greyscale colors in shader
+	- draw greyscale colors in shader [x]prototype
 	- all banks are equal (font vs map/spr)
 	- get/set pixel [x]screen [ ]bank
 	- shadow options
 	- pal as in pico ?
+	- palt as in pico ?
 	- print options -> remove ^x
-	- fillp
+	- fillp in shader [x]prototype
+	- fget, fset
+	- pico8 compatibility
 - map API
 - input API
 - sprite editor
-- audio API
+- audio API [x]prototype
 - map editor
 - shell
 - gif recorder
@@ -136,11 +139,24 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 	trifill x0 y0 x1 y1 x2 y2 [c]
 	
 		Draw a triangle or filled triangle
+
+	pset x y [c]
 	
+		...
+		
+		
+	pget x y
+		
+		...
+	
+	fillp [pattern=0]
+	
+		...
+		
 	
 	camera [x y]
 
-		Set screen offset to -x,-y
+		Set screen offset to x,y
 		camera() to reset
 
 
@@ -157,7 +173,6 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 		Set color c to specific r,g,b values
 		pal(c) returns r,g,b values for color c
 		
-	
 ```
 
 ### Map

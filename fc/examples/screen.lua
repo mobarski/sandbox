@@ -22,13 +22,13 @@ function INIT()
 		extern vec4 colors[32];
 		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords )
 		{
-			vec4 xxx = colors[5];
-			vec4 col;
-			col[0]=1;
-			col[1]=0.5;
-			col[2]=0.5;
-			col[3]=1;
-			return col;
+			if ((mod(screen_coords.x,2)<=1) && (mod(screen_coords.y,2)<=1) ||
+				(mod(screen_coords.x,2)>1) && (mod(screen_coords.y,2)>1) )
+			{
+				return colors[0];
+			} else {
+				return color;
+			};
 		}
 	]]
 	 
@@ -45,15 +45,21 @@ function INIT()
 	end
 	shader:sendColor('colors',unpack(rgba))
 	 
+	x,y = 0,0
 end
 
 function DRAW()
 	cls()
+	camera(x,y)
 	love.graphics.setShader(shader)
 	for c=0,MAX_COLOR do
 		rectfill(8+16*c,8,12,12,c)
 	end
 	love.graphics.setShader()
-
+	for c=0,MAX_COLOR do
+		rectfill(8+16*c,28,12,12,c)
+	end
+	if key("down") then y=y+1 end
+	if key("up") then y=y-1 end
 end
 
