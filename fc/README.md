@@ -2,34 +2,25 @@
 
 ## About
 
-**ITSY-8** is a fantasy computer that you can use to make, play and share tiny retro-looking games and programs.
+**ITSY-8** is a framework that you can use to make, play and share tiny retro-looking games and programs.
 
-- TODO - something about changable resolution
+Its API is similar to the API of the most popular fantasy console - PICO-8
+
+- TODO - something about focus on low cost of development
+- TODO - something about fantasy consoles + changable resolution + sprite size
 - TODO - something about smartphones
-- TODO - something about low cost of development
-- TODO - something about children
+- TODO - something about learning / teaching
 
 ## Roadmap
 
 - graphics API
-	- banks as greyscale -> [x]spr [x]map [ ]font
-	- draw greyscale colors in shader [x]prototype
-	- all banks are equal (font vs map/spr)
-	- get/set pixel [x]screen [ ]bank
-	- shadow options
-	- pal as in pico ?
-	- palt as in pico ?
-	- print options -> remove ^x
-	- fillp in shader [x]prototype
-	- fget, fset
-	- pico8 compatibility
+- gif recorder
 - map API
 - input API
 - sprite editor
 - audio API [x]prototype
 - map editor
 - shell
-- gif recorder
 - code editor
 - sfx editor
 - net API
@@ -41,17 +32,17 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 ### Program Structure
 
 ```
-	INIT
+	_init
 	
 		Function called once on program startup.
 	
 	
-	MAIN
+	_update
 	
 		Main function that will be called at 60 fps.
 
 	
-	DRAW
+	_draw
 
 		Function called once per visible frame.
 
@@ -60,20 +51,38 @@ ITSY-8 is in the experimental phase. API may change at any time without notice.
 
 ### Graphics
 ```
-	screen w h [scale] [colors=16]
+	screen w h [scale] [pal]
 	
 		Set screen resolution to width w and height h
-		then upscale by integer factor.
-		Set number of colors.
+		
+		Options:
+			scale - upscale factor
+			pal - palete string with color definitions in the #rrggbb format
+		
 
-	spr s x y [w=1 h=1] [flip=0 scale=1]
+	spr s x y [w=1 h=1] [flip_x flip_y]
 
 		Draw sprite number s at position x,y
 		
 		Options:
-			w - width (in 8px units)
-			h - height (in 8px units)
-			flip - flip (1:horizontal, 2:vertical, 3:both)
+			w - width in tiles
+			h - height in tiles
+			flip_x - flip on x axis (swap left and right)
+			flip_y - flip on y axis (swap up and down)
+		
+
+	sprite s x y [fx=0 fy=0] [rot=1 scale=1] [w=1 h=1]
+	
+		Draw sprite number s at position x,y and perform transformations.
+		
+		Options:
+			fx - flip on x axis (swap left and right)
+			fy - flip on y axis (swap up and down)
+			rot - rotation (0.5: half rotation, 1.0: full rotation, etc)
+			scale - upscale factor
+			w - width in tiles
+			h - height in tiles
+			
 		
 
 	shadow s x y [w=1 h=1] [c] [b]

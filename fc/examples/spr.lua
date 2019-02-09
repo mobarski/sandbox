@@ -1,5 +1,22 @@
 function INIT()
-	colors = pal_sweetie
+	screen(300,200,3,[[
+		#140c1c
+		#442434
+		#30346d
+		#4e4a4e
+		#854c30
+		#346524
+		#d04648
+		#757161
+		#597dce
+		#d27d2c
+		#8595a1
+		#6daa2c
+		#d2aa99
+		#6dc2ca
+		#dad45e
+		#deeed6
+	]])
 	
 	bank_from_text(1,[[
 		xxxxxxxx ######## ;
@@ -18,7 +35,13 @@ function INIT()
 end
 
 function DRAW()
-	cls()
+	cls(2)
+	local r
+	for c=1,16 do
+		rectfill(8+16*c,8,12,12,c)
+		r = col_to_rgba(c)[0]
+		--trace(c,r,r*255,int(r*255))
+	end
 	local f = 0
 	if key('left') then f=1 end
 	if key('up') then f=f+2 end
