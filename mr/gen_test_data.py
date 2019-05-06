@@ -36,3 +36,9 @@ for i,part in enumerate(parts):
 	db.execute('create table if not exists test(x,text)')
 	db.executemany('insert into test values (?,?)',[(randint(1,4),p) for p in part])
 	db.commit()
+
+db = sqlite3.connect('data/all')
+db.execute('drop table if exists test')
+db.execute('create table if not exists test(x,text)')
+db.executemany('insert into test values (?,?)',[(randint(1,4),s) for s in sentences])
+db.commit()

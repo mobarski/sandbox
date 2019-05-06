@@ -1,9 +1,9 @@
-import sqlite3
+import apsw
 from time import time
 
+# TODO parameter placeholders
 # TODO explode
 # TODO grouping
-# TODO parameter placeholders
 
 # NEW
 import re
@@ -13,20 +13,24 @@ def regexp(expr, item):
 
 def _map_fun(sql, part, path, combiner, functions, aggregates):
 	t0=time()
-	db = sqlite3.connect(path)
+	db = apsw.Connection(path)
 	
 	# new
-	db.create_function('regexp',2,regexp)
+	db.createscalarfunction('regexp',regexp,2)
 	
 	for x in functions:
-		db.create_function(*x)
+		db.createscalarfunction(*x)
 	for x in aggregates:
-		db.create_aggregate(*x)
+		db.createaggregatefunction(*x)
 	
-	result = db.execute(sql)
+	result = db.cursor().execute(sql)
+	try:
+		description = result.description
+	except:
+		description = []
 	out = {}
 	out['rows'] = list(result)
-	out['cols'] = [x[0] for x in result.description]
+	out['cols'] = [x[0] for x in description]
 	out['part'] = part
 	out['map_time'] = time()-t0
 	if combiner:
@@ -63,3 +67,8 @@ def reduce_sql(sql, map_output):
 	db = union(map_output)
 	return db.execute(sql)
 
+
+if __name__=="__main__":
+	PARTS = []
+	map_sql("drop table if exists test",range(4),lambda x:'data/mr2_{}'.format(x))
+	map_sql("create virtual table if not exists test using fts5(a,b)",range(4),lambda x:'data/mr2_{}'.format(x))
