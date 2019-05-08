@@ -1,8 +1,8 @@
 
-# TODO parallel insert -> executemany,fun(...)->args
-# TODO explode
-# TODO grouping
+# TODO parallel union
 # TODO parallel reduce
+# TODO grouping
+# TODO explode
 
 # ------------------------------------------------------------------------------
 
@@ -21,6 +21,10 @@ class MR:
 		                combiner=combiner,
 						functions=self.functions,
 						aggregates=self.aggregates)
+	
+	def map_fun(self, fun, kwargs={}, parts=None):
+		assert(parts)
+		return _map_function(fun, kwargs, parts, self.path_fun, pool=self.pool)
 	
 	def union(self, map_output):
 		return _union(map_output)
@@ -78,6 +82,13 @@ def _map_sql(sql, args, parts, path_fun, pool=None, combiner=None, functions=[],
 		out = map(_map_fun1, fun_args)
 	return out
 
+def _map_function(fun, kwargs, parts, path_fun, pool=None):
+	fun_args = [dict(part=part,path=path_fun(part),**kwargs) for part in parts]
+	if pool:
+		out = pool.map(fun, fun_args)
+	else:
+		out = map(fun, fun_args)
+	return out
 
 def _union(map_output):
 	tab = 'part' # TODO rename ???
@@ -95,11 +106,17 @@ def _union(map_output):
 
 import re
 def _regexp(expr, item):
-	r = re.compile(expr,re.U)
+	r = re.compile(expr,re.U|re.I)
 	return r.search(item) is not None
 
 # ------------------------------------------------------------------------------
 
+def test_map_fun(kv):
+	db = apsw.Connection(kv['path'])
+	db.cursor().execute("drop table if exists test")
+	db.cursor().execute("create virtual table if not exists test using fts5(a,b)")
+	db.cursor().execute("insert into test values (?,?)",['xx aa bb','zz ee rr'])
+	
 if __name__=="__main__":
 	PARTS = [0,1,2,3]
 	mr=MR(lambda x:'data/mr3_{}'.format(x))
@@ -109,3 +126,6 @@ if __name__=="__main__":
 	data = mr.map("select a,b from test",[],PARTS)
 	out = list(mr.reduce('select * from part',[],data))
 	print(out)
+	mr.map_fun(test_map_fun,{},PARTS)
+	print(mr.map("select a,b from test",[],PARTS))
+	
