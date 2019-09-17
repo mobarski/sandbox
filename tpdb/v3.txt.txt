@@ -1,0 +1,4 @@
+ALA REDIS
+glowny proces trzyma slownik kv
+zapis zawsze w glownym watku
+jak trzeba zrobic map-reduce to split na n procesow

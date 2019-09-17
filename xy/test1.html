@@ -1,0 +1,28 @@
+
+<!-- https://atomiks.github.io/tippyjs/ -->
+
+<style>
+</style>
+
+<svg width=500 height=150>
+	<rect x=10 y=10 width=100 height=100
+	      style="fill:#FFaaaa;"
+		  onmouseenter="tooltip(event,this,123)"
+		  />
+	<rect x=130 y=10 width=100 height=100
+	      style="fill:#aaFFaa;"
+		  onmouseenter="tooltip(event,this,321)"
+		  />
+</svg>
+<div id="tooltip" style="opacity:0">
+	to jest test
+</div>
+<script>
+	function tooltip(event,elem,id) {
+		t = document.getElementById("tooltip")
+		t.style.opacity = 1
+		t.innerHTML = "tooltip dla "+id
+		elem.style.opacity = 0.5
+	}
+</script>
+

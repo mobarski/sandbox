@@ -1,0 +1,6 @@
+API:
+
+funkcja na wejsciu dostaje sciezke:
+- otwiera db
+- robi przeksztalcenia
+- zwraca wyniki

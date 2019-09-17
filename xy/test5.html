@@ -1,0 +1,57 @@
+
+<!-- inspiracje:
+	https://atomiks.github.io/tippyjs/
+	https://github.com/Kozea/pygal.js/blob/gh-pages/2.0.x/pygal-tooltips.js
+-->
+
+<style>
+	.datapoint {
+		width: 20;
+		height: 20;
+	}
+	.g1 {
+		fill: #FFaaaa;
+	}
+	.g2 {
+		fill: #aaFFaa;
+	}
+</style>
+
+<script>
+	function tooltip_off(event,elem) {
+		t = document.getElementById("tooltip")
+		t.style.opacity = 0
+		elem.style.opacity = 1
+	}
+	function tooltip(event,elem) {
+		t = document.getElementById("tooltip")
+		t.style.opacity = 1
+		t.innerHTML = "<br>id:"+elem.getAttribute('id') + "<br>title: "+elem.getAttribute('title')
+		elem.style.opacity = 0.5
+	}
+</script>
+
+<!-- ----------------------------------------------------------------------- -->
+
+<!-- TODO: zamiast onmouse... funkcja, ktora doda to dynamicznie po wczytaniu
+
+	https://stackoverflow.com/questions/40956717/how-to-addeventlistener-to-multiple-elements-in-a-single-line
+	
+	!!! https://www.kirupa.com/html5/handling_events_for_many_elements.htm -!!!
+	
+-->
+
+<svg width=500 height=150>
+	<rect class="datapoint g1" x=10 y=10 id=123 title="to jest opis"
+		  onmouseenter="tooltip(event,this)"
+		  onmouseleave="tooltip_off(event,this)"
+		  />
+	<rect class="datapoint g2" x=130 y=10 id=321
+		  onmouseenter="tooltip(event,this)"
+		  onmouseleave="tooltip_off(event,this)"
+		  />
+</svg>
+
+<div id="tooltip" style="opacity:0">
+	to jest test
+</div>
