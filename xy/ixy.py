@@ -1,13 +1,12 @@
 from bottle import template
 from random import randint
 
-# TODO selective coloring
 # TODO better colors
 
 # TODO canvas mode
-
-# TODO mouseenter vs click
-# TODO select and highlight
+# TODO filter and highlight
+# TODO select single
+# TODO url
 
 # TODO zoom
 # TODO shapes
@@ -47,7 +46,7 @@ class XY:
 
 	def render_to_file(self,path,mode='canvas'):
 		text = self.render(mode)
-		with open(path,'w') as f:
+		with open(path,'wb') as f:
 			f.write(text.encode('utf8'))
 		
 	def render(self,mode='canvas'):
@@ -81,7 +80,7 @@ class XY:
 		y_factor = 1.0*(vars['height']-2*margin) / (y_max-y_min)
 		for g,(name,points,other) in enumerate(vars['groups']):
 			for p in points:
-				p['_g'] = g
+				p['g'] = g
 				if shape=='circle':
 					p['_x'] = margin + int( x_factor * (p['x']-x_min))
 					p['_y'] = height - margin - int( y_factor * (p['y']-y_min))
@@ -123,44 +122,71 @@ def quote(x):
 
 svg_template = u"""
 
-<style>
-	svg {
-		background-color: #FFFFFF;
-	}
-	
-	.datapoint {
-		width: {{ size }};
-		height: {{ size }};
-	}
-	
-	% for i,c in g_color.items():
-		.g{{ i }} {
-			fill: #{{ "{:02x}{:02x}{:02x}".format(c[0],c[1],c[2]) }};
-		}
-	% end
-</style>
-
 <script>
+
+	var g = -1
+	
 	function tooltip(event,elem) {
-		t = document.getElementById("tooltip")
+		var t = document.getElementById("tooltip")
 		t.innerHTML = {{! inner_html }}
 	}
+	
+	function highlight(event,elem) {
+		pg = g
+		g = elem.getAttribute("g")
+		var points = document.getElementsByClassName("datapoint")
+		if (g==pg) {
+			g = -1
+			for(var i in points) {
+				points[i].style.fill = ''
+			}
+		} else {
+			for(var i in points) {
+				var p = points[i]
+				if (p.getAttribute("g")==g) {
+					p.style.fill = ''
+				} else {
+					p.style.fill = '#aaaaaa' 
+				}
+			}
+		}
+	}
+	
 </script>
 
 <!-- ----------------------------------------------------------------------- -->
 
 <svg width={{ width }} height={{ height }}>
+
+	<style>
+		svg {
+			background-color: #FFFFFF;
+		}
+		
+		.datapoint {
+			width: {{ size }};
+			height: {{ size }};
+		}
+		
+		% for i,c in g_color.items():
+			.g{{ i }} {
+				fill: #{{ "{:02x}{:02x}{:02x}".format(c[0],c[1],c[2]) }};
+			}
+		% end
+	</style>
+
 	% for grp,points,grp_aux in groups:
 		% for p in points:
 			% if shape=='circle':
-				<circle class="datapoint g{{ p.get('_g','') }}" cx={{ p['_x'] }} cy={{ p['_y'] }} r={{ p.get('r',0.5*size) }} {{! p.get('_aux','') }}
-					onmouseenter="tooltip(event,this)" />				
+				<circle class="datapoint g{{ p.get('g','') }}" cx={{ p['_x'] }} cy={{ p['_y'] }} r={{ p.get('r',0.5*size) }} {{! p.get('_aux','') }}
+					onmouseenter="tooltip(event,this)" onclick="highlight(event,this)" />				
 			% else:
-				<rect class="datapoint g{{ p.get('_g','') }}" x={{ p['_x'] }} y={{ p['_y'] }} {{! p.get('_aux','') }}
-					onmouseenter="tooltip(event,this)" />
+				<rect class="datapoint g{{ p.get('g','') }}" x={{ p['_x'] }} y={{ p['_y'] }} {{! p.get('_aux','') }}
+					onmouseenter="tooltip(event,this)" onclick="highlight(event,this)" />
 			% end
 		% end
 	% end
+
 </svg>
 
 <div id="tooltip" class="tooltip">
@@ -170,8 +196,14 @@ svg_template = u"""
 # -----------------------------------------------------------------------------
 
 if __name__=="__main__":
-	plt = XY(width=900,height=500,inner_html=''' "<br>id:"+elem.getAttribute('id') + "<br>title: "+elem.getAttribute('title') ''')
-	plt.add('first',[{'x':1,'y':2,'id':123},{'x':2,'y':3,'id':234},{'x':3,'y':1,'id':321}],xxx='yyy')
-	plt.add('second',[{'x':11,'y':22,'id':2123},{'x':22,'y':33,'id':2234},{'x':33,'y':11,'id':2321}],aaa='bbb')
+	from random import randint
+	def r(): return randint(0,1000)
+	plt = XY(width=900, height=500, size=10, shape='circle', inner_html='''`
+		<br>id: ${elem.getAttribute('id')}
+		<br>title: ${elem.getAttribute('title')}
+		`''')
+	plt.add('alpha',[{'x':r(),'y':r(),'id':r()} for _ in range(20)],xxx='yyy')
+	plt.add('beta',[{'x':r(),'y':r(),'id':r()} for _ in range(20)], aaa='bbb')
+	plt.add('gamma',[{'x':r(),'y':r(),'id':r()} for _ in range(20)],ccc='ddd')
 	print(plt.render('svg'))
-	#plt.render_to_file('api_test.html',mode='svg')
+	plt.render_to_file('api_test.html',mode='svg')
