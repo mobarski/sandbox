@@ -18,7 +18,7 @@ function imagedata_to_image(imagedata) {
 
 
 function clear_screen(r,g,b) {
-	ctx.fillStyle="rgb("+r+","+g+","+b+")"
+	ctx.fillStyle=`rgb(${r},${g},${b})`
 	ctx.fillRect(0,0,cnv.width,cnv.height)
 }
 
@@ -157,17 +157,13 @@ function cls(c,g=-1,b=-1) {
 }
 
 function rect(x,y,w,h,c) {
-	rgb = PAL[c]
-	ctx.fillStyle = "rgb("+rgb[0]+","+rgb[1]+","+rgb[2]+")" // OPTIMIZATION  OPPORTUNITY
+	var [r,g,b] = PAL[c]
+	ctx.fillStyle = `rgb(${r},${g},${b})` // OPTIMIZATION  OPPORTUNITY
 	ctx.fillRect(x,y,w,h)
 }
 
-function sprite(w,h,colors,pixels,sx=1,sy=1,alpha={0:0}) {
-	var pal = []
-	for (i=0;i<colors.length;i++) {
-		pal.push(PAL[colors[i]])
-	}
-	return create_sprite(w,h,pal,pixels,sx,sy,alpha)
+function box(cx,cy,w,h,c) {
+	rect(cx-0.5*w,cy-0.5*h,w,h,c)
 }
 
 // TODO scale
@@ -178,22 +174,38 @@ function spr(img,x,y,rot=0) {
 }
 
 function mouse() {
-	return MX,MY,M1,M2
+	return [MX,MY,M1,M2]
+}
+
+function pix(x,y) {
+	var [r,g,b,a] = get_pixel_rgb(x,y)
+	for (var i=0; i<PAL.length; i++) {
+		if (PAL[i][0]==r && PAL[i][1]==g && PAL[i][2]==b) {
+			return i
+		}
+	}
+	return null
+}
+
+function sprite(w,h,colors,pixels,sx=1,sy=1,alpha={0:0}) {
+	var pal = []
+	for (i=0;i<colors.length;i++) {
+		pal.push(PAL[colors[i]])
+	}
+	return create_sprite(w,h,pal,pixels,sx,sy,alpha)
+}
+
+function rnd(lo,hi) {
+	return Math.floor((Math.random() * (hi-lo)) + lo)
 }
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-var pal_pv8 = [
-	[0x2D,0x1B,0x2E],[0x21,0x8A,0x91],[0x3C,0xC2,0xFA],[0x9A,0xF6,0xFD],
-	[0x4A,0x24,0x7C],[0x57,0x4B,0x67],[0x93,0x7A,0xC5],[0x8A,0xE2,0x5D],
-	[0x8E,0x2B,0x45],[0xF0,0x41,0x56],[0xF2,0x72,0xCE],[0xD3,0xC0,0xA8],
-	[0xC5,0x75,0x4A],[0xF2,0xA7,0x59],[0xF7,0xDB,0x53],[0xF9,0xF4,0xEA]
-]
-PAL = pal_pv8
+PAL = palette['pico8']
 
-function _init() {
+function _init_old() {
 	//cnv.style.cursor = "none"
 	s = sprite(3,3,[0,0,1],[
 		0,1,0,
@@ -208,15 +220,47 @@ function _init() {
 	}
 }
 
+function _init() {
+	cls(0,0,0)
+	pixel_data = new Array(64)
+	for (i=0;i<pixel_data.length;i++) {pixel_data[i]=5}
+}
+
 function _main() {
-	aux = get_pixel_rgb(MX,MY)
+	var [mx,my,m1] = mouse()
+	aux = pix(mx,my)
 	status = `x:${MX} y:${MY} m1:${M1} m2:${M2} mw:${MW} ${aux}`
 	out.innerHTML = status
 
 	cls(0,0,0)
-	spr(s,MX,MY,45)
-	for (i=0;i<16;i++) {
-		rect(30+i*40,50,30,30,i)
+	
+	picker(24,24,30,30,8)
+	editor(24,100,8,8,30,30,pixel_data)
+}
+
+function picker(x,y,sx,sy,m) {
+	//rect(x+1*(sx+m)+sx/2-4,y-m-4,8,8,2)
+	box(x+1.5*(sx+m),y-m,8,8,2)
+	
+	for (var i=0;i<16;i++) {
+		rect(x+i*(sx+m),y,sx,sy,i)
+	}
+}
+
+function editor(x,y,w,h,sx,sy,data) {
+	for (var i=0; i<w; i++) {
+		for (var j=0; j<h; j++) {
+			var c = data[i+j*w]
+			rect(x+i*sx,y+j*sy,sx,sy,c)
+		}
+	}
+	
+	var [mx,my,m1] = mouse()
+	
+	if (m1) {
+		var i = Math.floor((mx-x) / sx)
+		var j = Math.floor((my-y) / sy)
+		data[i+j*w] = 1
 	}
 }
 
