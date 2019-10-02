@@ -224,7 +224,8 @@ function _init() {
 	cls(0,0,0)
 	pixel_data = new Array(64)
 	for (i=0;i<pixel_data.length;i++) {pixel_data[i]=5}
-	edit = new_editor(24,100,8,8,30,30)
+	editor = new Editor(24,100,8,8,30,30)
+	picker = new Picker(24,24,30,30,8)
 }
 
 function _main() {
@@ -235,56 +236,45 @@ function _main() {
 
 	cls(0,0,0)
 	
-	picker(24,24,30,30,8)
-	edit.main(pixel_data)
+	picker.main()
+	editor.main(pixel_data, picker.active_color)
 }
 
-function picker(x,y,sx,sy,m) {
-	//rect(x+1*(sx+m)+sx/2-4,y-m-4,8,8,2)
-	box(x+1.5*(sx+m),y-m,8,8,2)
-	
-	for (var i=0;i<16;i++) {
-		rect(x+i*(sx+m),y,sx,sy,i)
-	}
-}
-
-function editor(x,y,w,h,sx,sy,data) {
-	for (var i=0; i<w; i++) {
-		for (var j=0; j<h; j++) {
-			var c = data[i+j*w]
-			rect(x+i*sx,y+j*sy,sx,sy,c)
+function Picker(x,y,sx,sy,m) {
+	this.marker_color = 1
+	this.active_color = 0
+	this.main = function() {
+		var c = this.active_color
+		rect(x+c*(sx+m),y-16,sx,8,this.marker_color)
+		
+		for (var i=0;i<16;i++) {
+			rect(x+i*(sx+m),y,sx,sy,i)
+		}
+		
+		var [mx,my,m1] = mouse()
+		if (m1 && my>=y && my<=y+sy && mx>=x && mx<=x+(sx+m)*PAL.length) {
+			this.active_color = Math.floor((mx-x) / (sx+m))
 		}
 	}
-	
-	var [mx,my,m1] = mouse()
-	
-	if (m1) {
-		var i = Math.floor((mx-x) / sx)
-		var j = Math.floor((my-y) / sy)
-		data[i+j*w] = 1
-	}
 }
 
-function new_editor(x,y,w,h,sx,sy) {
-	obj = {
-		main : function(data) {
-			for (var i=0; i<w; i++) {
-				for (var j=0; j<h; j++) {
-					var c = data[i+j*w]
-					rect(x+i*sx,y+j*sy,sx,sy,c)
-				}
-			}
-			
-			var [mx,my,m1] = mouse()
-			
-			if (m1) {
-				var i = Math.floor((mx-x) / sx)
-				var j = Math.floor((my-y) / sy)
-				data[i+j*w] = 1
+function Editor(x,y,w,h,sx,sy) {
+	this.main = function(data, color) {
+		for (var i=0; i<w; i++) {
+			for (var j=0; j<h; j++) {
+				var c = data[i+j*w]
+				rect(x+i*sx,y+j*sy,sx,sy,c)
 			}
 		}
+		
+		var [mx,my,m1] = mouse()
+		
+		if (m1 && my>=y && my<=y+sy*h && mx>=x && mx<=x+sx*w) {
+			var i = Math.floor((mx-x) / sx)
+			var j = Math.floor((my-y) / sy)
+			data[i+j*w] = color
+		}
 	}
-	return obj
 }
 
 
