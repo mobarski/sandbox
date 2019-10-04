@@ -204,6 +204,11 @@ function rnd(lo,hi) {
 // ----------------------------------------------------------------------------
 
 PAL = palette['pico8']
+SPW = 9
+SPH = 9
+SHW = 4
+SHH = 4
+SCALE = 4
 
 function _init_old() {
 	//cnv.style.cursor = "none"
@@ -222,10 +227,15 @@ function _init_old() {
 
 function _init() {
 	cls(0,0,0)
-	pixel_data = new Array(64)
-	for (i=0;i<pixel_data.length;i++) {pixel_data[i]=5}
-	editor = new Editor(24,100,8,8,30,30)
+	sheet_data = []
+	for (var i=0; i<SHW*SHH; i++) {
+		var pixel_data = new Array(SPW*SPH)
+		for (j=0;j<pixel_data.length;j++) {pixel_data[j]=i%PAL.length}
+		sheet_data.push(pixel_data)
+	}
+	editor = new Editor(24,100,SPW,SPH,30,30)
 	picker = new Picker(24,24,30,30,8)
+	sheet = new Sheet(400,100,SPW,SPH,SCALE,SCALE,SHW,SHH,sheet_data)
 }
 
 function _main() {
@@ -236,8 +246,10 @@ function _main() {
 
 	cls(0,0,0)
 	
+	sheet.main()
 	picker.main()
-	editor.main(pixel_data, picker.active_color)
+	editor.active_color = picker.active_color
+	editor.main(sheet_data[sheet.active_sprite])
 }
 
 function Picker(x,y,sx,sy,m) {
@@ -258,25 +270,68 @@ function Picker(x,y,sx,sy,m) {
 	}
 }
 
-function Editor(x,y,w,h,sx,sy) {
-	this.main = function(data, color) {
-		for (var i=0; i<w; i++) {
-			for (var j=0; j<h; j++) {
-				var c = data[i+j*w]
-				rect(x+i*sx,y+j*sy,sx,sy,c)
-			}
+// draw sprite directly from data
+function _spr(x,y,w,h,sx,sy,data) {
+	for (var i=0; i<w; i++) {
+		for (var j=0; j<h; j++) {
+			var c = data[i+j*w]
+			rect(x+i*sx,y+j*sy,sx,sy,c)
 		}
-		
+	}
+}
+
+// NOT WORKING
+// GET 
+function _mij(x,y,w,h,sx,sy) {
+	var [mx,my,m1] = mouse()
+	var i=-1
+	var j=-1
+	
+	if (m1 && my>=y && my<=y+sy*h && mx>=x && mx<=x+sx*w) {
+		i = Math.floor((mx-x) / sx)
+		j = Math.floor((my-y) / sy)
+	}
+	return [i,j]
+}
+
+function Editor(x,y,w,h,sx,sy) {
+	this.active_color = 1
+	this.main = function(data) {
+		_spr(x,y,w,h,sx,sy,data)
+	
 		var [mx,my,m1] = mouse()
 		
 		if (m1 && my>=y && my<=y+sy*h && mx>=x && mx<=x+sx*w) {
 			var i = Math.floor((mx-x) / sx)
 			var j = Math.floor((my-y) / sy)
-			data[i+j*w] = color
+			data[i+j*w] = this.active_color
 		}
+		// var i,j = _mij(x,y,w,h,sx,sy)
+		// if (i>-1) {
+			// data[i+j*w] = this.active_color
+		// }
 	}
 }
 
+function Sheet(x,y,w,h,sx,sy,sw,sh,data) {
+	this.active_sprite = 0
+	this.main = function() {
+		for (var i=0; i<sh; i++) {
+			for (var j=0; j<sw; j++) {
+				var k = j+i*sw
+				_spr(x+j*sx*w,y+i*sy*h,w,h,sx,sy,data[k])
+			}
+		}
+
+		var [mx,my,m1] = mouse()
+		
+		if (m1 && my>=y && my<=y+sy*h*sh && mx>=x && mx<=x+sx*w*sw) {
+			var i = Math.floor((mx-x) / (sx*w))
+			var j = Math.floor((my-y) / (sy*h))
+			this.active_sprite = j*sw+i
+		}
+	}
+}
 
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------

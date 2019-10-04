@@ -2,10 +2,10 @@
 
 core:
 - **cls** - Clear the screen
-- **spr** - Draw sprite
 - **rect** - Draw filled rectangle
-- **pget** - Get pixel color from the screen
+- **pix** - Get pixel color from the screen
 - **mouse** - Get mouse coordinates and button states
+- **spr** - Draw sprite
 
 map:
 - **map** - 
@@ -30,6 +30,17 @@ auxilary:
 - **keyp** - 
 - **** - 
 
+# Editor
+- picker
+- editor
+- sheet
+- commands: clear, copy, paste, roll*4
+
+# Sprite
+
+- C64 -> 24x21 kolory: 1+3
+- zx -> brak kolory: 1+1
+- nes -> 8x8 8x16 
 
 # Reference
 
