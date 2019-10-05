@@ -110,6 +110,43 @@ cnv.addEventListener('mousedown',on_mouse_down)
 cnv.addEventListener('wheel',on_wheel)
 cnv.addEventListener("contextmenu",function(e){e.preventDefault()})
 
+// === [ KEYBOARD ] ============================================================
+
+var KEY = {} // 2:down 1:released
+var KEYS = {}
+
+function on_key_press(e) {
+	var k = e.key
+	KEY[k] = 2
+}
+
+function on_key_up(e) {
+	var k = e.key
+	KEY[k] = 1
+}
+
+function keyboard_before_main() {
+	KEYS = {}
+	for (var k in KEY) {
+		KEYS[k] = KEY[k]
+	}
+}
+
+function keyboard_after_main() {
+	for (var k in KEYS) {
+		if (KEY[k]==1 && KEYS[k]==1) {
+			delete KEY[k]
+		}
+	}
+}
+
+function key(k) {
+	return KEYS[k] || 0
+}
+
+document.addEventListener('keypress',on_key_press)
+document.addEventListener('keyup',on_key_up)
+
 // === STAGE 1 === mozliwosc zrobienia edytora spritow
 
 // TODO gotowe palety
@@ -204,11 +241,12 @@ function rnd(lo,hi) {
 // ----------------------------------------------------------------------------
 
 PAL = palette['pico8']
-SPW = 9
-SPH = 9
-SHW = 4
-SHH = 4
-SCALE = 4
+SPW = 12
+SPH = 12
+SHW = 12
+SHH = 12
+SHS = 2
+EDS = 28
 
 function _init_old() {
 	//cnv.style.cursor = "none"
@@ -233,14 +271,17 @@ function _init() {
 		for (j=0;j<pixel_data.length;j++) {pixel_data[j]=i%PAL.length}
 		sheet_data.push(pixel_data)
 	}
-	editor = new Editor(24,100,SPW,SPH,30,30)
+	editor = new Editor(24,100,SPW,SPH,EDS,EDS)
 	picker = new Picker(24,24,30,30,8)
-	sheet = new Sheet(400,100,SPW,SPH,SCALE,SCALE,SHW,SHH,sheet_data)
+	sheet = new Sheet(400,100,SPW,SPH,SHS,SHS,SHW,SHH,sheet_data)
 }
 
 function _main() {
+	keyboard_before_main()
+	
 	var [mx,my,m1] = mouse()
-	aux = pix(mx,my)
+	//aux = pix(mx,my)
+	aux = key('a')
 	status = `x:${MX} y:${MY} m1:${M1} m2:${M2} mw:${MW} ${aux}`
 	out.innerHTML = status
 
@@ -250,6 +291,8 @@ function _main() {
 	picker.main()
 	editor.active_color = picker.active_color
 	editor.main(sheet_data[sheet.active_sprite])
+	
+	keyboard_after_main()
 }
 
 function Picker(x,y,sx,sy,m) {
@@ -296,7 +339,10 @@ function _mij(x,y,w,h,sx,sy) {
 
 function Editor(x,y,w,h,sx,sy) {
 	this.active_color = 1
+	this.margin = 4
 	this.main = function(data) {
+		var m=this.margin
+		rect(x-m,y-m,w*sx+2*m,h*sy+2*m,1)
 		_spr(x,y,w,h,sx,sy,data)
 	
 		var [mx,my,m1] = mouse()
