@@ -38,7 +38,17 @@ out-of-scope:
 - picker
 - editor
 - sheet
-- commands: clear, copy, paste, roll*4
+- commands: 
+  - copy & paste
+  - shift*4
+  - mirror*4
+  - flip*2
+  - clear
+    - swap & replace color *
+  - TODO / OUT OF SCOPE:
+	- rotate*2
+	- pick color **
+	- fill **
 
 ## Sprites
 
@@ -46,8 +56,8 @@ out-of-scope:
 - zx -> brak kolory: 1+1
 - nes -> 8x8 8x16
 - cpc -> 16x16 kolory: 16 
-- tic-80 -> 8x8* 256+256
-- pico-8 -> 8x8* 128+128
+- tic-80 -> 8x8*n 256+256
+- pico-8 -> 8x8*n 128+128
 
 3x32=96 wystarcza na wszystkie widzialne niskie ASCII
 
@@ -84,3 +94,4 @@ out-of-scope:
 - [ svg      ](https://www.w3schools.com/graphics/svg_reference.asp)
 
 
+1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5

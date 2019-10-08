@@ -214,6 +214,16 @@ function spr(img,x,y,rot=0) {
 	draw_sprite(img,x,y,rot)
 }
 
+// draw sprite directly from data
+function _spr(x,y,w,h,sx,sy,data) {
+	for (var i=0; i<w; i++) {
+		for (var j=0; j<h; j++) {
+			var c = data[i+j*w]
+			rect(x+i*sx,y+j*sy,sx,sy,c)
+		}
+	}
+}
+
 function mouse() {
 	return [MX,MY,M1,M2]
 }
@@ -248,166 +258,3 @@ function status(text) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// TODO - config/fc definition in separate file
-PAL = palette['pico8']
-SPW = 12
-SPH = 12
-SHW = 12
-SHH = 12
-SHS = 2
-EDS = 28
-
-function _init_old() {
-	//cnv.style.cursor = "none"
-	s = sprite(3,3,[0,0,1],[
-		0,1,0,
-		1,2,1,
-		1,0,1],8,12,alpha={0:0,2:128})
-
-	cls(0,0,0)
-	spr(s,100,100,45)
-	spr(s,110,110)
-	for (i=0;i<16;i++) {
-		rect(30+i*40,50,30,30,i)
-	}
-}
-
-function _init() {
-	cls(0,0,0)
-	sheet_data = []
-	for (var i=0; i<SHW*SHH; i++) {
-		var pixel_data = new Array(SPW*SPH)
-		for (j=0;j<pixel_data.length;j++) {pixel_data[j]=i%PAL.length}
-		sheet_data.push(pixel_data)
-	}
-	editor = new Editor(24,100,SPW,SPH,EDS,EDS)
-	picker = new Picker(24,24,30,30,8)
-	sheet = new Sheet(400,100,SPW,SPH,SHS,SHS,SHW,SHH,sheet_data)
-	toolbox = new Toolbox(24,450,8,2,16,16,null)
-}
-
-function _main() {
-	keyboard_before_main()
-	
-	var [mx,my,m1] = mouse()
-	//aux = pix(mx,my)
-	aux = key('a')
-	//status(`x:${MX} y:${MY} m1:${M1} m2:${M2} mw:${MW} ${aux}`)
-
-	cls(0,0,0)
-	
-	sheet.main()
-	picker.main()
-	editor.active_color = picker.active_color
-	editor.main(sheet_data[sheet.active_sprite])
-	toolbox.main()
-	
-	keyboard_after_main()
-}
-
-function Picker(x,y,sx,sy,m) {
-	this.marker_color = 1
-	this.active_color = 0
-	this.main = function() {
-		// draw
-		var c = this.active_color
-		rect(x+c*(sx+m),y-16,sx,8,this.marker_color)
-		for (var i=0;i<16;i++) {
-			rect(x+i*(sx+m),y,sx,sy,i)
-		}
-		
-		// react
-		// TODO refactor with _grid_click
-		var [mx,my,m1] = mouse()
-		if (m1 && my>=y && my<=y+sy && mx>=x && mx<=x+(sx+m)*PAL.length) {
-			this.active_color = Math.floor((mx-x) / (sx+m))
-		}
-	}
-}
-
-// draw sprite directly from data
-function _spr(x,y,w,h,sx,sy,data) {
-	for (var i=0; i<w; i++) {
-		for (var j=0; j<h; j++) {
-			var c = data[i+j*w]
-			rect(x+i*sx,y+j*sy,sx,sy,c)
-		}
-	}
-}
-
-// NOT WORKING
-// GET 
-function _grid_click(x,y,w,h,sx,sy) {
-	var [mx,my,m1] = mouse()
-	var i=null
-	var j=null
-	
-	if (m1 && my>=y && my<=y+sy*h && mx>=x && mx<=x+sx*w) {
-		i = Math.floor((mx-x) / sx)
-		j = Math.floor((my-y) / sy)
-		status(`mx-x:${mx-x} my-y:${my-y} i:${i} j:${j}`)
-	}
-	return [i,j]
-}
-
-function Editor(x,y,w,h,sx,sy) {
-	this.active_color = 1
-	this.margin = 4
-	this.main = function(data) {
-		// draw
-		var m=this.margin
-		rect(x-m,y-m,w*sx+2*m,h*sy+2*m,1)
-		_spr(x,y,w,h,sx,sy,data)
-	
-		// react
-		var [i,j] = _grid_click(x,y,w,h,sx,sy)
-		if (i != null) {
-			data[i+j*w] = this.active_color
-		}
-	}
-}
-
-function Sheet(x,y,w,h,sx,sy,sw,sh,data) {
-	this.active_sprite = 0
-	this.main = function() {
-		// draw
-		for (var i=0; i<sh; i++) {
-			for (var j=0; j<sw; j++) {
-				var k = j+i*sw
-				_spr(x+j*sx*w,y+i*sy*h,w,h,sx,sy,data[k])
-			}
-		}
-
-		// react
-		var [i,j] = _grid_click(x,y,sw,sh,sx*w,sy*h)
-		if (i != null) {
-			this.active_sprite = j*sw+i
-		}
-	}
-}
-
-function Toolbox(x,y,w,h,sx,sy,icons) {
-	this.main = function() {
-		// draw
-		for (var i=0; i<w; i++) {
-			for (var j=0; j<h; j++) {
-				rect(x+i*sx,y+j*sy,sx,sy,(i+j*w)%PAL.length)
-			}
-		}
-		
-		// react
-		var [i,j] = _grid_click(x,y,w,h,sx,sy)
-		if (i != null) {
-			// TODO
-		}
-	}
-}
-
-// ------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------
-
-window.onload = function(e) {
-	_init()
-	window.setInterval(_main,16.6)
-}
