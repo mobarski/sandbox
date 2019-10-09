@@ -38,17 +38,21 @@ out-of-scope:
 - picker
 - editor
 - sheet
-- commands: 
+- toolbox commands: 
   - copy & paste
   - shift*4
   - mirror*4
   - flip*2
   - clear
-    - swap & replace color *
+  - replace color *
   - TODO / OUT OF SCOPE:
 	- rotate*2
 	- pick color **
 	- fill **
+
+# Map Editor
+- tile picker
+- editor
 
 ## Sprites
 
