@@ -122,12 +122,13 @@ function Editor(x,y,w,h,sx,sy) {
 
 function Sheet(x,y,w,h,sx,sy,sw,sh,data) {
 	this.active_sprite = 0
+	this.data = data
 	this.main = function() {
 		// draw
 		for (var i=0; i<sh; i++) {
 			for (var j=0; j<sw; j++) {
 				var k = j+i*sw
-				_spr(x+j*sx*w,y+i*sy*h,w,h,sx,sy,data[k])
+				_spr(x+j*sx*w,y+i*sy*h,w,h,sx,sy,this.data[k])
 			}
 		}
 
@@ -135,6 +136,15 @@ function Sheet(x,y,w,h,sx,sy,sw,sh,data) {
 		var [i,j] = _grid_click(x,y,sw,sh,sx*w,sy*h)
 		if (i != null) {
 			this.active_sprite = j*sw+i
+		}
+	}
+	this.save = function(key) {
+		save(key, sheet_data)
+	}
+	this.load = function(key) {
+		var v = load(key)
+		for (var i=0; i<v.length; i++) {
+			sheet_data[i] = v[i]
 		}
 	}
 }
@@ -152,7 +162,7 @@ function Toolbox(x,y,w,h,sx,sy,icons) {
 		// react
 		var [i,j] = _grid_click(x,y,w,h,sx,sy)
 		switch (`${i},${j}`) {
-			case '0,0': replace_color(editor.data,picker.active_color,picker.background_color); break
+			case '0,0': clear_sprite(editor.data,picker.background_color); break
 			case '1,0': copy_sprite(editor.data); break
 			case '2,0': paste_sprite(editor.data); break
 			case '3,0': shift_sprite(editor.data,-1); break
@@ -165,7 +175,9 @@ function Toolbox(x,y,w,h,sx,sy,icons) {
 			case '2,1': mirror_sprite_up_to_down(editor.data,SPW,SPH); break
 			case '3,1': mirror_sprite_left_to_right(editor.data,SPW,SPH); break
 			case '4,1': mirror_sprite_right_to_left(editor.data,SPW,SPH); break
-			case '5,1': clear_sprite(editor.data,picker.background_color); break
+			case '5,1': replace_color(editor.data,picker.active_color,picker.background_color); break
+			case '6,1': sheet.save('maciek.test'); break
+			case '7,1': sheet.load('maciek.test'); break
 		}
 	}
 }
@@ -274,7 +286,6 @@ function mirror_sprite_right_to_left(data,w,h) {
 function clear_sprite(data,c) {
 	data.fill(c)
 }
-
 
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
