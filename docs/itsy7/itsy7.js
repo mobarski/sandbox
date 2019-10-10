@@ -1,4 +1,5 @@
 var out = document.getElementById("output")
+var tar = document.getElementById("textarea")
 var cnv = document.getElementById("main_canvas")
 var ctx = cnv.getContext("2d")
 
@@ -58,6 +59,14 @@ function draw_sprite(img,x,y,rot=0) {
 
 function get_pixel_rgb(x,y) {
 	return ctx.getImageData(x,y,1,1).data
+}
+
+function dumps(data) {
+	return JSON.stringify(data)
+}
+
+function loads(s) {
+	return JSON.parse(s)
 }
 
 // ---[ MOUSE ]-----------------------------------------------------------------
@@ -215,13 +224,17 @@ function spr(img,x,y,rot=0) {
 }
 
 // draw sprite directly from data
-function _spr(x,y,w,h,sx,sy,data) {
+function _spr(data,x,y,w,h,sx,sy) {
 	for (var i=0; i<w; i++) {
 		for (var j=0; j<h; j++) {
 			var c = data[i+j*w]
 			rect(x+i*sx,y+j*sy,sx,sy,c)
 		}
 	}
+}
+
+// shadow(sp[1],0,4,x,y)
+function _shd(data,bg,fg,x,y,w,h,sx,sy) {
 }
 
 function mouse() {

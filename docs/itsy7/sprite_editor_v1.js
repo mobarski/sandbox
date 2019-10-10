@@ -1,11 +1,12 @@
 // TODO - config/fc definition in separate file
 PAL = palette['pico8']
-SPW = 12
-SPH = 12
-SHW = 12
-SHH = 12
-SHS = 2
-EDS = 28
+SPW = 5
+SPH = 5
+SHW = 7
+SHH = 7
+SHS = 5
+SHM = 1
+EDS = 40
 
 function _init_old() {
 	//cnv.style.cursor = "none"
@@ -32,7 +33,7 @@ function _init() {
 	}
 	editor = new Editor(24,100,SPW,SPH,EDS,EDS)
 	picker = new Picker(24,24,30,30,8)
-	sheet = new Sheet(400,100,SPW,SPH,SHS,SHS,SHW,SHH,sheet_data)
+	sheet = new Sheet(400,100,SPW,SPH,SHS,SHS,SHW,SHH,SHM,sheet_data)
 	toolbox = new Toolbox(24,450,8,2,16,16,null)
 }
 
@@ -111,7 +112,7 @@ function Editor(x,y,w,h,sx,sy) {
 		// draw
 		var m=this.margin
 		rect(x-m,y-m,w*sx+2*m,h*sy+2*m,1)
-		_spr(x,y,w,h,sx,sy,data)
+		_spr(data,x,y,w,h,sx,sy)
 	
 		// react
 		var [i,j,mb] = _grid_click(x,y,w,h,sx,sy)
@@ -120,7 +121,7 @@ function Editor(x,y,w,h,sx,sy) {
 	}
 }
 
-function Sheet(x,y,w,h,sx,sy,sw,sh,data) {
+function Sheet(x,y,w,h,sx,sy,sw,sh,m,data) {
 	this.active_sprite = 0
 	this.data = data
 	this.main = function() {
@@ -128,18 +129,19 @@ function Sheet(x,y,w,h,sx,sy,sw,sh,data) {
 		for (var i=0; i<sh; i++) {
 			for (var j=0; j<sw; j++) {
 				var k = j+i*sw
-				_spr(x+j*sx*w,y+i*sy*h,w,h,sx,sy,this.data[k])
+				_spr(this.data[k],x+j*sx*(w+m),y+i*sy*(h+m),w,h,sx,sy)
 			}
 		}
 
 		// react
-		var [i,j] = _grid_click(x,y,sw,sh,sx*w,sy*h)
+		var [i,j] = _grid_click(x,y,sw,sh,sx*(w+m),sy*(h+m))
 		if (i != null) {
 			this.active_sprite = j*sw+i
 		}
 	}
 	this.save = function(key) {
 		save(key, sheet_data)
+		tar.value = dumps(sheet_data)
 	}
 	this.load = function(key) {
 		var v = load(key)

@@ -3,11 +3,12 @@
 core:
 - **cls** - Clear the screen
 - **rect** - Draw filled rectangle
-- **pix** - Get pixel color from the screen
-- **mouse** - Get mouse coordinates and button states
 - **spr** - Draw sprite (baked)
-- **???** - Draw sprite (raw)
+- **raw,rspr,sprr,blit** - Draw raw sprite
 - **bake** - Cache sprite with current palette for faster drawing
+- **mouse** - Get mouse coordinates and button states
+- **key** - Get key status
+- **pix,pget** - Get pixel color from the screen
 
 map:
 - **map** - 
@@ -15,6 +16,8 @@ map:
 - **mset** -
 
 auxilary:
+- **fset** - Set sprite flag
+- **fget** - Get sprite flag
 - **touch** - 
 - **pal** - 
 - **palt** - 
@@ -22,7 +25,6 @@ auxilary:
 - **sget** - Get pixel color from the sprite sheet
 - **sset** - Set pixel color on the sprite sheet
 - **pset** - Set pixel color on the screen
-- **key** - 
 - **keyp** - 
 - **** - 
 
@@ -37,7 +39,7 @@ out-of-scope:
 # Editor
 - picker
 - editor
-- sheet
+- sheet / bank
 - toolbox commands: 
   - copy & paste
   - shift*4
@@ -45,10 +47,11 @@ out-of-scope:
   - flip*2
   - clear
   - replace color *
-  - TODO / OUT OF SCOPE:
-	- rotate*2
+  - TODO:
 	- pick color **
 	- fill **
+  - OUT OF SCOPE:
+	- rotate*2
 
 # Map Editor
 - tile picker
@@ -64,6 +67,14 @@ out-of-scope:
 - pico-8 -> 8x8*n 128+128
 
 3x32=96 wystarcza na wszystkie widzialne niskie ASCII
+
+### ITSY
+
+sizes? 5 7 9 11 13 15
+colors? 7 8 9 16
+proportion? 16:9 16:10 2:1 3:2 1:1
+resolution?
+screen? solid rect circle
 
 # FC Reference
 
