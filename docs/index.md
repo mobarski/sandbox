@@ -2,5 +2,5 @@ Hello Web!
 
 Hello World!
 
-[test](itsy7/canvas.html)
+[test](itsy7/old/canvas.html)
 

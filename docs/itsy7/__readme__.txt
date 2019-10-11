@@ -1,21 +1,51 @@
+# Idea
+
+Rodzina Emulatorów Fantasy Computers preferująca liczby nieparzyste
+np. sprite 7x7, paleta 7 kolorów itp.
+Nisko ustawione limity mają sprzyjać skupieniu się na tym co istotne
+i obniżeniu kosztu produkcji.
+Niecodzienne wartości (nie będące wielokrotnościami 2) mają pomóc utworzyć
+spójną, niecodzienną estetykę.
+Zestaw instrukcji API też stara się być minimalistyczny z takich samych powodów.
+
+Część możliwości jest celowo bardzo wysoka aby stworzyć pewien dysonans:
+- niska rozdzielczość sprite i ogromna rozdzielczość ekranu
+- mała ilość kolorów ale dostępny alpha-blending
+- niska rozdzielczość sprite i mało instrukcji ale dowolna rotacja, skalowanie, alpha-blending
+
+less-is-more
+
+Modele mają nazwy od głównego limitu - rozmiaru sprite'a.
+??? Ilość kolorów w domyslnym modelu (z ostatnią cyfrą 0) jest równa rozmiarowi sprite'a.
+
+ITSY-50: sprite 5x5, 5 kolorów
+ITSY-70: sprite 7x7, 7 kolorów
+ITSY-90: sprite 9x9, 9 kolorów
+ITSY-110: sprite 11x11, 11 kolorów
+ITSY-130: sprite 13x13, 13 kolorów
+ITSY-150: sprite 15x15, 15 kolorów
+
 # Api
 
 core:
 - **cls** - Clear the screen
 - **rect** - Draw filled rectangle
-- **spr** - Draw sprite (baked)
-- **raw,rspr,sprr,blit** - Draw raw sprite
-- **bake** - Cache sprite with current palette for faster drawing
+- **blit** - Draw from raw data
+- **spr** - Draw sprite from bank
 - **mouse** - Get mouse coordinates and button states
-- **key** - Get key status
-- **pix,pget** - Get pixel color from the screen
+- **pix** - Get pixel color from the screen
 
 map:
 - **map** - 
 - **mget** - 
 - **mset** -
 
-auxilary:
+rotozoom:
+- **sspr,rspr** - Draw sprite using baked data, enables rotation
+- **bake** - Render sprite with current palette for faster drawing
+
+aux:
+- **key** - Get key status
 - **fset** - Set sprite flag
 - **fget** - Get sprite flag
 - **touch** - 
@@ -71,9 +101,16 @@ out-of-scope:
 ### ITSY
 
 sizes? 5 7 9 11 13 15
-colors? 7 8 9 16
+5:25 7:49 9:81 11:121 13:169 15:225
+
+colors? 5 7 8 9 - 12 16 24
+
+sheet? 5:25 7:49 8:64 11:121
+
 proportion? 16:9 16:10 2:1 3:2 1:1
+
 resolution?
+
 screen? solid rect circle
 
 # FC Reference
