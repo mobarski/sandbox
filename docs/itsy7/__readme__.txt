@@ -1,7 +1,7 @@
 # Idea
 
 Rodzina Emulatorów Fantasy Computers preferująca liczby nieparzyste
-np. sprite 7x7, paleta 7 kolorów itp.
+np. sprite 7x7, paleta 7 kolorów (?) itp.
 Nisko ustawione limity mają sprzyjać skupieniu się na tym co istotne
 i obniżeniu kosztu produkcji.
 Niecodzienne wartości (nie będące wielokrotnościami 2) mają pomóc utworzyć
@@ -24,6 +24,8 @@ ITSY-90: sprite 9x9, 9 kolorów
 ITSY-110: sprite 11x11, 11 kolorów
 ITSY-130: sprite 13x13, 13 kolorów
 ITSY-150: sprite 15x15, 15 kolorów
+
+podstawowa wersja obsluguje tylko 1 klawiszowa myszke / 1 punkt dotyku
 
 # Api
 

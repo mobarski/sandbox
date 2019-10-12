@@ -25,3 +25,46 @@ function _init_bank(b,w,h,nx,ny,c=0) {
 	}
 	fc.banks[b] = bank
 }
+
+function _dumps_bank(b) {
+	const code = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+	const ver = 1
+	var bank = fc.banks[b]
+	var out = ''
+	out += code[ver]
+	out += code[bank.w]
+	out += code[bank.h]
+	out += code[bank.nx]
+	out += code[bank.ny]
+	
+	for (var i=0;i<bank.data.length; i++) {
+		var s = bank.data[i]
+		for (var j=0;j<s.length;j++) {
+			out += code[s[j]]
+		}
+	}
+	return out
+}
+
+function _loads_bank(b,raw) {
+	const code = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+	var bank = {}
+	var data = raw.split('')
+	var ver = code.indexOf(data.shift())
+	if (ver!=1) return // ALERT
+	bank.w = code.indexOf(data.shift())
+	bank.h = code.indexOf(data.shift())
+	bank.nx = code.indexOf(data.shift())
+	bank.ny = code.indexOf(data.shift())
+	bank.data = []
+	for (var i=0; i<bank.nx*bank.ny; i++) {
+		var a = []
+		for (var j=0; j<bank.w*bank.h; j++) {
+			var v = code.indexOf(data.shift()) 
+			//if (v>=0) a.push(v) // wymaga zmiany petli
+			a.push(v)
+		}
+		bank.data.push(a)
+	}
+	fc.banks[b] = bank
+}

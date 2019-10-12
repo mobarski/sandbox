@@ -118,6 +118,7 @@ function Sheet(x,y,w,h,sx,sy,sw,sh,m,data) {
 	}
 	this.save = function(key) {
 		save(key, sheet_data)
+		status(_dumps_bank(1))
 	}
 	this.load = function(key) {
 		var v = load(key)
@@ -269,7 +270,3 @@ function clear_sprite(data,c) {
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
 
-window.onload = function(e) {
-	_init()
-	window.setInterval(_main,16.6)
-}
