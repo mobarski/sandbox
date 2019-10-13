@@ -19,9 +19,9 @@ function blit(data,x,y,w,h,sx,sy,ckey) {
 	}
 }
 
-function spr(n,x,y,ckey=0) {
+function spr(n,x,y,ckey=0,scx=fc.sx,scy=fc.sy) {
 	var b = fc.bank
-	blit(b.data[n], x,y, b.w,b.h, fc.sx,fc.sy, ckey)
+	blit(b.data[n], x,y, b.w,b.h, scx,scy, ckey)
 }
 
 function pix(x,y) {
@@ -40,6 +40,18 @@ function status(text) {
 }
 
 // -----------------------------------------------------------------------------
+
+function _fullscreen(elem) {
+	if (elem.requestFullscreen) {
+		elem.requestFullscreen()
+	} else if (elem.mozRequestFullScreen) { /* Firefox */
+		elem.mozRequestFullScreen()
+	} else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+		elem.webkitRequestFullscreen()
+	} else if (elem.msRequestFullscreen) { /* IE/Edge */
+		elem.msRequestFullscreen()
+	}
+}
 
 function _init_screen() {
 	fc.w = fc.w || 800

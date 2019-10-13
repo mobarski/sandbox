@@ -16,7 +16,7 @@ function _init() {
 	editor = new Editor(24,100,SPW,SPH,EDS,EDS)
 	picker = new Picker(24,24,30,30,8)
 	sheet = new Sheet(400,100,SPW,SPH,SHS,SHS,SHW,SHH,SHM,sheet_data)
-	toolbox = new Toolbox(24,450,8,2,16,16,null)
+	toolbox = new Toolbox(24,400,8,2,30,30,15,15)
 }
 
 function _main() {
@@ -63,19 +63,15 @@ function Picker(x,y,sx,sy,m) {
 // GET 
 function _grid_click(x,y,w,h,sx,sy) {
 	var [mx,my,m1,m2] = mouse()
-	var i=null
-	var j=null
-	var mb=0
 	if (my>=y && my<=y+sy*h && mx>=x && mx<=x+sx*w) {
 		if (m1 || m2) {
-			if (m1) mb=1
-			if (m2) mb=2
-			i = Math.floor((mx-x) / sx)
-			j = Math.floor((my-y) / sy)
-			status(`mx-x:${mx-x} my-y:${my-y} i:${i} j:${j} m1:${m1} m2:${m2} mb:${mb}`)
+			var i = Math.floor((mx-x) / sx)
+			var j = Math.floor((my-y) / sy)
+			status(`mx-x:${mx-x} my-y:${my-y} i:${i} j:${j} m1:${m1} m2:${m2}`)
+			return [i,j,m1,m2]
 		}
 	}
-	return [i,j,mb]
+	return [null,null,0,0]
 }
 
 function Editor(x,y,w,h,sx,sy) {
@@ -92,9 +88,9 @@ function Editor(x,y,w,h,sx,sy) {
 		blit(data,x,y,w,h,sx,sy)
 	
 		// react
-		var [i,j,mb] = _grid_click(x,y,w,h,sx,sy)
-		if (mb==1) data[i+j*w] = this.active_color
-		if (mb==2) data[i+j*w] = this.background_color
+		var [i,j,m1,m2] = _grid_click(x,y,w,h,sx,sy)
+		if (m1>1) data[i+j*w] = this.active_color
+		if (m2>1) data[i+j*w] = this.background_color
 	}
 }
 
@@ -128,18 +124,28 @@ function Sheet(x,y,w,h,sx,sy,sw,sh,m,data) {
 	}
 }
 
-function Toolbox(x,y,w,h,sx,sy,icons) {
+function Toolbox(x,y,w,h,sx,sy,mx=1,my=1) {
 	this.buffer = null
 	this.main = function() {
 		// draw
-		for (var i=0; i<w; i++) {
-			for (var j=0; j<h; j++) {
-				rect(x+i*sx,y+j*sy,sx,sy,(i+j*w)%fc.pal.length)
+		// for (var i=0; i<w; i++) {
+			// for (var j=0; j<h; j++) {
+				// rect(x+i*(sx+m),y+j*(sy+m),sx,sy,(i+j*w)%fc.pal.length)
+			// }
+		// }
+		bank(0) // TODO push pop
+		
+		var icons = [0,21,22,5,6,7,8,10,11,17,18,15,16,3,1,2]
+		for (var j=0; j<h; j++) {
+			for (var i=0; i<w; i++) {
+				var s = icons.shift()
+				spr(s,x+i*(sx+mx),y+j*(sy+my),-1,sx/5,sy/5)
 			}
-		}
+		}		
 		
 		// react
-		var [i,j] = _grid_click(x,y,w,h,sx,sy)
+		var [i,j,m1] = _grid_click(x,y,w,h,sx+mx,sy+my)
+		if (m1<3) return
 		switch (`${i},${j}`) {
 			case '0,0': clear_sprite(editor.data,picker.background_color); break
 			case '1,0': copy_sprite(editor.data); break
@@ -149,6 +155,7 @@ function Toolbox(x,y,w,h,sx,sy,icons) {
 			case '5,0': shift_sprite(editor.data,-SPW); break
 			case '6,0': shift_sprite(editor.data,SPW); break
 			case '7,0': flip_sprite_horiz(editor.data,SPW,SPH); break
+			
 			case '0,1': flip_sprite_vert(editor.data,SPW,SPH); break
 			case '1,1': mirror_sprite_down_to_up(editor.data,SPW,SPH); break
 			case '2,1': mirror_sprite_up_to_down(editor.data,SPW,SPH); break
