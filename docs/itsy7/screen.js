@@ -41,7 +41,8 @@ function status(text) {
 
 // -----------------------------------------------------------------------------
 
-function _fullscreen(elem) {
+function _fullscreen() {
+	var elem = cnv
 	if (elem.requestFullscreen) {
 		elem.requestFullscreen()
 	} else if (elem.mozRequestFullScreen) { /* Firefox */
