@@ -12,11 +12,19 @@ var M1 = 0 // status -> 3210 3:down 2:held 1:up 0:none
 var M2 = 0 // status -> 3210 3:down 2:held 1:up 0:none
 var MW = 0
 
-var cnv_bcr = cnv.getBoundingClientRect()
-
 function on_mouse_move(e) {
-	MX = e.clientX - cnv_bcr.left // TODO - cnv_x
-	MY = e.clientY - cnv_bcr.top // TODO - cnv_y
+	var bcr = cnv.getBoundingClientRect()
+	var bcr_left = bcr.left
+	var bcr_top = bcr.top
+	var bcr_w = bcr.width
+	var bcr_h = bcr.height
+	
+	var ratio = bcr_h/fc.h
+	var width = fc.w * ratio
+	var bcr_left = 0.5*(bcr_w-width)
+	
+	MX = (e.clientX - bcr_left) / ratio
+	MY = (e.clientY - bcr_top) / ratio
 }
 
 function on_mouse_up(e) {

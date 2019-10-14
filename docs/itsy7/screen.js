@@ -61,7 +61,7 @@ function _init_screen() {
 	fc.sy = fc.sy || 8
 	
 	var screen = document.getElementById("screen")
-	screen.innerHTML = `<canvas id="main_canvas" width="${fc.w}" height="${fc.h}" style="border:1px solid #000000;"></canvas>`
+	screen.innerHTML = `<canvas id="main_canvas" width="${fc.w}" height="${fc.h}""></canvas>`
 	
 	// TODO fc.*
 	out = document.getElementById("output")

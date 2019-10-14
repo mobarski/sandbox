@@ -4,7 +4,7 @@
 function on_touch_start(e) {
 	MX = e.touches[0].clientX
 	MY = e.touches[0].clientY
-	M1 = 1
+	M1 = 3
 }
 
 function on_touch_end(e) {

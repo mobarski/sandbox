@@ -1,7 +1,7 @@
 var fc = {}
 
-fc.w = 800
-fc.h = 500
+fc.w = 640
+fc.h = 640
 // fc.sx = 2
 // fc.sy = 2
 
