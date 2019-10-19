@@ -15,10 +15,15 @@ function __init() {
 }
 
 function __main() {
+	var t0 = now()
 	for (var i in _before) { _before[i]() }
+	fc.t1 = now() - t0
 	_main()
+	fc.t2 = now() - t0
 	_draw()
+	fc.t3 = now() - t0
 	for (var i in _after) { _after[i]() }
+	fc.t4 = now() - t0
 }
 
 window.onload = function(e) {

@@ -22,12 +22,16 @@ function _main() {
 	dvy = sign(ry) * f * ry*ry / r2
 	vx -= dvx
 	vy -= dvy
+	
+	status(`t1:${fc.t1}  t2:${fc.t2}  t3:${fc.t3}  t4:${fc.t4}`)
 }
 
 function _draw() {
 	cls(0)
-
+	
+	//camera(-300,-300,2,2)
 	//camera(Math.random()*10,Math.random()*10)
+	//camera(0,0)
 
 	color(1)
 	circ(px,py,12)
@@ -47,16 +51,19 @@ function _draw() {
 	xrect(100,500,55,55,2,1,true)
 	xrect(100,500,45,45,0,0.8,true)
 	
+	//camera(Math.random()*10-5,Math.random()*10-5)
+	
 	color(2)
 	xprint('Au',100,500)
 	
 	color(3)
-	shape(200,500,[[50,0],[50,50],[0,50],[0,0]],0,false,true)
+	shape(200,500, [50,0,50,50,0,50,-25,25])
 	
 	color(5)
 	print("Hail to Crail",300,500)
 	print("dv = 1.432",300,550)
 
 	
-	snap = snapshot()
+	snap = snapshot(true,0,0,20,20)
+	ctx.drawImage(snap,20,20)
 }
