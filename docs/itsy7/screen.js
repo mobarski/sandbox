@@ -39,6 +39,32 @@ function status(text) {
 	out.innerHTML = text
 }
 
+
+// EXPERIMENTAL
+function circ(x,y,r,c,a=1) {
+	ctx.fillStyle = fc.pal.style[c].slice(0,-1)+`,${a})`
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*Math.PI)
+	ctx.fill()
+}
+
+// EXPERIMENTAL
+function line(x,y,x2,y2,c,w=1,a=1) {
+	ctx.beginPath()
+	ctx.lineCap = "round"
+	ctx.moveTo(x,y)
+	ctx.lineTo(x2,y2)
+	ctx.lineWidth = w
+	ctx.strokeStyle = fc.pal.style[c].slice(0,-1)+`,${a})`
+	ctx.stroke()
+}
+
+// EXPERIMENTAL
+function text(s,x,y,c) {
+	ctx.fillStyle = fc.pal.style[c]
+	ctx.fillText(s,x,y)
+}
+
 // -----------------------------------------------------------------------------
 
 function _fullscreen() {
