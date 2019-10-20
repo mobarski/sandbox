@@ -21,12 +21,12 @@ Program Structure
 Graphics
 --------
 
-	color  c [a = 1]
+	color  c [a]
 		
 		Sets the current color and alpha
 	
 	
-	cls  c [a = 1]
+	cls  [c] [a]
 	
 		Clears the screen
 	
@@ -56,7 +56,7 @@ Graphics
 		Starts the fullscreen mode
 		
 	
-	shape  x y dots
+	shape  x y dots [c] [a]
 	
 		Draws a filled shape
 	
@@ -86,7 +86,7 @@ Graphics
 Text
 ----
 
-	print str [x y]
+	print str x y [c] [a]
 	
 		Prints a string
 	

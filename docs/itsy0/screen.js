@@ -85,7 +85,8 @@ function fullscreen() {
 	// ctx.fill()
 // }
 
-function shape(x,y,dots) {
+function shape(x,y,dots,c=null,a=1) {
+	if (c != null) { color(c,a) }
 	ctx.beginPath()
 	ctx.moveTo(x,y)
 	for (var i=0; i<dots.length; i+=2) {
