@@ -22,7 +22,7 @@
 
 // --------------
 
-fc.pal.load('pico8')
+palette('pico-8')
 _init_screen()
 //_init_bank(1,5,5,5,5,1)
 _init_bank(0,5,5,5,5,

@@ -6,10 +6,10 @@ function _main() {
 }
 
 function _draw() {
-	color(1)
+	color(3)
 	for (var i=0;i<500;i++) {
 		for (var j=0;j<500;j++) {
-			line(i,j,i,j,4)
+			rect(i,j,50,50,1,0.5)
 		}
 	}
 }

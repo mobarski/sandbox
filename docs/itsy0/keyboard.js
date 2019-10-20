@@ -1,5 +1,5 @@
 function on_key_press() {
-	_fullscreen()
+	fullscreen()
 	console.log('test')
 }
 

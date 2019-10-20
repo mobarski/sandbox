@@ -5,26 +5,21 @@ function status(text) {
 
 // ---[ API ]-------------------------------------------------------------------
 
-// INFO - rect(x,y,w,h) vs rect(x,y,w,h,color) -> 3.3 times slower !!!
-
 function color(c,a=1) {
-	ctx.fillStyle = fc.pal.style[c].slice(0,-1)+`,${a})`
+	var _c = c % fc.pal.length
+	ctx.fillStyle = fc.pal.style[_c].slice(0,-1)+`,${a})`
 	ctx.strokeStyle = ctx.fillStyle
 }
 
 
-function cls(c,a=1) {
-	color(c,a)
+function cls(c=null,a=1) {
+	if (c != null) { color(c,a) }
 	rect(0,0,fc.w,fc.h)
 }
 
-// 250k -> 230ms
-function rect(x,y,w,h,center=false) {
-	if (center) {
-		ctx.fillRect(x-0.5*w,y-0.5*h,w,h)
-	} else {
-		ctx.fillRect(x,y,w,h)
-	}
+function rect(x,y,w,h,c=null,a=1) {
+	if (c != null) { color(c,a) }
+	ctx.fillRect(x,y,w,h)
 }
 
 // 3.3 x wolniej niz rect !!!
@@ -38,7 +33,8 @@ function xrect(x,y,w,h,c,a=1,center=false) {
 }
 
 // 250k -> 1800ms
-function circ(x,y,r) {
+function circ(x,y,r,c=null,a=1) {
+	if (c != null) { color(c,a) }
 	ctx.beginPath()
 	ctx.arc(x,y,r,0,2*Math.PI)
 	ctx.fill()
