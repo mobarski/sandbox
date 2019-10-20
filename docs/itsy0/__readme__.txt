@@ -71,17 +71,16 @@ Graphics
 		Change palette. Argument p can be palette slug from lospec.com or string of #rrggbb values
 	
 	
-	Experimental
-	------------
+	pal  [c] [c2]
 	
-	Planned
-	-------
+		Draw color c as c2.
+		Without arguments: reset all remappings.
+		With one argument: reset remapping for this color.
 	
-		cursor  x y
 	
-			Sets the cursor position and carriage return margin
-
-		pal  [c c2]
+	TODO cursor  x y
+	
+		Sets the cursor position and carriage return margin
 		
 		
 Text
@@ -157,6 +156,18 @@ Bank
 Storage
 -------
 
+	save  key value
+	
+		Save value in local storage
+		
+	
+	load  key
+
+		Load value from local storage
+
+
+	-- TODO storage to/from image
+
 
 Mouse / Touch
 -------------
@@ -166,6 +177,8 @@ Mouse / Touch
 	
 Keyboard
 --------
+
+	
 
 -------------------------------------------------------------------------------
 

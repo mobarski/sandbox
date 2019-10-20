@@ -1,6 +1,6 @@
 // ---[ API ]------------------------------------------------------------------
 
-// TODO - rotation / shuffle preserving 0
+// TODO fc.pal.remap = {} ???
 function palette(p) {
 	if (p[0] != '#') {
 		p = _palettes[p]
@@ -9,12 +9,21 @@ function palette(p) {
 	fc.pal.recalc()
 }
 
+function pal(c=null,c2=null) {
+	if (c==null) {
+		fc.pal.remap = {}
+	} else {
+		fc.pal.remap[c] = c2
+	}
+}
+
 // ----------------------------------------------------------------------------
 
 
 fc.pal = {}
 fc.pal.rgb = []
 fc.pal.style = []
+fc.pal.remap = {}
 
 fc.pal.recalc = function() {
 	this.length = this.rgb.length

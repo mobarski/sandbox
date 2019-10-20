@@ -5,8 +5,11 @@ function status(text) {
 
 // ---[ API ]-------------------------------------------------------------------
 
+
+// TODO move to palette.js ???
 function color(c,a=1) {
-	var _c = c % fc.pal.length
+	var _c = fc.pal.remap[c] != null ? fc.pal.remap[c] : c
+	_c = _c % fc.pal.length
 	ctx.fillStyle = fc.pal.style[_c].slice(0,-1)+`,${a})`
 	ctx.strokeStyle = ctx.fillStyle
 }
