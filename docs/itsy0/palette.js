@@ -41,8 +41,13 @@ fc.pal.load = function(name) {
 function _parse_pal(str) {
 	var colors = str.match(/#[0-9a-f]{6}/gi)
 	var rgb = []
+	
+	// min and max luminance
 	var min_i = 0
 	var min_y = 1000
+	var max_i = 0
+	var max_y = 0
+	
 	for (var i in colors) {
 		var r = colors[i].slice(1,3)
 		var g = colors[i].slice(3,5)
@@ -55,6 +60,10 @@ function _parse_pal(str) {
 		if (y < min_y) {
 			min_y = y
 			min_i = i
+		}
+		if (y > max_y) {
+			max_y = y
+			max_i = i
 		}
 	}
 	
