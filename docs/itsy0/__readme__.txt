@@ -61,6 +61,11 @@ Graphics
 		Draws a filled shape
 	
 	
+	TODO mesh x y dots [width] [cap] [c] [a]
+	
+		...
+		
+	
 	snapshot  [image=false] [x y] [w h]
 	
 		Returns ImageData or Image from the canvas or its fragment
@@ -78,11 +83,6 @@ Graphics
 		With one argument: reset remapping for this color.
 	
 	
-	TODO cursor  x y
-	
-		Sets the cursor position and carriage return margin
-		
-		
 Text
 ----
 
@@ -99,6 +99,11 @@ Text
 	font x
 	
 		Sets the font
+
+
+	TODO cursor  x y
+	
+		Sets the cursor position and carriage return margin
 
 
 Math

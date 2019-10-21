@@ -33,20 +33,16 @@ function _draw() {
 	//camera(Math.random()*10,Math.random()*10)
 	//camera(0,0)
 
-	color(1)
-	circ(px,py,12)
+	circ(px,py,12,1)
 	
-	color(2)
-	circ(sx,sy,2)
+	circ(sx,sy,2,2)
 	
-	color(3)
-	print("¶®ΨѦ",sx+10,sy+10)
+	print("¶®ΨѦ",sx+10,sy+10,3)
 	
 	color(1)
 	line(sx,sy,sx+10*vx,sy+10*vy)
 	
-	color(1,1)
-	rect(10,10,50,50)
+	rect(10,10,50,50,1)
 	
 	xrect(100,500,55,55,2,1,true)
 	xrect(100,500,45,45,0,0.8,true)
@@ -56,12 +52,10 @@ function _draw() {
 	color(2)
 	xprint('Au',100,500)
 	
-	color(3)
-	shape(200,500, [50,0,50,50,0,50,-25,25])
+	shape(200,500, [50,0,50,50,0,50,-25,25],3)
 	
-	color(5)
-	print("Hail to Crail",300,500)
-	print("dv = 1.432",300,550)
+	print("Hail to Crail",300,500,5)
+	print("dv = 1.432",300,550,5)
 
 	
 	snap = snapshot(true,0,0,20,20)
