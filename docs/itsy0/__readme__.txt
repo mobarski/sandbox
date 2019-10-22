@@ -183,8 +183,50 @@ Mouse / Touch
 Keyboard
 --------
 
-	
 
+
+Roadmap
+=======
+
+	0.2 - Banks & Sprites
+	
+		Banks
+			+ encode
+			+ decode
+			- bank geometry
+			- bank save
+			- bank load
+			- get single sprite
+			- set single sprite
+			- get multi-sprite
+			- set multi-sprite
+		
+		Sprites
+	
+	0.3 - Sprite Editor & Fonts
+		
+		Sprite Editor
+		
+		Fonts
+	
+	0.4 - Map & Map editor
+	
+		Map
+		
+		Map Editor
+		
+	0.5 - GIF Recorder
+	
+	0.6 - Sound
+		
+	0.7 - Music
+	
+	Shader-like-effects
+	
+	Multitouch
+	
+	
+	
 -------------------------------------------------------------------------------
 
 Reference

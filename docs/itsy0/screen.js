@@ -152,17 +152,22 @@ function _get_pixel_rgb(x,y) {
 	return ctx.getImageData(x,y,1,1).data
 }
 
-function _imagedata_to_image(imagedata) {
+function _imagedata_to_url(imagedata,fmt='image/png') {
     var canvas = document.createElement('canvas')
     var ctx = canvas.getContext('2d')
     canvas.width = imagedata.width
     canvas.height = imagedata.height
     ctx.putImageData(imagedata, 0, 0)
 
+    return canvas.toDataURL(fmt)
+}
+
+function _imagedata_to_image(imagedata,fmt='image/png') {
     var image = new Image()
-    image.src = canvas.toDataURL()
+    image.src = _imagedata_to_url(imagedata,fmt)
     return image
 }
+
 
 function _init_screen() {
 	fc.w = fc.w || 800
