@@ -4,12 +4,24 @@ function mouse() {
 	return [MX,MY,M1,M2]
 }
 
+function mousebtn(b) {
+	switch (b) {
+		case 1:  return [M1,MX,MY,M1X,M1Y,M1T]
+		case 2:  return [M2,MX,MY,M2X,M2Y,M2T]
+		default: return [0,MX,MY,-1,-1,-1]
+	}
+}
+
 // ---[ MOUSE ]-----------------------------------------------------------------
 
 var MX = -1
 var MY = -1
 var M1 = 0 // status -> 3210 3:down 2:held 1:up 0:none
 var M2 = 0 // status -> 3210 3:down 2:held 1:up 0:none
+var M1X = -1 // MX when button was pressed (status==3)
+var M1Y = -1 // MY when button was pressed
+var M2X = -1
+var M2Y = -1
 var MW = 0
 
 function on_mouse_move(e) {
@@ -38,8 +50,12 @@ function on_mouse_up(e) {
 function on_mouse_down(e) {
 	if (e.button==0) {
 		M1 = 3
+		M1X = MX
+		M1Y = MY
 	} else if (e.button==2) {
 		M2 = 3
+		M2X = MX
+		M2Y = MY
 	}
 }
 

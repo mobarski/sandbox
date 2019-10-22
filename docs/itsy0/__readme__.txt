@@ -166,7 +166,7 @@ Storage
 		Save value in local storage
 		
 	
-	load  key
+	load  key  ->  data
 
 		Load value from local storage
 
@@ -177,6 +177,23 @@ Storage
 Mouse / Touch
 -------------
 
+	mouse  ->  x y m1 m2
+	
+		...
+	
+	
+	mousebtn  b  ->  status x y xp yp
+		
+		Returns status of the specific mouse key, current x,y coords
+		and x,y coords when the button was pressed.
+		
+		Status:
+			3 -> just pressed
+			2 -> held
+			1 -> just released
+			0 -> up
+		
+		
 	grid_click -- TODO
 	
 	
