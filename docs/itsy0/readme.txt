@@ -31,19 +31,29 @@ Graphics
 		Clears the screen
 	
 	
-	rect  x y w h [c] [a]
+	rect      x y w h [c] [a]
+	rectfill  x y w h [c] [a]
 	
-		Draws a filled rectangle
+		Draws a rectangle or filled rectangle
 		
 	
-	circ  x y r [c] [a]
+	circ      x y r [c] [a]
+	circfill  x y r [c] [a]
 	
-		Draws a filled circle
+		Draws a circle or a filled circle 
 		
-	
-	line  x y x2 y2 [width=1] [cap=round]
+		
+	line  x y x2 y2 [c] [a]
 	
 		Draws a line
+
+	
+	pen  [width=1] [cap=round] [join=miter]
+	
+		Sets style for drawing lines.
+		
+		cap  -- round | butt  | square
+		join -- miter | round | bevel
 
 
 	camera  x y [sx=1] [sy=1]
@@ -56,15 +66,11 @@ Graphics
 		Starts the fullscreen mode
 		
 	
-	shape  x y dots [c] [a]
+	shape      x y dots [c] [a] [close=1]
+	shapefill  x y dots [c] [a]
 	
-		Draws a filled shape
-	
-	
-	TODO mesh x y dots [width] [cap] [c] [a]
-	
-		...
-		
+		Draws a shape or filled shape
+			
 	
 	snapshot  [image=false] [x y] [w h]
 	
@@ -157,6 +163,18 @@ Bank
 
 	-- 16x10 spriteow 8x8 + metadane 1/2/3/4 pix na spr
    
+	bank  b -> prev_b
+	
+		Switch active bank to b
+	
+   
+	sget  n x y -> c
+	sset  n x y c
+		
+		Get or set the color (c) of sprite n from the current bank
+	
+
+		
 
 Storage
 -------
@@ -210,10 +228,14 @@ Roadmap
 		Banks
 			+ encode
 			+ decode
-			- bank geometry
-			- bank save
-			- bank load
-			- get single sprite
+			+ bank geometry
+			+ new bank
+			+ get sprite pixel
+			+ set sprite pixel
+			+ get single sprite
+			| bank save
+			| bank load
+			
 			- set single sprite
 			- get multi-sprite
 			- set multi-sprite
@@ -250,5 +272,5 @@ Reference
 =========
 
 	pico8 -- https://www.lexaloffle.com/pico-8.php?page=manual
-
+	tic80 -- https://github.com/nesbox/TIC-80/wiki
 

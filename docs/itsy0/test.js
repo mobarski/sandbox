@@ -28,21 +28,22 @@ function _main() {
 
 function _draw() {
 	cls(0)
+	pen(3)
 	
 	//camera(-300,-300,2,2)
 	//camera(Math.random()*10,Math.random()*10)
 	//camera(0,0)
 
-	circ(px,py,12,1)
+	circfill(px,py,12,1)
 	
-	circ(sx,sy,2,2)
+	circfill(sx,sy,2,2)
 	
 	print("¶®ΨѦ",sx+10,sy+10,3)
 	
 	color(1)
 	line(sx,sy,sx+10*vx,sy+10*vy)
 	
-	rect(10,10,50,50,1)
+	rectfill(10,10,50,50,1)
 	
 	xrect(100,500,55,55,2,1,true)
 	xrect(100,500,45,45,0,0.8,true)
@@ -52,11 +53,16 @@ function _draw() {
 	color(2)
 	xprint('Au',100,500)
 	
-	shape(200,500, [50,0,50,50,0,50,-25,25],3)
+	shapefill(200,500, [50,0,50,50,0,50,-25,25],1)
 	
 	print("Hail to Crail",300,500,5)
 	print("dv = 1.432",300,550,5)
 
+	
+	color(5)
+	line(100,50,100,100)
+	line(100,150)
+	line(150,150)
 	
 	snap = snapshot(true,0,0,20,20)
 	ctx.drawImage(snap,20,20)

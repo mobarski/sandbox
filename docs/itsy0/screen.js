@@ -17,12 +17,17 @@ function color(c,a=1) {
 
 function cls(c=null,a=1) {
 	if (c != null) { color(c,a) }
-	rect(0,0,fc.w,fc.h)
+	rectfill(0,0,fc.w,fc.h)
+}
+
+function rectfill(x,y,w,h,c=null,a=1) {
+	if (c != null) { color(c,a) }
+	ctx.fillRect(x,y,w,h)
 }
 
 function rect(x,y,w,h,c=null,a=1) {
 	if (c != null) { color(c,a) }
-	ctx.fillRect(x,y,w,h)
+	ctx.strokeRect(x,y,w,h)
 }
 
 // 3.3 x wolniej niz rect !!!
@@ -36,22 +41,33 @@ function xrect(x,y,w,h,c,a=1,center=false) {
 }
 
 // 250k -> 1800ms
-function circ(x,y,r,c=null,a=1) {
+function circfill(x,y,r,c=null,a=1) {
 	if (c != null) { color(c,a) }
 	ctx.beginPath()
 	ctx.arc(x,y,r,0,2*Math.PI)
 	ctx.fill()
 }
 
+function circ(x,y,r,c=null,a=1) {
+	if (c != null) { color(c,a) }
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*Math.PI)
+	ctx.stroke()
+}
+
+function pen(width=1,cap='round',join='miter') {
+	ctx.lineWidth = width
+	ctx.lineCap = cap	// butt round square
+	ctx.lineJoin = join	// bevel round miter
+}
 
 // TODO - lepsze api ???
 // 250k -> 1200ms
-function line(x,y,x2,y2,width=1,cap='round') {
+function line(x,y,x2,y2,c=null,a=1) {
+	if (c != null) { color(c,a) }
 	ctx.beginPath()
-	ctx.lineCap = cap
 	ctx.moveTo(x,y)
 	ctx.lineTo(x2,y2)
-	ctx.lineWidth = width
 	ctx.stroke()
 }
 
@@ -85,7 +101,7 @@ function fullscreen() {
 	// ctx.fill()
 // }
 
-function shape(x,y,dots,c=null,a=1) {
+function shapefill(x,y,dots,c=null,a=1) {
 	if (c != null) { color(c,a) }
 	ctx.beginPath()
 	ctx.moveTo(x,y)
@@ -98,16 +114,27 @@ function shape(x,y,dots,c=null,a=1) {
 	ctx.fill()
 }
 
-function xshape(x,y,dots,w=1,cap='miter',jn='mitter',close=false,strk=true,fil=false) {
+function shape(x,y,dots,c=null,a=1,close=1) {
+	if (c != null) { color(c,a) }
+	ctx.beginPath()
+	ctx.moveTo(x,y)
+	for (var i=0; i<dots.length; i+=2) {
+		var dx = dots[i]
+		var dy = dots[i+1]
+		ctx.lineTo(x+dx,y+dy)
+	}
+	if (close) { ctx.closePath() }
+	ctx.stroke()
+}
+
+// ???
+function xshape(x,y,dots,close=false,strk=true,fil=false) {
 	ctx.beginPath()
 	ctx.moveTo(x,y)
 	for (var i in dots) {
 		var [dx,dy] = dots[i]
 		ctx.lineTo(x+dx,y+dy)
 	}
-	ctx.lineCap = cap // butt  round square
-	ctx.lineJoin = jn // bevel round miter
-	ctx.lineWidth = w
 	if (close) {ctx.closePath()}
 	if (fil)   {ctx.fill()}
 	if (strk)  {ctx.stroke()}
