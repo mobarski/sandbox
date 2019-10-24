@@ -6,16 +6,17 @@ fc.b2 = null
 
 function new_bank(b,bw,bh,sw=8,sh=8,c=0) {
 	var bank = {}
-	bank.bw = bw
-	bank.bh = bh
+	bank.bw = bw // bank width in sprites
+	bank.bh = bh // bank height in sprites
 	bank.sw = sw
 	bank.sh = sh
+	bank.b = b
 	if (Array.isArray(c)) {
 		bank.data = c
 	} else {
 		bank.data = []
-		for (var i=0; i<Math.floor(bh/sh); i++) {
-			for (var j=0; j<Math.floor(bw/sw); j++) {
+		for (var i=0; i<bh; i++) {
+			for (var j=0; j<bw; j++) {
 				var spr = Array(sw*sh).fill(c)
 				bank.data.push(spr)
 			}
@@ -40,9 +41,7 @@ function sget(n,x,y) {
 }
 
 function sset(n,x,y,c) {
-	var prev = fc.bank2.data[n][x+y*fc.bank2.sw]
 	fc.bank2.data[n][x+y*fc.bank2.sw] = c
-	return prev
 }
 
 // -----------------------------------------------------------------------------
@@ -51,6 +50,64 @@ function _spr_get(n) {
 	return fc.bank2.data[n]
 }
 
+function _spr_set(n,spr) {
+	fc.bank2.data[n] = spr
+}
+
+function _serialize_bank(n) {
+	var out = []
+	var b = fc.banks2[n]
+	var data = _data_to_flat_array(b.data)
+	var max_c = max(...data)
+	
+	// header
+	out.push(1) // ver
+	out.push(b.bw, b.bh, b.sw, b.sh) // geometry
+	out.push(max_c) // max color
+	
+	// data
+	var packed = _array_to_packed_array(data,max_c)
+	out = out.concat(packed)
+	
+	return out
+}
+
+function _deserialize_bank(raw) {
+	var ver = raw[0]
+	if (ver!=1) return null
+	var bank = {}
+	var [bw,bh,sw,sh,max_c] = raw.slice(1,6)
+	var packed = raw.slice(6,raw.length)
+	var flat_ar = _packed_array_to_array(packed)
+	
+	bank.bw = bw
+	bank.bh = bh
+	bank.sw = sw
+	bank.sh = sh
+	bank.data = _flat_array_to_data(flat_ar,bw,bh,sw,sh)
+	
+	return bank
+}
+
+// -----------------------------------------------------------------------------
+
+function _data_to_flat_array(data) {
+	return data.flat()
+}
+
+function _flat_array_to_data(ar,bw,bh,sw=8,sh=8) {
+	var bn = bw*bh
+	var sn = sw*sh
+	var out = []
+	for (var i=0; i<bn; i++) {
+		var spr = ar.slice(sn*i,sn*(i+1))
+		out.push(spr)
+	}
+	return out
+}
+
+// ??? WILL NOT BE USED - NOT LEAN
+/*
 function _data_to_array(data,bw,bh,sw,sh) {
 	var out = Array(bw*bh).fill(0)
 	var bw_n = Math.floor(bw/sw)
@@ -71,7 +128,10 @@ function _data_to_array(data,bw,bh,sw,sh) {
 	}
 	return out
 }
+*/
 
+// ??? WILL NOT BE USED - NOT LEAN
+/*
 function _array_to_data(ar,bw,bh,sw,sh) {
 	var out = []
 	var bw_n = Math.floor(bw/sw)
@@ -92,29 +152,7 @@ function _array_to_data(ar,bw,bh,sw,sh) {
 	}
 	return out
 }
-
-function _array_to_compact_imagedata(ar,w,h=null) {
-	h = h || Math.ceil(ar.length / w / 4)
-	var img = ctx.createImageData(w,h)
-	for (var i=0; i<w*h*4; i++) {
-		if (i<ar.length) {
-			var v = ar[i]
-			img.data[i] = v>0 ? 256-v : 0
-		} else {
-			img.data[i] = 1
-		}
-	}
-	return img
-}
-
-function _compact_imagedate_to_array(img,n) {
-	var ar = []
-	for (var i=0; i<n; i++) {
-		var v = img.data[i]
-		ar.push(v>0 ? 256-v : 0)
-	}
-	return ar
-}
+*/
 
 function _array_to_packed_array(ar,max_v) {
 	var out = []
@@ -166,10 +204,37 @@ function _packed_array_to_array(ar,max_v) {
 	return out
 }
 
+// MOVE TO STORAGE ???
+function _array_to_compact_imagedata(ar,w,h=null) {
+	h = h || Math.ceil(ar.length / w / 4)
+	var img = ctx.createImageData(w,h)
+	for (var i=0; i<w*h*4; i++) {
+		if (i<ar.length) {
+			var v = ar[i]
+			img.data[i] = v>0 ? 256-v : 0
+		} else {
+			img.data[i] = 1
+		}
+	}
+	return img
+}
+
+
+// MOVE TO STORAGE ???
+function _compact_imagedate_to_array(img,n) {
+	var ar = []
+	for (var i=0; i<n; i++) {
+		var v = img.data[i]
+		ar.push(v>0 ? 256-v : 0)
+	}
+	return ar
+}
+
+
 // ---[ TEST ]---
 
-if (0) {
-	new_bank(1,4,4,2,2)
+if (1) {
+	new_bank(1,2,2,2,2)
 	bank2(1)
 	sset(0,0,0,10)
 	sset(0,1,0,11)
@@ -188,7 +253,65 @@ if (0) {
 	sset(3,0,1,42)
 	sset(3,1,1,43)
 	d=fc.bank2.data
-	a=_data_to_array(d,4,4,2,2)
-	d2=_array_to_data(a,4,4,2,2)
-	a2=_data_to_array(d2,4,4,2,2)
+	a=_data_to_flat_array(d,2,2,2,2)
+	d2=_flat_array_to_data(a,2,2,2,2)
+	a2=_data_to_flat_array(d2,2,2,2,2)
+
+	new_bank(2,2,2,2,2)
+	bank2(2)
+	sset(0,0,0,0)
+	sset(0,1,0,1)
+	sset(0,0,1,2)
+	sset(0,1,1,3)
+	sset(1,0,0,4)
+	sset(1,1,0,5)
+	sset(1,0,1,6)
+	sset(1,1,1,7)
+	sset(2,0,0,8)
+	sset(2,1,0,9)
+	sset(2,0,1,10)
+	sset(2,1,1,11)
+	sset(3,0,0,12)
+	sset(3,1,0,13)
+	sset(3,0,1,14)
+	sset(3,1,1,15)
+
+	new_bank(3,2,2,2,2)
+	bank2(3)
+	sset(0,0,0,0)
+	sset(0,1,0,1)
+	sset(0,0,1,2)
+	sset(0,1,1,3)
+	sset(1,0,0,0)
+	sset(1,1,0,1)
+	sset(1,0,1,2)
+	sset(1,1,1,3)
+	sset(2,0,0,0)
+	sset(2,1,0,1)
+	sset(2,0,1,2)
+	sset(2,1,1,3)
+	sset(3,0,0,0)
+	sset(3,1,0,1)
+	sset(3,0,1,2)
+	sset(3,1,1,3)
+
+	new_bank(4,2,2,2,2)
+	bank2(4)
+	sset(0,0,0,0)
+	sset(0,1,0,1)
+	sset(0,0,1,0)
+	sset(0,1,1,1)
+	sset(1,0,0,0)
+	sset(1,1,0,1)
+	sset(1,0,1,0)
+	sset(1,1,1,1)
+	sset(2,0,0,0)
+	sset(2,1,0,1)
+	sset(2,0,1,0)
+	sset(2,1,1,1)
+	sset(3,0,0,0)
+	sset(3,1,0,1)
+	sset(3,0,1,0)
+	sset(3,1,1,1)
+
 }

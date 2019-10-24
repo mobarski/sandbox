@@ -28,5 +28,8 @@ function __main() {
 
 window.onload = function(e) {
 	__init()
-	window.setInterval(__main,1000.0/fc.freq)
+	__main()
+	if (fc.freq && fc.freq>0) {
+		window.setInterval(__main,1000.0/fc.freq)
+	}
 }

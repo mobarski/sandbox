@@ -88,7 +88,22 @@ Graphics
 		Without arguments: reset all remappings.
 		With one argument: reset remapping for this color.
 	
+
+Sprites
+-------
+
+	rspr  n x y [flip_x] [flip_y] [sx] [sy]
 	
+		Draw raw sprite. Slow but doesn't require baking
+
+
+	sscale  sx sy
+	
+		Sets the default sprite scale
+		
+	
+	
+
 Text
 ----
 
@@ -144,6 +159,10 @@ Time
 	
 		Returns miliseconds since 1970-01-01
 	
+	
+	freq  n
+	
+		Sets the desired main function frequency
 	
 Network
 -------
@@ -226,21 +245,30 @@ Roadmap
 	0.2 - Banks & Sprites
 	
 		Banks
-			+ encode
-			+ decode
+			+ encode image
+			+ decode image
+			+ pack data
+			+ unpack data
 			+ bank geometry
 			+ new bank
 			+ get sprite pixel
 			+ set sprite pixel
 			+ get single sprite
-			| bank save
-			| bank load
+			+ set single sprite
+			+ unflat
+			+ serialize bank
+			+ deserialize bank
+			| bank save -> encode_image(serialize())
+			| bank load <- deserialize(decode_image())
 			
-			- set single sprite
 			- get multi-sprite
 			- set multi-sprite
 		
 		Sprites
+			- rspr
+			- bake
+			- spr
+			- sspr
 	
 	0.3 - Sprite Editor & Fonts
 		
