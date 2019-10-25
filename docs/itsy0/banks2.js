@@ -78,7 +78,7 @@ function _deserialize_bank(raw) {
 	var bank = {}
 	var [bw,bh,sw,sh,max_c] = raw.slice(1,6)
 	var packed = raw.slice(6,raw.length)
-	var flat_ar = _packed_array_to_array(packed)
+	var flat_ar = _packed_array_to_array(packed,max_c)
 	
 	bank.bw = bw
 	bank.bh = bh
@@ -204,16 +204,18 @@ function _packed_array_to_array(ar,max_v) {
 	return out
 }
 
-// MOVE TO STORAGE ???
 function _array_to_compact_imagedata(ar,w,h=null) {
-	h = h || Math.ceil(ar.length / w / 4)
+	var h = h || Math.ceil(ar.length / w / 3)
 	var img = ctx.createImageData(w,h)
-	for (var i=0; i<w*h*4; i++) {
-		if (i<ar.length) {
-			var v = ar[i]
-			img.data[i] = v>0 ? 256-v : 0
-		} else {
-			img.data[i] = 1
+	img.data.fill(0)
+	var j = 0
+	for (var i in ar) {
+		var v = ar[i]
+		img.data[j] = v>0 ? 256-v : 0
+		j++
+		if (i%3==2) {
+			img.data[j] = 255
+			j++
 		}
 	}
 	return img
@@ -221,15 +223,28 @@ function _array_to_compact_imagedata(ar,w,h=null) {
 
 
 // MOVE TO STORAGE ???
-function _compact_imagedate_to_array(img,n) {
+function _compact_imagedate_to_array(data) {
 	var ar = []
-	for (var i=0; i<n; i++) {
-		var v = img.data[i]
-		ar.push(v>0 ? 256-v : 0)
+	for (var i in data) {
+		if (i%4<3) {
+			var v = data[i]
+			ar.push(v>0 ? 256-v : 0)
+		}
 	}
 	return ar
 }
 
+function bexport(n,w,h=0,fmt=null) {
+	var ar = _serialize_bank(n)
+	var im = _array_to_compact_imagedata(ar,w,h)
+	return _imagedata_to_url(im,fmt)
+}
+
+function bimport(n,url) {
+	var imagedata = _image_to_imagedata(url)
+	var ar = _compact_imagedate_to_array(imagedata.data)
+	return _deserialize_bank(ar)
+}
 
 // ---[ TEST ]---
 

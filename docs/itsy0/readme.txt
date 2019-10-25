@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 
-ITSY v0.1
+ITSY v0.2
 Author: Maciej Obarski -- mobarski@gmail.com
 
 -------------------------------------------------------------------------------
@@ -70,11 +70,6 @@ Graphics
 	shapefill  x y dots [c] [a]
 	
 		Draws a shape or filled shape
-			
-	
-	snapshot  [image=false] [x y] [w h]
-	
-		Returns ImageData or Image from the canvas or its fragment
 	
 	
 	palette  p
@@ -89,6 +84,17 @@ Graphics
 		With one argument: reset remapping for this color.
 	
 
+	snapshot  [x y] [w h] [raw=false]
+	
+		Copy screen or its fragment into internal clipboard
+		
+	
+	paste  [x y] [ix iy] [w h]
+	
+		Paste internal clipboard or its fragment to the screen
+		
+		
+		
 Sprites
 -------
 
@@ -258,35 +264,49 @@ Roadmap
 			+ unflat
 			+ serialize bank
 			+ deserialize bank
-			| bank save -> encode_image(serialize())
-			| bank load <- deserialize(decode_image())
-			
+			+ bank export
+			+ bank import
+	
+		Sprites
+			+ rspr
+			+ sscale
+
+	
+	0.3 - Sprite Editor & Fonts
+
+		Sprite Editor
+		
+		Banks
 			- get multi-sprite
 			- set multi-sprite
-		
+
 		Sprites
-			- rspr
 			- bake
 			- spr
 			- sspr
-	
-	0.3 - Sprite Editor & Fonts
 		
-		Sprite Editor
-		
-		Fonts
 	
 	0.4 - Map & Map editor
 	
 		Map
 		
 		Map Editor
-		
-	0.5 - GIF Recorder
 	
-	0.6 - Sound
+	0.5 - Fonts & Text
+	
+		Fonts
 		
-	0.7 - Music
+		Text
+		- color markup
+		- margin & newline
+		- colision (for wordcloud)
+		
+	
+	0.6 - GIF Recorder
+	
+	0.7 - Sound
+		
+	0.8 - Music
 	
 	Shader-like-effects
 	
@@ -301,4 +321,12 @@ Reference
 
 	pico8 -- https://www.lexaloffle.com/pico-8.php?page=manual
 	tic80 -- https://github.com/nesbox/TIC-80/wiki
+	
+	get / put imagedata
+		- https://www.w3schools.com/tags/canvas_getimagedata.asp
+		- https://www.w3schools.com/tags/canvas_putimagedata.asp
+	
+	canvas double buffering
+		- https://stackoverflow.com/questions/2795269/does-html5-canvas-support-double-buffering
+		- http://devbutze.blogspot.com/2013/09/requestanimationframe-is-what-you-need.html
 

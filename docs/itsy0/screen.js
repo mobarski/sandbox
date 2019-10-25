@@ -140,11 +140,23 @@ function xshape(x,y,dots,close=false,strk=true,fil=false) {
 	if (strk)  {ctx.stroke()}
 }
 
-function snapshot(image=false,x=0,y=0,w=0,h=0) {
+
+function snapshot(x=0,y=0,w=0,h=0) {
 	var _w = w || fc.w-x
 	var _h = h || fc.h-y
 	var imagedata = ctx.getImageData(0,0,_w,_h)
-	return image ? _imagedata_to_image(imagedata) : imagedata.data
+	fc.clipboard = imagedata
+	return imagedata.data
+}
+
+
+function paste(x=0,y=0,ix=0,iy=0,w=0,h=0) {
+	var imagedata = fc.clipboard
+	if (imagedata==null) return
+	var _w = w || (imagedata.width-ix)
+	var _h = h || (imagedata.height-iy)
+	console.log(`_w:${_w} _h:${_h}`)
+	ctx.putImageData(imagedata,x,y,ix,iy,_w,_h)
 }
 
 // function blit(data,x,y,w,h,sx,sy,ckey) {
@@ -179,22 +191,37 @@ function _get_pixel_rgb(x,y) {
 	return ctx.getImageData(x,y,1,1).data
 }
 
-function _imagedata_to_url(imagedata,fmt='image/png') {
+// TODO remove canvas
+function _imagedata_to_url(imagedata,fmt=null) {
     var canvas = document.createElement('canvas')
     var ctx = canvas.getContext('2d')
     canvas.width = imagedata.width
     canvas.height = imagedata.height
     ctx.putImageData(imagedata, 0, 0)
 
-    return canvas.toDataURL(fmt)
+	var _fmt = fmt || 'png'
+    return canvas.toDataURL('image/'+_fmt)
 }
 
-function _imagedata_to_image(imagedata,fmt='image/png') {
+function _imagedata_to_image(imagedata,fmt=null) {
     var image = new Image()
     image.src = _imagedata_to_url(imagedata,fmt)
     return image
 }
 
+
+// FIXME
+function _image_to_imagedata(url) {
+	var img = new Image()
+	img.src = url
+	while (!img.width) {} // TODO FIX busy loop
+    var cnv = document.createElement('canvas')
+    var ctx = cnv.getContext('2d')
+	ctx.drawImage(img,0,0)
+	var data = ctx.getImageData(0,0,img.width,img.height)
+	// TODO remove canvas
+	return data
+}
 
 function _init_screen() {
 	fc.w = fc.w || 800
