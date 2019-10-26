@@ -274,8 +274,22 @@ Roadmap
 	
 	0.3 - Sprite Editor & Fonts
 
-		Sprite Editor
+		Sprite Editor MVP (single bank)
+			+ color picker
+			+ bank viewer / sprite selector
+			+ sprite editor
+			- toolbar (clear, save, load)
+			- active colors
+			- save (auto versioning)
+			- load (auto versioning)
+			- configuration
 		
+		Metadata API (bw bh sw sh pal.length)
+	
+		Banks2 vs Banks refactoring 
+	
+	0.4 
+	
 		Banks
 			- get multi-sprite
 			- set multi-sprite
@@ -286,13 +300,13 @@ Roadmap
 			- sspr
 		
 	
-	0.4 - Map & Map editor
+	0.5 - Map & Map editor
 	
 		Map
 		
 		Map Editor
 	
-	0.5 - Fonts & Text
+	0.6 - Fonts & Text
 	
 		Fonts
 		
@@ -302,11 +316,11 @@ Roadmap
 		- colision (for wordcloud)
 		
 	
-	0.6 - GIF Recorder
+	0.7 - GIF Recorder
 	
-	0.7 - Sound
+	0.8 - Sound
 		
-	0.8 - Music
+	0.9 - Music
 	
 	Shader-like-effects
 	

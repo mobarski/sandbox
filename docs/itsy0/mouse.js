@@ -6,8 +6,8 @@ function mouse() {
 
 function mousebtn(b) {
 	switch (b) {
-		case 1:  return [M1,MX,MY,M1X,M1Y,M1T]
-		case 2:  return [M2,MX,MY,M2X,M2Y,M2T]
+		case 1:  return [M1,MX,MY,M1X,M1Y]
+		case 2:  return [M2,MX,MY,M2X,M2Y]
 		default: return [0,MX,MY,-1,-1,-1]
 	}
 }

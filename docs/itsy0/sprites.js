@@ -15,7 +15,7 @@ function rspr(n,x,y,flip_x=0,flip_y=0,sx=null,sy=null) {
 			var _i = flip_y ? sh-1-i : i
 			var c = sget(n,_j,_i)
 			rectfill(x+j*sx, y+i*sy, sx, sy, c)
-			console.log(x+j*sx, y+i*sy, sx, sy, c)
+			//console.log(x+j*sx, y+i*sy, sx, sy, c)
 		}
 	}
 }

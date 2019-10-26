@@ -24,6 +24,7 @@ function new_bank(b,bw,bh,sw=8,sh=8,c=0) {
 		
 	}
 	fc.banks2[b] = bank
+	bank2(b)
 }
 
 function bank2(b=null) {
@@ -241,7 +242,7 @@ function bexport(n,w,h=0,fmt=null) {
 }
 
 function bimport(n,url) {
-	var imagedata = _image_to_imagedata(url)
+	var imagedata = (url)
 	var ar = _compact_imagedate_to_array(imagedata.data)
 	return _deserialize_bank(ar)
 }
