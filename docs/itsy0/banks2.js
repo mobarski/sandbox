@@ -78,17 +78,18 @@ function _serialize_bank2(n) {
 	var b = fc.banks2[n]
 	
 	// header
-	out.push(2) // ver
+	out.push(3) // ver
 	out.push(b.bw, b.bh, b.sw, b.sh) // geometry
 	
 	// data
 	for (var i in b.data) {
-		out.push(ser_spr(i))
+		out.push(ser_spr(i).slice(2)) // v3
 	}
 	
 	return out
 }
 
+// TODO
 function _deserialize_bank(raw) {
 	var ver = raw[0]
 	if (ver!=1) return null
