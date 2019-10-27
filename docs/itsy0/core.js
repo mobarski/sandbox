@@ -1,3 +1,24 @@
+// ---[ API ]-------------------------------------------------------------------
+
+function meta(key) {
+	switch (key) {
+		case 'sw': return fc.bank.sw
+		case 'sh': return fc.bank.sh
+		case 'bw': return fc.bank.bw
+		case 'bh': return fc.bank.bh
+		case 'freq': return fc.freq
+		case 'w': return fc.w
+		case 'h': return fc.h
+		case 'pal': return fc.pal.length
+		//case 'banks': return fc.banks
+		// case 'fps': return 
+		default: return null
+	}
+}
+
+
+// -----------------------------------------------------------------------------
+
 function _init() {}
 function _main() {}
 function _draw() {}

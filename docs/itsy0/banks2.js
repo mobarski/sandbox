@@ -55,11 +55,11 @@ function _spr_set(n,spr) {
 	fc.bank2.data[n] = spr
 }
 
-function _serialize_bank(n) {
+function _serialize_bank(n,pack=true) {
 	var out = []
 	var b = fc.banks2[n]
 	var data = _data_to_flat_array(b.data)
-	var max_c = max(...data)
+	var max_c = pack ? max(...data) : 63
 	
 	// header
 	out.push(1) // ver
@@ -155,85 +155,6 @@ function _array_to_data(ar,bw,bh,sw,sh) {
 }
 */
 
-function _array_to_packed_array(ar,max_v) {
-	var out = []
-	var n = 1
-	var k = 0
-	if (max_v==1) 				n=8
-	if (max_v>1 && max_v<4) 	n=4
-	if (max_v>3 && max_v<16) 	n=2
-	
-	var val = 0
-	var j
-	for (var i in ar) {
-		j = i%n
-		var v = max(0,min(ar[i],max_v))
-		val |= v
-		if (j==n-1) {
-			out.push(val)
-			val = 0
-		} else {
-			val <<= 8/n
-		}
-	}
-	if (j != n-1) {
-		out.push(val)
-	}
-	return out
-}
-
-function _packed_array_to_array(ar,max_v) {
-	var out = []
-	var m = 255
-	var n = 1
-	if (max_v==1) 				{n=8;m=1}
-	if (max_v>1 && max_v<4) 	{n=4;m=3}
-	if (max_v>3 && max_v<16) 	{n=2;m=15}
-
-	for (var i in ar) {
-		var batch = []
-		var v = ar[i]
-		for (var j=0; j<n; j++) {
-			var val = v&m
-			batch.unshift(val)
-			v >>= 8/n
-		}
-		for (var j in batch) {
-			out.push(batch[j])
-		}
-	}
-	return out
-}
-
-function _array_to_compact_imagedata(ar,w,h=null) {
-	var h = h || Math.ceil(ar.length / w / 3)
-	var img = ctx.createImageData(w,h)
-	img.data.fill(0)
-	var j = 0
-	for (var i in ar) {
-		var v = ar[i]
-		img.data[j] = v>0 ? 256-v : 0
-		j++
-		if (i%3==2) {
-			img.data[j] = 255
-			j++
-		}
-	}
-	return img
-}
-
-
-// MOVE TO STORAGE ???
-function _compact_imagedate_to_array(data) {
-	var ar = []
-	for (var i in data) {
-		if (i%4<3) {
-			var v = data[i]
-			ar.push(v>0 ? 256-v : 0)
-		}
-	}
-	return ar
-}
 
 function bexport(n,w,h=0,fmt=null) {
 	var ar = _serialize_bank(n)
@@ -241,6 +162,7 @@ function bexport(n,w,h=0,fmt=null) {
 	return _imagedata_to_url(im,fmt)
 }
 
+// TODO
 function bimport(n,url) {
 	var imagedata = (url)
 	var ar = _compact_imagedate_to_array(imagedata.data)

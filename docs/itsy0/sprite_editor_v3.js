@@ -1,5 +1,13 @@
 function _init() {
-	new_bank(1,5,5,8,8,1)
+	var b = load('spr_ed_v3')
+	//b = null
+	if (b) {
+		fc.banks2[1] = _deserialize_bank(b)
+		fc.bank2 = fc.banks2[1]
+		bank2(1)
+	} else {
+		new_bank(1,5,5,8,8,1)
+	}
 	picker = new ColorPicker(10,10,40,20,1,2)
 	viewer = new BankViewer(10,100,5,5,1)
 	editor = new SpriteEditor(300,100,30,30,1)
@@ -46,13 +54,22 @@ function SpriteEditor(x,y,sx,sy,m=0) {
 	this.react = function() {
 		var vs = viewer.selected
 		var c = picker.fg
+		var c0 = picker.bg
 		var b = fc.bank2
+		// LMB
 		var [s,n] = grid_click(1,x,y,sx+m,sy+m,b.sw,b.sh)
 		if (s>=2) {
 			var col = n % b.sw
 			var row = floor(n/b.sw)
 			sset(vs,col,row,c)
 		}
+		// RMB
+		var [s,n] = grid_click(2,x,y,sx+m,sy+m,b.sw,b.sh)
+		if (s>=2) {
+			var col = n % b.sw
+			var row = floor(n/b.sw)
+			sset(vs,col,row,c0)
+		}		
 	}
 }
 
@@ -86,6 +103,7 @@ function BankViewer(x,y,sx,sy,m=0) {
 		var [s,n] = grid_click(1,x,y,b.sw*sx+m,b.sh*sy+m,b.bw,b.bh)
 		if (s==3) {
 			this.selected = n
+			save('spr_ed_v3',_serialize_bank(1)) // XXX
 		}
 	}
 }

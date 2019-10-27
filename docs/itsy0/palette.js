@@ -17,6 +17,11 @@ function pal(c=null,c2=null) {
 	}
 }
 
+// TODO remap or not ???
+function rgb(c) {
+	return fc.pal.rgb[c]
+}
+
 // ----------------------------------------------------------------------------
 
 

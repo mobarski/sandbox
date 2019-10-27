@@ -83,6 +83,11 @@ Graphics
 		Without arguments: reset all remappings.
 		With one argument: reset remapping for this color.
 	
+	
+	rgb  c -> r g b
+	
+		Return r g b values of the specific color
+	
 
 	snapshot  [x y] [w h] [raw=false]
 	
@@ -244,6 +249,21 @@ Keyboard
 --------
 
 
+Other
+-----
+
+	meta  key
+	
+		Return metadata / configuration
+			w -> screen width
+			h -> screen height
+			sw -> sprite width
+			sh -> sprite height
+			freq -> main loop frequency
+			bw -> bank width (in sprites)
+			bh -> bank height (in sprites)
+			pal -> palette length
+			banks -> list of bank ids
 
 Roadmap
 =======
@@ -272,27 +292,34 @@ Roadmap
 			+ sscale
 
 	
-	0.3 - Sprite Editor & Fonts
+	0.3 - Sprite Editor & metadata
 
 		Sprite Editor MVP (single bank)
 			+ color picker
 			+ bank viewer / sprite selector
 			+ sprite editor
-			- toolbar (clear, save, load)
+			+ rmb -> bg color
+			+ auto save
+			+ auto load
+			- toolbar (clear, load, save)
 			- active colors
-			- save (auto versioning)
-			- load (auto versioning)
-			- configuration
+			- configuration / invocation
+			- documentation
+			? palette ops (next,prev,save,load)
 		
 		Metadata API (bw bh sw sh pal.length)
+			+ meta
 	
-		Banks2 vs Banks refactoring 
 	
 	0.4 
 	
+		Banks2 vs Banks refactoring 
+	
+		Encode/Decode/Export/Import refactoring
+	
 		Banks
-			- get multi-sprite
-			- set multi-sprite
+			? get multi-sprite
+			? set multi-sprite
 
 		Sprites
 			- bake
