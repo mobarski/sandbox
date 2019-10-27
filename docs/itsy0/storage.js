@@ -44,7 +44,7 @@ function _run_len_encode(data) {
 }
 
 function _run_len_decode(text) {
-	var out = ""
+	var out = []
 	for (var i=0; i<text.length;) {
 		var c = text[i]
 		if (c==RLCHAR) {
@@ -52,11 +52,11 @@ function _run_len_decode(text) {
 			var n = CODE.indexOf(c1)
 			var c2 = text[i+2]
 			for (var j=0; j<n; j++) {
-				out += c2
+				out.push(CODE.indexOf(c2))
 			}
 			i += 3
 		} else {
-			out += c
+			out.push(CODE.indexOf(c))
 			i += 1
 		}
 	}
@@ -66,14 +66,14 @@ function _run_len_decode(text) {
 // -----------------------------------------------------------------------------
 
 
-function _array_to_packed_array(ar,max_v,n1=8,n2=4,n3=2,n4=2) {
+function _array_to_packed_array(ar,max_v,n_bits=8) {
 	var out = []
 	var n = 1
-	var k = 0
-	if (max_v==1) 				n=n1
-	if (max_v>1 && max_v<4) 	n=n2
-	if (max_v>3 && max_v<8) 	n=n3
-	if (max_v>7 && max_v<16) 	n=n4
+	//var k = 0
+	if (max_v==1) 				n=floor(n_bits/1)
+	if (max_v>1 && max_v<4) 	n=floor(n_bits/2)
+	if (max_v>3 && max_v<8) 	n=floor(n_bits/3)
+	if (max_v>7 && max_v<16) 	n=floor(n_bits/4)
 	
 	var val = 0
 	var j
@@ -85,7 +85,7 @@ function _array_to_packed_array(ar,max_v,n1=8,n2=4,n3=2,n4=2) {
 			out.push(val)
 			val = 0
 		} else {
-			val <<= 8/n
+			val <<= n_bits/n
 		}
 	}
 	if (j != n-1) {
@@ -94,15 +94,15 @@ function _array_to_packed_array(ar,max_v,n1=8,n2=4,n3=2,n4=2) {
 	return out
 }
 
-function _packed_array_to_array(ar,max_v,n1=8,n2=4,n3=2,n4=2) {
+function _packed_array_to_array(ar,max_v,n_bits=8) {
 	var out = []
 	var b = 8
 	var m = 255
 	var n = 1
-	if (max_v==1) 				{b=1;n=n1;m=1}
-	if (max_v>1 && max_v<4) 	{b=2;n=n2;m=3}
-	if (max_v>3 && max_v<8) 	{b=3;n=n3;m=7}
-	if (max_v>7 && max_v<16) 	{b=4;n=n4;m=15}
+	if (max_v==1) 				{n=floor(n_bits/1);m=1}
+	if (max_v>1 && max_v<4) 	{n=floor(n_bits/2);m=3}
+	if (max_v>3 && max_v<8) 	{n=floor(n_bits/3);m=7}
+	if (max_v>7 && max_v<16) 	{n=floor(n_bits/4);m=15}
 
 	for (var i in ar) {
 		var batch = []
@@ -110,7 +110,7 @@ function _packed_array_to_array(ar,max_v,n1=8,n2=4,n3=2,n4=2) {
 		for (var j=0; j<n; j++) {
 			var val = v&m
 			batch.unshift(val)
-			v >>= 8/n
+			v >>= n_bits/n
 		}
 		for (var j in batch) {
 			out.push(batch[j])

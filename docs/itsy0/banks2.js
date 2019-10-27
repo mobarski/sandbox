@@ -73,6 +73,22 @@ function _serialize_bank(n,pack=true) {
 	return out
 }
 
+function _serialize_bank2(n) {
+	var out = []
+	var b = fc.banks2[n]
+	
+	// header
+	out.push(2) // ver
+	out.push(b.bw, b.bh, b.sw, b.sh) // geometry
+	
+	// data
+	for (var i in b.data) {
+		out.push(ser_spr(i))
+	}
+	
+	return out
+}
+
 function _deserialize_bank(raw) {
 	var ver = raw[0]
 	if (ver!=1) return null
@@ -156,20 +172,20 @@ function _array_to_data(ar,bw,bh,sw,sh) {
 */
 
 
-function bexport(n,w,h=0,fmt=null) {
-	var ar = _serialize_bank(n)
-	var im = _array_to_compact_imagedata(ar,w,h)
-	return _imagedata_to_url(im,fmt)
-}
+// function bexport(n,w,h=0,fmt=null) {
+	// var ar = _serialize_bank(n)
+	// var im = _array_to_compact_imagedata(ar,w,h)
+	// return _imagedata_to_url(im,fmt)
+// }
 
-// TODO
-function bimport(n,url) {
-	var imagedata = (url)
-	var ar = _compact_imagedate_to_array(imagedata.data)
-	return _deserialize_bank(ar)
-}
+// // TODO
+// function bimport(n,url) {
+	// var imagedata = (url)
+	// var ar = _compact_imagedate_to_array(imagedata.data)
+	// return _deserialize_bank(ar)
+// }
 
-// ---[ TEST ]---
+// ---[ TEST ]-----------------------------------------------------------------
 
 if (1) {
 	new_bank(1,2,2,2,2)
@@ -190,10 +206,6 @@ if (1) {
 	sset(3,1,0,41)
 	sset(3,0,1,42)
 	sset(3,1,1,43)
-	d=fc.bank2.data
-	a=_data_to_flat_array(d,2,2,2,2)
-	d2=_flat_array_to_data(a,2,2,2,2)
-	a2=_data_to_flat_array(d2,2,2,2,2)
 
 	new_bank(2,2,2,2,2)
 	bank2(2)
