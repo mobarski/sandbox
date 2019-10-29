@@ -1,9 +1,9 @@
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 ITSY v0.2
 Author: Maciej Obarski -- mobarski@gmail.com
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 API
 ===
@@ -24,7 +24,7 @@ Graphics
 	color  c [a]
 		
 		Sets the current color and alpha
-	
+
 	
 	cls  [c] [a]
 	
@@ -74,7 +74,7 @@ Graphics
 	
 	palette  p
 	
-		Change palette. Argument p can be palette slug from lospec.com or string of #rrggbb values
+		Change palette. Argument p can be palette slug from lospec.com or string of #rrggbb values (separated by anything)
 	
 	
 	pal  [c] [c2]
@@ -83,6 +83,17 @@ Graphics
 		Without arguments: reset all remappings.
 		With one argument: reset remapping for this color.
 	
+
+	-- TODO pget      x y  ->  c
+	-- TODO pget_rgb  x y  ->  r g b
+	
+		Get the color of the pixel at x,y	
+		
+		
+	pset  x y [c] [a]
+		
+		Set the pixel at x,y to color c
+		
 	
 	rgb  c -> r g b
 	
@@ -100,20 +111,30 @@ Graphics
 		
 		
 		
-Sprites
--------
+Sprites & Banks
+---------------
 
-	rspr  n x y [flip_x] [flip_y] [sx] [sy]
+	spr  n x y [flip_x] [flip_y] [sx] [sy]
 	
-		Draw raw sprite. Slow but doesn't require baking
+		Draw sprite.
+		-- Slower than xspr but doesn't require baking
 
 
 	sscale  sx sy
 	
 		Sets the default sprite scale
+			
+   
+	sget  n x y  ->  c
+	sset  n x y c
 		
+		Get or set the color (c) of sprite n from the current bank
 	
+
+	bank  b  ->  prev_b
 	
+		Switch active bank to b
+
 
 Text
 ----
@@ -187,25 +208,7 @@ Network
 	
 		Post data as JSON to url and pass the response to function f
 		
-
-Bank
-----
-
-	-- 16x10 spriteow 8x8 + metadane 1/2/3/4 pix na spr
-   
-	bank  b -> prev_b
-	
-		Switch active bank to b
-	
-   
-	sget  n x y -> c
-	sset  n x y c
 		
-		Get or set the color (c) of sprite n from the current bank
-	
-
-		
-
 Storage
 -------
 
@@ -219,7 +222,16 @@ Storage
 		Load value from local storage
 
 
+	list  [prefix]  ->  keys
+
+		List keys in local storage matching prefix
+		
+
+	-- TODO storage from web url / name in repo
+
 	-- TODO storage to/from image
+	
+	-- TODO run program from storage
 
 
 Mouse / Touch
@@ -240,9 +252,6 @@ Mouse / Touch
 			2 -> held
 			1 -> just released
 			0 -> up
-		
-		
-	grid_click -- TODO
 	
 	
 Keyboard
@@ -264,6 +273,7 @@ Other
 			bh -> bank height (in sprites)
 			pal -> palette length
 			banks -> list of bank ids
+
 
 Roadmap
 =======
@@ -288,7 +298,7 @@ Roadmap
 			+ bank import
 	
 		Sprites
-			+ rspr
+			+ spr
 			+ sscale
 
 	
@@ -301,31 +311,37 @@ Roadmap
 			+ rmb -> bg color
 			+ auto save
 			+ auto load
-			- toolbar (clear, load, save)
-			- active colors
+			+ active colors
+			? toolbar (clear, load, save) -> clear as MMB on viewer/editor
 			- configuration / invocation
 			- documentation
 			? palette ops (next,prev,save,load)
 		
 		Metadata API (bw bh sw sh pal.length)
 			+ meta
+			- refactor existing code
 	
 	
 	0.4 
-	
+		
+		Env
+			- passing parametrs via url
+		
 		Banks2 vs Banks refactoring 
 	
 		Encode/Decode/Export/Import refactoring
-	
-		Banks
-			? get multi-sprite
-			? set multi-sprite
+			+ ser_spr
+			+ deser_spr
+			+ encode_bank
+			- decode_bank
 
 		Sprites
 			- bake
-			- spr
+			- xspr
 			- sspr
 		
+		Sprite Editor Enhancements
+	
 	
 	0.5 - Map & Map editor
 	
@@ -352,17 +368,57 @@ Roadmap
 	Shader-like-effects
 	
 	Multitouch
-	
+
+	Banks
+		? get multi-sprite
+		? set multi-sprite
 	
 	
 -------------------------------------------------------------------------------
 
+Ideas
+=====
+
+
 Reference
 =========
 
+API
+---
+
 	pico8 -- https://www.lexaloffle.com/pico-8.php?page=manual
 	tic80 -- https://github.com/nesbox/TIC-80/wiki
-	
+
+
+Sprite editor
+-------------
+
+	TIC-80     -- https://img.itch.zone/aW1nLzY4NTU4My5wbmc=/original/ZKjBhW.png
+	LIKO-12    -- http://d2.alternativeto.net/dist/s/liko-12_541614_full.png?format=jpg&width=1600&height=1600&mode=min&upscale=false
+	PICO-8     -- https://cdn.thenewstack.io/media/2016/06/pico-8-judy-300x298.png
+	spritemate -- http://www.vintageisthenewold.com/wp-content/uploads/2017/10/31865103-30467f1e-b769-11e7-9f3e-c065b4413f82.png
+	spritesx   -- http://gatatac.org/attachments/download/282/spriteSX_v099b_01.png
+	seuck      -- http://www.c64-wiki.de/images/6/63/Seuck_Anim_SpriteEditor.gif
+	makecode   -- https://pxt.azureedge.net/blob/0a1700b6821e130b4796de267cff7a4d4321843d/static/blog/arcade/spriteEditor1.jpg
+	gamemaker  -- https://upload.wikimedia.org/wikipedia/en/d/d7/GK-GameMaker-Sprite-Editor.jpg
+  
+  
+Map editor
+----------
+
+	TIC-80  -- https://3.bp.blogspot.com/-67a9B-UiOMA/W67J8iP9YEI/AAAAAAAA43U/_WepL_9OMNkthAi6Ip-PowIJxLWVMWl-ACEwYBhgL/s1600/WS000001.JPG
+	LIKO-12 -- 
+	PICO-8  -- https://www.skrolli.fi/content/uploads/2016/07/skrolli.2016.1.net_.04karttaeditori.jpg
+
+
+Java Script
+-----------
+
+	lang     -- https://www.w3schools.com/js/DEFAULT.asp
+	graphics -- https://www.w3schools.com/graphics/default.asp
+	canvas   -- https://www.w3schools.com/graphics/canvas_reference.asp
+	svg      -- https://www.w3schools.com/graphics/svg_reference.asp
+
 	get / put imagedata
 		- https://www.w3schools.com/tags/canvas_getimagedata.asp
 		- https://www.w3schools.com/tags/canvas_putimagedata.asp
@@ -370,4 +426,3 @@ Reference
 	canvas double buffering
 		- https://stackoverflow.com/questions/2795269/does-html5-canvas-support-double-buffering
 		- http://devbutze.blogspot.com/2013/09/requestanimationframe-is-what-you-need.html
-

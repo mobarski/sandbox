@@ -1,11 +1,11 @@
 // TODO: jakis dodatkowy prefix
 
 function save(key,value) {
-	localStorage['itsy_'+key] = JSON.stringify(value)
+	localStorage[PREFIX+key] = JSON.stringify(value)
 }
 
 function load(key,_default=null) {
-	var val = localStorage['itsy_'+key]
+	var val = localStorage[PREFIX+key]
 	if (val) {
 		return JSON.parse(val)
 	} else {
@@ -13,8 +13,19 @@ function load(key,_default=null) {
 	}
 }
 
+function list(prefix='') {
+	out = []
+	for (var k in localStorage) {
+		if (k.startsWith(PREFIX+prefix)) {
+			out.push(k.slice(PREFIX.length))
+		}
+	}
+	return out
+}
+
 // -----------------------------------------------------------------------------
 
+const PREFIX = 'itsy_'
 const CODE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 const RLCHAR = '.'
 
@@ -138,8 +149,6 @@ function _array_to_compact_imagedata(ar,w,h=null) {
 	return img
 }
 
-
-// MOVE TO STORAGE ???
 function _compact_imagedate_to_array(data) {
 	var ar = []
 	for (var i in data) {

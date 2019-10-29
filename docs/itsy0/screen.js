@@ -30,6 +30,12 @@ function rect(x,y,w,h,c=null,a=1) {
 	ctx.strokeRect(x,y,w,h)
 }
 
+function pset(x,y,c=null,a=1) {
+	rectfill(x,y,1,1,c,a)
+}
+
+// TODO - pget
+
 // 3.3 x wolniej niz rect !!!
 function xrect(x,y,w,h,c,a=1,center=false) {
 	color(c,a)

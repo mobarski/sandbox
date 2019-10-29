@@ -4,7 +4,7 @@ function sscale(sx,sy) {
 	fc.ssy = sy
 }
 
-function rspr(n,x,y,flip_x=0,flip_y=0,sx=null,sy=null) {
+function spr(n,x,y,flip_x=0,flip_y=0,sx=null,sy=null) {
 	sx = sx || fc.ssx || 1
 	sy = sy || fc.ssy || 1
 	var sw = fc.bank2.sw

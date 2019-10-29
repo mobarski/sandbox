@@ -1,13 +1,6 @@
 function _init() {
-	var b = load('spr_ed_v3')
-	//b = null
-	if (b) {
-		fc.banks2[1] = _deserialize_bank(b)
-		fc.bank2 = fc.banks2[1]
-		bank2(1)
-	} else {
-		new_bank(1,5,5,8,8,1)
-	}
+	app_init('spr_ed_v3',5,5,8,8)
+
 	picker = new ColorPicker(10,10,40,20,1,2)
 	viewer = new BankViewer(10,100,5,5,1)
 	editor = new SpriteEditor(300,100,30,30,1)
@@ -17,6 +10,24 @@ function _main() {
 	picker.main()
 	viewer.main()
 	editor.main()
+}
+
+// -----------------------------------------------------------------------------
+
+function app_init(bank_name,bw,bh,sw,sh) {
+	var b = load(bank_name)
+	if (b) {
+		fc.banks2[1] = _deserialize_bank(b)
+		fc.bank2 = fc.banks2[1]
+		bank2(1)
+		// TODO check bw,bh,sw,sh of the loaded bank
+	} else {
+		if (bw && bh && sw && sh) {
+			new_bank(1,bw,bh,sw,sh,1)
+		} else {
+			// TODO HALT
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -48,6 +59,8 @@ function SpriteEditor(x,y,sx,sy,m=0) {
 				rectfill(x+col*(sx+m), y+row*(sy+m),sx,sy,c)
 			}
 		}
+		// border
+		rect(x-m, y-m, b.sw*(sx+m)+m, b.sh*(sy+m)+m, 1)
 		
 	}
 	
@@ -88,7 +101,7 @@ function BankViewer(x,y,sx,sy,m=0) {
 		var row = 0
 		var b = fc.bank2
 		for (var n in b.data) { // TODO api do pobrania tego
-			rspr(n,x+row*b.sw*sx+m*row, y+col*b.sh*sy+m*col, 0,0, sx, sy)
+			spr(n,x+row*b.sw*sx+m*row, y+col*b.sh*sy+m*col, 0,0, sx, sy)
 			if (n%b.bw==b.bw-1) {
 				row=0
 				col++
@@ -96,6 +109,8 @@ function BankViewer(x,y,sx,sy,m=0) {
 				row++
 			}
 		}
+		// border
+		rect(x-m, y-m, b.bw*(b.sw*sx+m)+m, b.bh*(b.sh*sy+m)+m, 1)
 	}
 	
 	this.react = function() {
@@ -138,6 +153,8 @@ function ColorPicker(x,y,w,h,m=0,ny=1) {
 		var row = 0
 		for (var c in fc.pal.rgb) { // TODO api do pobrania tego
 			rectfill(x+row*(w+m),y+col*(h+m),w,h,c)
+			if (c==this.fg) rectfill(x+row*(w+m)+4, y+col*(h+m)+4, 4, 4, 0)
+			if (c==this.bg) rectfill(x+row*(w+m)+4+w-12, y+col*(h+m)+4, 4, 4, 0)
 			if (c%per_row==per_row-1) {
 				row=0
 				col++
