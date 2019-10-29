@@ -12,6 +12,10 @@ from common import *
 
 class rsm:
 	def __init__(self, n, m):
+		"""
+			n -- number of neurons
+			m -- max number of synapses
+		"""
 		self.mem = {j:set() for j in range(n)} # memory
 		self.vol = {j:set() for j in range(n)} # volatile memory -- "Once is never. Twice is always."
 		self.free = {j:m for j in range(n)}
@@ -129,7 +133,7 @@ if __name__=="__main__":
 	t0=time()
 	mm = rsm(100,5)
 	clock('init',t0)
-	X = [random_vector(0,9,40) for _ in range(10)]
+	X = [random_vector(0,9,30) for _ in range(10)]
 	x = X[0]
 	t0 = time()
 	s = mm.score(x)
@@ -147,4 +151,8 @@ if __name__=="__main__":
 	size=mm.save(open('data/v1.model','wb'))
 	clock('save',t0)
 	print('size:',size//1024,'KB')
-	
+	#
+	print(X[0])
+	print(mm.mem)
+	print(mm.free)
+	print(mm.vol)
