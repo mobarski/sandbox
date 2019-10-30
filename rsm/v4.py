@@ -3,13 +3,16 @@ from common2 import *
 # NAME IDEA -> pooling/random/sparse/distributed hebbian/horde/crowd/fragment/sample memory
 
 # FEATURES:
-# + boost (TODO vol?)
-# + noise
+# + boost -- neurons with empty mem slots learn faster
+# + noise -- 
 # + dropout -- temporal disabling of neurons
-# + decay -- move from mem to vol
+# + decay -- remove from mem
 # + negatives -- learning to avoid detecting some patterns
-# - prune -- if input < mem perform fast decay
-# - fatigue -- winner has lower score for some time
+# + fatigue -- winner has lower score for some time
+# - prune -- if input < mem shrink mem ? (problem with m > input len)
+
+# IDEA:
+# - popularity -- most popular neuron is cloned / killed
 
 # NEXT VERSION:
 # - layers -- rsm stacking
@@ -27,21 +30,21 @@ from common2 import *
 # - distributed 
 
 class rsm:
-	def __init__(self,n,m,v):
+	def __init__(self,n,m):
 		"""Random Sample Memory
 			n -- number of neurons
-			m -- max hard connections per neuron (memory)
-			v -- max soft connections per neuron (volatile memory)
+			m -- max connections per neuron (memory)
 		"""
 		self.N = n
 		self.M = m
-		self.V = v
 		self.mem = {j:set() for j in range(n)}
-		self.vol = {j:set() for j in range(n)}
-		self.win = set() # NEW fatigue
+		self.win = {j:0 for j in range(n)}
+		self.tow = {j:-42000 for j in range(n)} # time of win
+		self.t = 0
 	
 	
-	def scores(self, input, boost=False, noise=False, dropout=0.0): # -> dict[i] -> scores
+	# TODO -- input length vs mem length
+	def scores(self, input, boost=False, noise=False, fatigue=0, dropout=0.0): # -> dict[i] -> scores
 		"""
 			input -- sparse binary features
 			boost -- improve scores based on number of unconnected synapses (TODO)
@@ -49,20 +52,24 @@ class rsm:
 			dropout -- temporal disabling of neurons
 		"""
 		mem = self.mem
-		vol = self.vol
+		tow = self.tow
 		N = self.N
 		M = self.M
-		V = self.V
+		t = self.t
 		scores = {}
 		for j in mem:
 			scores[j] = len(input & mem[j])
-			scores[j] += 1.0*len(input & vol[j])/(V+1)
 		if noise:
 			for j in mem:
-				scores[j] += 1.0/(V+2)*random()
+				scores[j] += 0.9*random()
 		if boost:
 			for j in mem:
 				scores[j] += 1+2*(M-len(mem[j])) if len(mem[j])<M else 0
+		if fatigue:
+			for j in mem:
+				dt = 1.0*min(fatigue,t - tow[j])
+				factor = dt / fatigue
+				scores[j] *= factor
 		if dropout:
 			k = int(round(float(dropout)*N))
 			for j in combinations(N,k):
@@ -70,81 +77,57 @@ class rsm:
 		return scores
 	
 	
-	def learn(self, input, k, decay=0.0, dropout=0.0, quick=False, negative=False):
+	def learn(self, input, k, decay=0.0, dropout=0.0, fatigue=0,
+	          negative=False, boost=True, noise=True):
 		"""
 			input -- sparse binary features
 			k -- number of winning neurons
 		"""
 		mem = self.mem
-		vol = self.vol
+		win = self.win
+		tow = self.tow
 		M = self.M
-		V = self.V
+		t = self.t
 		
-		# quick learning
-		if quick and not negative:
-			known_inputs = set()
-			for j in mem:
-				known_inputs.update(mem[j])
-				known_inputs.update(vol[j])
+		known_inputs = set()
+		for j in mem:
+			known_inputs.update(mem[j])
 		
-		
-		scores = self.scores(input, boost=True, noise=True, dropout=dropout)
+		scores = self.scores(input, boost=boost, noise=noise, dropout=dropout, fatigue=fatigue)
 		winners = top(k,scores)
 		for j in winners:
 			
 			# negative learning
 			if negative:
-				vol[j].difference_update(input)
 				mem[j].difference_update(input)
 				continue
 			
-			# quick learning
-			if quick:
-				if len(mem[j])==0:
-					unknown_inputs = input - known_inputs
-					mem[j].update(self.pick(unknown_inputs, M))
-					known_inputs.update(mem[j])
-			
-			confirmed = vol[j] & input # must be done before decay
+			# positive learning
+			unknown_inputs = input - known_inputs
+			mem[j].update(self.pick(unknown_inputs, M-len(mem[j])))
+			known_inputs.update(mem[j])
 
 			# handle decay
-			if decay and random()<decay:
+			if decay:
 				decay_candidates = mem[j] - input
 				if decay_candidates:
-					d_list = list(decay_candidates)
-					shuffle(d_list)
-					d = d_list[0]
-					mem[j].remove(d)
-					if V:
-						vol[j].add(d)
-
-			# handle confirmed
-			# -> add to mem, remove from vol
-			free_mem = self.M - len(mem[j])
-			mem_delta = self.pick(confirmed, free_mem)
-			mem[j].update(mem_delta)
-			vol[j].difference_update(mem_delta)
+					for d in decay_candidates:
+						if random() < decay:
+							mem[j].remove(d)
 			
-			# handle unknown
-			# -> add to vol
-			known = mem[j] & input
-			unknown = input - known - confirmed
-			not_comfirmed = vol[j] - confirmed
-			not_memorized = confirmed - set(mem_delta) # must stay in vol
-			new_vol = list(unknown) + list(not_comfirmed) # TODO: proportion
-			shuffle(new_vol)
-			new_vol = list(not_memorized) + new_vol
-			vol[j] = set(new_vol[:V])
+			# handle popularity
+			win[j] += 1
+			
+			# handle fatigue
+			tow[j] = t 
 
-		#print(scores) # XXX
-		
-		# TODO handle fatigue
+		self.t += 1
 
 	
 	@classmethod
 	def pick(self,v_set,n):
 		"select n random values from a set"
-		# TODO random
+		if n<=0: return []
 		out = list(v_set)
 		shuffle(out)
 		return out[:n]
@@ -184,10 +167,6 @@ class rsm:
 		out['m_empty']     = sum([1.0 if len(x)==0 else 0.0 for x in mem_v])/self.N
 		out['m_not_empty'] = sum([1.0 if len(x)>0 else 0.0 for x in mem_v])/self.N
 		out['m_full']      = sum([1.0 if len(x)==self.M else 0.0 for x in mem_v])/self.N
-		out['v_empty']     = sum([1.0 if len(x)==0 else 0.0 for x in vol_v])/self.N
-		out['v_not_empty'] = sum([1.0 if len(x)>0 else 0.0 for x in vol_v])/self.N
-		out['v_full']      = sum([1.0 if len(x)==self.V else 0.0 for x in vol_v])/self.N
 		out['m_avg']       = sum([1.0*len(x) for x in mem_v])/(self.N*self.M)
-		out['v_avg']       = sum([1.0*len(x) for x in vol_v])/(self.N*self.V)
 		return {k:v for k,v in out.items() if k.startswith(prefix)}
 
