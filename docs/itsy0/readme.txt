@@ -233,6 +233,15 @@ Storage
 	
 	-- TODO run program from storage
 
+	
+	-- TODO xxx  key  ->  value
+	
+		TODO Get configuration variable value
+
+
+	-- TODO xxx  key value
+	
+		TODO Set configuration variable value
 
 Mouse / Touch
 -------------
@@ -312,10 +321,9 @@ Roadmap
 			+ auto save
 			+ auto load
 			+ active colors
-			? toolbar (clear, load, save) -> clear as MMB on viewer/editor
+			- clear as MMB on viewer/editor
 			- configuration / invocation
 			- documentation
-			? palette ops (next,prev,save,load)
 		
 		Metadata API (bw bh sw sh pal.length)
 			+ meta
@@ -341,7 +349,10 @@ Roadmap
 			- sspr
 		
 		Sprite Editor Enhancements
-	
+			- drag & drop sprites -> LMB:swap, RMB:clone
+			- toolbar -> flip*2, mirror*4, shift*4, shadow
+			- palette ops (next,prev,save,load)
+			- sprite preview (variable zoom)
 	
 	0.5 - Map & Map editor
 	

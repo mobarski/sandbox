@@ -120,6 +120,11 @@ function BankViewer(x,y,sx,sy,m=0) {
 			this.selected = n
 			save('spr_ed_v3',_serialize_bank(1)) // XXX
 		}
+		var [s,n] = grid_click(3,x,y,b.sw*sx+m,b.sh*sy+m,b.bw,b.bh)
+		if (s==3) {
+			console.log(`clear ${n}`)
+			fc.bank2.data[n].fill(picker.bg)
+		}
 	}
 }
 
