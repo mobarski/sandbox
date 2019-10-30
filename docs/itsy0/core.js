@@ -2,10 +2,10 @@
 
 function meta(key) {
 	switch (key) {
-		case 'sw': return fc.bank.sw
-		case 'sh': return fc.bank.sh
-		case 'bw': return fc.bank.bw
-		case 'bh': return fc.bank.bh
+		case 'sw': return fc.bank2.sw
+		case 'sh': return fc.bank2.sh
+		case 'bw': return fc.bank2.bw
+		case 'bh': return fc.bank2.bh
 		case 'freq': return fc.freq
 		case 'w': return fc.w
 		case 'h': return fc.h

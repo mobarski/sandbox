@@ -23,6 +23,12 @@ function list(prefix='') {
 	return out
 }
 
+function env(key) {
+	var q = window.location.search
+	var m = q.match(RegExp('[?&]'+key+'=([^&]*)'))
+	return m ? m[1] : null
+}
+
 // -----------------------------------------------------------------------------
 
 const PREFIX = 'itsy_'

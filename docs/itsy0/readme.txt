@@ -234,9 +234,9 @@ Storage
 	-- TODO run program from storage
 
 	
-	-- TODO xxx  key  ->  value
+	env  key  ->  value
 	
-		TODO Get configuration variable value
+		Get configuration variable value
 
 
 	-- TODO xxx  key value
@@ -246,7 +246,7 @@ Storage
 Mouse / Touch
 -------------
 
-	mouse  ->  x y m1 m2
+	mouse  ->  x y m1 m2 m3
 	
 		...
 	
@@ -284,6 +284,74 @@ Other
 			banks -> list of bank ids
 
 
+Sprite Editor
+=============
+
+	Sprite Editor app consists of following components:
+	- Color Picker
+	- Bank Viewer
+	- Pixel Editor
+	- Editor Toolbar (TODO)
+	- Sprite Preview (TODO)
+	
+	
+	Bank Viewer
+		
+		LMB -- select sprite & save bank
+		MMB -- clear sprite
+		drag LMB -- swap sprites (TODO)
+		drag RMB -- copy sprites (TODO)
+
+
+	Pixel Editor
+
+		LMB -- set pixel to foreground color
+		RMB -- set pixel to background color
+		MMB -- flip - depending on position (TODO)
+		drag MMB -- mirror|move - depending on position (TODO)
+
+	Color Picker
+	
+		LMB -- select foreground color
+		RMB -- select background color
+		drag LMB -- recolor|swap in sprite (TODO)
+		drag RMB -- recolor|swap in bank (TODO)
+		drag MMB -- change palette (TODO)
+	
+	
+Parameters
+----------
+
+	bank
+		key -- bank key, default=spr_ed_v3
+		bw  -- bank width, default=5
+		bh  -- bank height, default=5
+		sw  -- sprite width, default=8
+		sh  -- sprite height, default=8
+	
+	color picker
+		cpx  -- position
+		cpy  -- position
+		cpw  -- tile width
+		cph  -- tile height
+		cpny -- rows
+		cpm  -- margin
+	
+	bank viewer
+		bvx  -- position
+		bvy  -- position
+		bvsx -- scale x
+		bvsy -- scale y
+		bvm  -- margin
+	
+	pixel editor
+		pex  -- position
+		pey  -- position
+		pesx -- scale x
+		pesy -- scale y
+		pem  -- margin
+	
+	
 Roadmap
 =======
 
@@ -321,19 +389,20 @@ Roadmap
 			+ auto save
 			+ auto load
 			+ active colors
-			- clear as MMB on viewer/editor
+			+ clear as MMB on viewer/editor
 			- configuration / invocation
-			- documentation
+			+ documentation
 		
 		Metadata API (bw bh sw sh pal.length)
 			+ meta
-			- refactor existing code
+			+ refactor existing code
 	
 	
 	0.4 
 		
 		Env
-			- passing parametrs via url
+			+ passing parametrs via url
+			- save/load env to/from local storage
 		
 		Banks2 vs Banks refactoring 
 	

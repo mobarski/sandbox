@@ -73,7 +73,7 @@ function _serialize_bank(n,pack=true) {
 	return out
 }
 
-function _serialize_bank2(n) {
+function _serialize_bank3(n) {
 	var out = []
 	var b = fc.banks2[n]
 	

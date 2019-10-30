@@ -1,7 +1,7 @@
 // ---[ API ]-------------------------------------------------------------------
 
 function mouse() {
-	return [MX,MY,M1,M2]
+	return [MX,MY,M1,M2,M3]
 }
 
 function mousebtn(b) {
