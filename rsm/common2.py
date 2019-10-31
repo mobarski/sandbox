@@ -3,6 +3,7 @@ import numpy as np
 from random import shuffle, random
 from time import time
 from heapq import nlargest
+from collections import deque
 
 import marshal
 from pprint import pprint
@@ -42,6 +43,13 @@ def clock(label,t0,t1=None):
 def avg(v):
 	"average"
 	return 1.0*sum(v)/len(v)
+
+def pick(v_set,n):
+	"select n random values from a set"
+	if n<=0: return []
+	out = list(v_set)
+	shuffle(out)
+	return out[:n]
 
 if __name__=="__main__":
 	x = random_vector(30,0,1)

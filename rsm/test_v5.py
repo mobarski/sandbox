@@ -1,4 +1,4 @@
-from v4 import *
+from v5 import *
 
 def test1():
 	X = [random_vector(100,0,1) for i in range(100)]
@@ -71,5 +71,21 @@ def test3():
 		s = nn.score(X1+X2,Y1+Y2,kind=kind)
 		print('{}\t-> {:.3f}'.format(kind,s))
 
+def test4():
+	X1 = [set(combinations(10000,50)) for i in range(10)]
+	X2 = [set(combinations(10000,50)) for i in range(10)]
+	Y1 = [1 for x in X1]
+	Y2 = [0 for x in X2]
+	# learning
+	nn = rsm(10,5,c=5,boost=True)
+	for i in range(10):
+		nn.fit(X1+X2,Y1+Y2)
+	# score
+	for kind in ['f1','acc','prec','sens','spec']:
+		s = nn.score(X1+X2,Y1+Y2,kind=kind)
+		print('{}\t-> {:.3f}'.format(kind,s))
+	print(nn.stats('win'))
+	print(nn.stats('ctx'))
+	print(nn.ctx)
 if __name__=="__main__":
-	test3()
+	test4()

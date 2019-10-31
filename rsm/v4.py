@@ -9,7 +9,8 @@ from common2 import *
 # + decay -- remove from mem
 # + negatives -- learning to avoid detecting some patterns
 # + fatigue -- winner has lower score for some time
-# - prune -- if input < mem shrink mem ? (problem with m > input len)
+# - sklearn -- compatibile api
+# - prune -- if input < mem shrink mem ? (problem with m > input len
 
 # IDEA:
 # - popularity -- most popular neuron is cloned / killed
@@ -42,6 +43,7 @@ class rsm:
 		self.tow = {j:-42000 for j in range(n)} # time of win
 		self.t = 0
 	
+	# ---[ core ]---------------------------------------------------------------
 	
 	# TODO -- input length vs mem length
 	def scores(self, input, boost=False, noise=False, fatigue=0, dropout=0.0): # -> dict[i] -> scores
@@ -104,7 +106,7 @@ class rsm:
 			
 			# positive learning
 			unknown_inputs = input - known_inputs
-			mem[j].update(self.pick(unknown_inputs, M-len(mem[j])))
+			mem[j].update(pick(unknown_inputs, M-len(mem[j])))
 			known_inputs.update(mem[j])
 
 			# handle decay
@@ -123,19 +125,72 @@ class rsm:
 
 		self.t += 1
 
-	
-	@classmethod
-	def pick(self,v_set,n):
-		"select n random values from a set"
-		if n<=0: return []
-		out = list(v_set)
-		shuffle(out)
-		return out[:n]
+
+	# ---[ auxiliary ]----------------------------------------------------------
+
+	def fit(self, X, Y):
+		for x,y in zip (X,Y):
+			negative = not y
+			self.learn(x,negative=negative)
+
+	def score_many(self, X, k=1, method=1):
+		out = []
+		for x in X:
+			s = self.score_one(x,k,method)
+			out += [s]
+		return out
 
 
-	# auxiliary
+	def transform(self, X, k=1, method=1, cutoff=0.5):
+		out = []
+		for s in self.score_many(X,k,method):
+			y = 1 if s>=cutoff else 0
+			out += [y]
+		return out
 
-	def score(self, input, k=1, method=1):
+
+	def confusion(self, X, Y, k=1, method=1, cutoff=0.5):
+		PY = self.transform(X,k,method,cutoff)
+		p = 0
+		n = 0
+		tp = 0
+		tn = 0
+		fp = 0
+		fn = 0
+		for y,py in zip(Y,PY):
+			if y:  p+=1
+			else:  n+=1
+			
+			if y:
+				if py: tp+=1
+				else:  fn+=1
+			else:
+				if py: fp+=1
+				else:  tn+=1
+		return dict(p=p,n=n,tp=tp,tn=tn,fp=fp,fn=fn)
+
+
+	def score(self, X, Y, k=1, method=1, cutoff=0.5, kind='acc'):
+		c = self.confusion(X,Y,k,method,cutoff)
+		p = float(c['p'])
+		n = float(c['n'])
+		tp = float(c['tp'])
+		tn = float(c['tn'])
+		fp = float(c['fp'])
+		fn = float(c['fn'])
+		if kind=='f1':
+			return (2*tp) / (2*tp + fp + fn)
+		elif kind=='acc':
+			return (tp+tn) / (p+n)
+		elif kind=='prec':
+			return tp / (tp + fp)
+		elif kind=='sens':
+			return tp / (tp + fn)
+		elif kind=='spec':
+			return tn / (tn + fp)
+
+
+	def score_one(self, input, k=1, method=1):
 		"aggregate scores to scalar"
 		scores = self.scores(input)
 		if method==0:
