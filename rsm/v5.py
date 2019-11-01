@@ -18,9 +18,17 @@ from common2 import *
 # - attention
 #   - https://towardsdatascience.com/the-fall-of-rnn-lstm-2d1594c74ce0
 #   - https://towardsdatascience.com/memory-attention-sequences-37456d271992
-#   IDEA:
+#   - https://medium.com/breathe-publication/neural-networks-building-blocks-a5c47bcd7c8d
+#   - https://distill.pub/2016/augmented-rnns/
+#   - http://akosiorek.github.io/ml/2017/10/14/visual-attention.html
+#   + IDEA:
 #     append activated neurons indexes to queue available as input
 #     queue ages at constant rate and drops oldest values
+#   - IDEA:
+#     each neuron has small memory of activation prior to winning
+#     this memory is compared to ctx and intersection added to score
+#     winner updated this memory
+#     OPTION: several memories with diferent time frames
 
 # NEXT VERSION:
 # - layers -- rsm stacking
@@ -55,10 +63,14 @@ class rsm:
 		cfg['fatigue'] = kw.get('fatigue',0)
 		cfg['boost'] = kw.get('boost',True)
 		cfg['noise'] = kw.get('noise',True)
+		cfg['sequence'] = kw.get('sequence',False)
 		cfg.update(kw)
 		self.cfg = cfg
 	
 	# ---[ core ]---------------------------------------------------------------
+	
+	def new_ctx(self):
+		self.ctx.clear()
 	
 	# TODO -- input length vs mem length
 	# TODO -- args from cfg
@@ -114,18 +126,22 @@ class rsm:
 		t = self.t
 		cfg = self.cfg
 		M = self.cfg['m']
+		N = self.cfg['n']
 		k = self.cfg['k']
 		decay = self.cfg['decay']
+		sequence = self.cfg['sequence']
 		
 		known_inputs = set()
 		for j in mem:
 			known_inputs.update(mem[j])
 		
-		# TODO add context to input and known_inputs
+		# context
+		input = input | set(ctx)
 		
-		#scores = self.scores(input, boost=boost, noise=noise, dropout=dropout, fatigue=fatigue)
+		# scoring
 		scores = self.scores(input, **cfg)
 		winners = top(k,scores)
+		
 		for j in winners:
 			
 			# negative learning
@@ -152,7 +168,11 @@ class rsm:
 			# handle fatigue
 			tow[j] = t 
 			
-			# handle context
+		# handle context
+		if sequence:
+			for i in range(len(ctx)):
+				ctx[i] -= N
+		for j in winners:
 			ctx.append(-j-1)
 			
 		self.t += 1
@@ -162,10 +182,17 @@ class rsm:
 
 	def fit(self, X, Y):
 		cfg = self.cfg
-		for x,y in zip (X,Y):
+		for x,y in zip(X,Y):
 			negative = not y
 			self.learn(x,negative=negative,**cfg)
 
+	def fit2(self, X1, X0):
+		cfg = self.cfg
+		# TODO - unbalanced
+		for x1,x0 in zip(X1,X0):
+			self.learn(x1,negative=False,**cfg)
+			self.learn(x0,negative=True,**cfg)
+		
 
 	def transform(self, X):
 		cutoff = self.cfg['cutoff']
@@ -189,17 +216,19 @@ class rsm:
 		tn = float(c['tn'])
 		fp = float(c['fp'])
 		fn = float(c['fn'])
-		if kind=='acc':
-			return (tp + tn) / (p + n)
-		elif kind=='f1':
-			return (2*tp) / (2*tp + fp + fn)
-		elif kind=='prec':
-			return tp / (tp + fp)
-		elif kind=='sens':
-			return tp / (tp + fn)
-		elif kind=='spec':
-			return tn / (tn + fp)
-
+		try:
+			if kind=='acc':
+				return (tp + tn) / (p + n)
+			elif kind=='f1':
+				return (2*tp) / (2*tp + fp + fn)
+			elif kind=='prec':
+				return tp / (tp + fp)
+			elif kind=='sens':
+				return tp / (tp + fn)
+			elif kind=='spec':
+				return tn / (tn + fp)
+		except ZeroDivisionError:
+			return float('nan')
 
 	def confusion(self, X, Y):
 		PY = self.transform(X)
@@ -230,6 +259,14 @@ class rsm:
 			out += [s]
 		return out
 
+	# TODO
+	def calibrate(self, X, Y, kind='f1'):
+		for i in range(1,20):
+			c = 0.05*i
+			self.set_params(cutoff=c)
+			s = self.score(X,Y,kind)
+			print'{} {:.3} -> {:.3}'.format(kind,c,s)
+		
 
 	def score_one(self, input):
 		"aggregate scores to scalar"
@@ -278,11 +315,11 @@ class rsm:
 			for b in win:
 				gini += abs(a-b)
 		gini = float(gini)/(2.0*len(win)*sum(win))
-		out['win_gini'] = gini
+		out['win_gini'] = round(gini,3)
 		# ctx
 		out['ctx_mem_sum'] = sum([1 if x<0 else 0 for m in mem_v for x in m])
-		out['ctx_mem_cnt'] = sum([max([1 if x<0 else 0 for x in m]) for m in mem_v])
-		out['ctx_mem_max'] = max([sum([1 if x<0 else 0 for x in m]) for m in mem_v])
+		out['ctx_mem_cnt'] = sum([max([1 if x<0 else 0 for x in m]) for m in mem_v if m])
+		out['ctx_mem_max'] = max([sum([1 if x<0 else 0 for x in m]) for m in mem_v if m])
 		#
 		return {k:v for k,v in out.items() if k.startswith(prefix)}
 
