@@ -40,12 +40,13 @@ from common2 import *
 # - distributed 
 
 class rsm:
-	def __init__(self,n,m,c=0,**kw):
+	def __init__(self,n,m,c=0,v=0,**kw):
 		"""Random Sample Memory
 			n -- number of neurons
 			m -- max connections per neuron (memory)
 		"""
 		self.mem = {j:set() for j in range(n)}
+		self.neg = {j:set() for j in range(n)}
 		self.win = {j:0 for j in range(n)}
 		self.tow = {j:-42000 for j in range(n)} # time of win
 		self.t = 0
@@ -55,6 +56,7 @@ class rsm:
 		cfg['n'] = n
 		cfg['m'] = m
 		cfg['c'] = c
+		cfg['v'] = v
 		cfg['k'] = kw.get('k',1)
 		cfg['method'] = kw.get('method',1)
 		cfg['cutoff'] = kw.get('cutoff',0.5)
@@ -83,6 +85,7 @@ class rsm:
 			dropout -- temporal disabling of neurons
 		"""
 		mem = self.mem
+		neg = self.neg
 		tow = self.tow
 		N = self.cfg['n']
 		M = self.cfg['m']
@@ -90,7 +93,7 @@ class rsm:
 		
 		scores = {}
 		for j in mem:
-			scores[j] = len(set(input) & mem[j])
+			scores[j] = len(set(input) & mem[j]) #- len(set(input) & neg[j])
 			
 		if raw:
 			return scores
@@ -115,6 +118,7 @@ class rsm:
 	
 	
 	def learn(self, input, negative=False, **ignore):
+		self.new_ctx()
 		for i in range(0,len(input),10):
 			self.learn_(set(input[i:i+10]),negative=negative)
 	
@@ -127,10 +131,12 @@ class rsm:
 		win = self.win
 		tow = self.tow
 		ctx = self.ctx
+		neg = self.neg
 		t = self.t
 		cfg = self.cfg
 		M = self.cfg['m']
 		N = self.cfg['n']
+		V = self.cfg['v']
 		k = self.cfg['k']
 		decay = self.cfg['decay']
 		sequence = self.cfg['sequence']
@@ -150,11 +156,15 @@ class rsm:
 			
 			# negative learning
 			if negative:
+				known = neg[j] & input
+				unknown = input - known
+				neg[j] = known
+				neg[j].update(pick(unknown, V-len(neg[j])))
 				mem[j].difference_update(input)
 				continue
 			
 			# positive learning
-			unknown_inputs = input - known_inputs
+			unknown_inputs = input - known_inputs - neg[j]
 			mem[j].update(pick(unknown_inputs, M-len(mem[j])))
 			known_inputs.update(mem[j])
 

@@ -3,10 +3,11 @@ import numpy as np
 from random import shuffle, random
 from time import time
 from heapq import nlargest
-from collections import deque
+from collections import deque,Counter
 
 import marshal
 from pprint import pprint
+import sys
 
 def combinations(n,k):
 	"return k from n combination"

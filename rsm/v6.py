@@ -48,6 +48,7 @@ class rsm:
 		self.mem = {j:set() for j in range(n)}
 		self.win = {j:0 for j in range(n)}
 		self.tow = {j:-42000 for j in range(n)} # time of win
+		self.cnt = {j:Counter() for j in range(n)}
 		self.t = 0
 		self.ctx = deque(maxlen=c) # context queue
 		# cfg
@@ -127,6 +128,7 @@ class rsm:
 		win = self.win
 		tow = self.tow
 		ctx = self.ctx
+		cnt = self.cnt
 		t = self.t
 		cfg = self.cfg
 		M = self.cfg['m']
@@ -134,51 +136,34 @@ class rsm:
 		k = self.cfg['k']
 		decay = self.cfg['decay']
 		sequence = self.cfg['sequence']
-		
-		known_inputs = set()
-		for j in mem:
-			known_inputs.update(mem[j])
-		
-		# context
-		input = input | set(ctx)
-		
+				
 		# scoring
 		scores = self.scores(input, **cfg)
-		winners = top(k,scores)
+		if negative:
+			winners = top(N/2,scores)
+		else:
+			winners = top(k,scores)
 		
 		for j in winners:
 			
 			# negative learning
 			if negative:
-				mem[j].difference_update(input)
+				cnt[j].subtract(input)
+				cnt[j] = Counter(dict(cnt[j].most_common(M)))
+				mem[j] = set(cnt[j].keys())
 				continue
 			
 			# positive learning
-			unknown_inputs = input - known_inputs
-			mem[j].update(pick(unknown_inputs, M-len(mem[j])))
-			known_inputs.update(mem[j])
-
-			# handle decay
-			if decay:
-				decay_candidates = mem[j] - input
-				if decay_candidates:
-					for d in decay_candidates:
-						if random() < decay:
-							mem[j].remove(d)
+			cnt[j].update(input)
+			cnt[j] = Counter(dict(cnt[j].most_common(M)))
+			mem[j] = set(cnt[j].keys())
 			
 			# handle popularity
 			win[j] += 1
 			
 			# handle fatigue
 			tow[j] = t 
-			
-		# handle context
-		if sequence:
-			for i in range(len(ctx)):
-				ctx[i] -= N
-		for j in winners:
-			ctx.append(-j-1)
-			
+						
 		self.t += 1
 
 
