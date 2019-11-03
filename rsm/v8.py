@@ -119,12 +119,15 @@ class rsm:
 		
 		# count winners
 		for j,s in winners:
+			if s==0 and y==0: continue
 			self.win[y][j] += 1
 	
 	# ---[ aux ]----------------------------------------------------------------
 	
 	def fit2(self, X1, X0):
 		# TODO unbalanced
+		shuffle(X1)
+		shuffle(X0)
 		for x1,x0 in zip(X1,X0):
 			self.learn(x1,1)
 			self.learn(x0,0)

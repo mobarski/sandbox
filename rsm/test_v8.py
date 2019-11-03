@@ -9,8 +9,8 @@ def test5():
 	XT = X1T+X2T
 	YT = Y1T+Y2T
 	# learning
-	nn = rsm(30,m=3,v=300,k=4,dropout=0.5)#,cutoff=0.1)
-	for i in range(50):
+	nn = rsm(50,m=20,v=20,k=2,dropout=0.1)#,cutoff=0.1)
+	for i in range(10):
 		nn.fit2(X1L, X2L)
 		# current score
 		kind = 'f1'
