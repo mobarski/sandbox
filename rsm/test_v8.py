@@ -5,7 +5,7 @@ seed(44)
 
 def test5():
 	from test_data import learn_test_split,t_by_i,tf
-	X1L,X2L,Y1L,Y2L,X1T,X2T,Y1T,Y2T = learn_test_split(160,30)
+	X1L,X2L,Y1L,Y2L,X1T,X2T,Y1T,Y2T = learn_test_split(160)
 	XL = X1L+X2L
 	YL = Y1L+Y2L
 	XT = X1T+X2T
@@ -14,13 +14,13 @@ def test5():
 	t0 = time()
 	# learning
 
-	nn = rsm(80, m=20, v=20, k=2,
+	nn = rsm(80, m=40, v=20, k=2, boost=2,
 			dropout=0.5, decay=0.005,
 			c=0, sequence=0,
 			awidth=10, astep=10,
 			cutoff=0.05)
 			
-	for i in range(10):
+	for i in range(4):
 		nn.fit2(X1L, X2L)
 		# current score
 		kind = 'f1'
@@ -40,6 +40,12 @@ def test5():
 		tvec = [t_by_i.get(i,i) for i in vec]
 		fvec = [tf.get(t,-1) for t in tvec]
 		print(tvec,fvec) 
+	print('\nCNT:')
+	for j in range(1,20):
+		vec = nn.cnt[j].most_common()
+		tvec = [(t_by_i.get(i,i),c) for i,c in vec]
+		fvec = [tf.get(t,-1) for t,c in tvec]
+		print(tvec,fvec)  
 	# score
 	print()
 	nn.set_params(k=1)
@@ -56,6 +62,7 @@ def test5():
 	#
 	print()
 	nn.calibrate(XT,YT)
+	#
 	
 if __name__=="__main__":
 	test5()

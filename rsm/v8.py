@@ -11,6 +11,8 @@ class rsm:
 		self.cfg.update(kw)
 		self.defaults()
 		self.ctx = deque(maxlen=self.cfg['c']) # context queue
+		# NEW
+		self.cnt = {j:Counter() for j in range(n)}
 	
 	def defaults(self):
 		def default(k,v):
@@ -48,11 +50,13 @@ class rsm:
 			dropout = self.cfg['dropout']
 		
 			if boost:
-				for j in mem:
-					# TODO boost=2 -> need at least 2 items to not allocate new
-					free = M-len(mem[j])
-					used = len(mem[j])
-					scores[j] += M+1 if used==0 else 0
+				max_s = max(scores.values())
+				if max_s <= boost: # NEW
+					for j in mem:
+						s = scores[j]
+						free = M-len(mem[j])
+						used = len(mem[j])
+						scores[j] += M+1 if used==0 else 0
 			
 			if noise:
 				for j in mem:
@@ -103,7 +107,8 @@ class rsm:
 				new_neg = list(common) + list(old_neg) + list(unknown)
 				new_neg = [x for x in new_neg if x>=0] # !!!
 				#print('negative',common,old_neg,unknown)
-				neg[j] = set(new_neg[:V])
+				new_neg = set(new_neg[:V]) 
+				neg[j] = new_neg
 		
 		# positive
 		else:
@@ -132,7 +137,13 @@ class rsm:
 				shuffle(old_mem)
 				shuffle(unknown)
 				new_mem = common + old_mem + unknown
-				mem[j] = set(new_mem[:M])
+				new_mem = set(new_mem[:M])
+				mem[j] = new_mem
+				# counter
+				if 1:
+					cnt = Counter({x:self.cnt[j][x] for x in new_mem})
+					cnt.update(new_mem & input)
+					self.cnt[j] = cnt
 		
 
 		# handle context
@@ -190,12 +201,21 @@ class rsm:
 		return score
 
 	# NO ATTENTION VERSION
-	def transform_one(self, x):
+	def transform_one_(self, x):
 		self.ctx.clear()
 		M = self.cfg['m']
 		scores = self.scores(x)
 		k = 6 # TODO
 		score = 1.0*sum(top(k,scores,values=True))/(M*k)
+		return score
+
+	# NO ATTENTION VERSION
+	def transform_one(self, x):
+		self.ctx.clear()
+		M = self.cfg['m']
+		scores = self.scores(x)
+		k = 3 # TODO
+		score = 1.0*sum([x if x>=2 else 0 for x in top(k,scores,values=True)])/(M*k)
 		return score
 
 	# TODO cutoff jako cfg
@@ -253,7 +273,7 @@ class rsm:
 		self.cfg.update(kw)
 
 if __name__=="__main__":
-	nn = rsm(5,m=5,v=5,k=2,boost=0)
+	nn = rsm(5,m=5,v=5,k=2,boost=1)
 	nn.learn([1,3,4,5],y=1)
 	nn.learn([1,5,7,9],y=0)
 	nn.learn([1,3,4,9],y=1)
