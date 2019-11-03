@@ -11,12 +11,10 @@ from random import shuffle,seed
 ROOT = 'data/reuters_transcribed-mld'
 ROOT = 'data/20_newsgroups'
 
-LIMIT = 100
+LIMIT = 200
 
 C1 = 'sci.space'
 C2 = 'rec.motorcycles'
-
-seed(44)
 
 def text_by_cls():
 	out = {}

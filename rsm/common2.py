@@ -1,6 +1,6 @@
 from __future__ import print_function
 import numpy as np
-from random import shuffle, random
+from random import shuffle, random,seed
 from time import time
 from heapq import nlargest
 from collections import deque,Counter

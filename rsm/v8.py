@@ -10,6 +10,7 @@ class rsm:
 		self.cfg = {'n':n}
 		self.cfg.update(kw)
 		self.defaults()
+		self.ctx = deque(maxlen=self.cfg['c']) # context queue
 	
 	def defaults(self):
 		def default(k,v):
@@ -17,11 +18,16 @@ class rsm:
 		default('m',5)
 		default('v',5)
 		default('k',1)
+		default('c',0)
 		default('k0',self.cfg['k'])
 		default('dropout',0.0)
 		default('boost',1)
 		default('noise',0.9)
 		default('decay',0.0)
+		default('sequence',False)
+		default('awidth',10)
+		default('astep',5)
+		default('cutoff',0.1)
 
 	# ---[ core ]---------------------------------------------------------------
 	
@@ -61,19 +67,27 @@ class rsm:
 	
 
 	def learn(self,input,y=1):
-		# TODO params
-		for i in range(0,len(input),10):
-			self.learn_part(input[i:i+4],y)
+		self.ctx.clear()
+		a_w = self.cfg['awidth']
+		a_o = self.cfg['astep']
+		for i in range(0,len(input),a_o):
+			self.learn_part(input[i:i+a_w],y)
 
 	
 	def learn_part(self,input,y=1):
 		input = set(input)
 		mem = self.mem
 		neg = self.neg
+		ctx = self.ctx
 		M = self.cfg['m']
+		C = self.cfg['c']
 		V = self.cfg['v']
 		K = self.cfg['k']
 		K0 = self.cfg['k0']
+		sequence = self.cfg['sequence']
+		
+		# context
+		input = input | set(ctx)
 		
 		# negative
 		if not y:
@@ -87,6 +101,7 @@ class rsm:
 				old_neg = neg[j] - common
 				# TODO mix old_neg and unknown
 				new_neg = list(common) + list(old_neg) + list(unknown)
+				new_neg = [x for x in new_neg if x>=0] # !!!
 				#print('negative',common,old_neg,unknown)
 				neg[j] = set(new_neg[:V])
 		
@@ -97,9 +112,11 @@ class rsm:
 			winners = top(K,scores,items=True)
 			for j,s in winners:
 
-				# handle decay - POOR RESULTS !!!
+				# handle decay
 				if decay and random()<decay:
 					decay_candidates = list(mem[j] - input)
+					#decay_candidates = mem[j]
+					decay_candidates = [x for x in decay_candidates if x>=0]
 					if decay_candidates:
 						shuffle(decay_candidates)
 						mem[j].remove(decay_candidates[0])
@@ -116,6 +133,18 @@ class rsm:
 				shuffle(unknown)
 				new_mem = common + old_mem + unknown
 				mem[j] = set(new_mem[:M])
+		
+
+		# handle context
+		if C:
+			N = self.cfg['n']
+			if sequence:
+				for i in range(len(ctx)):
+					ctx[i] -= N
+			for j,s in winners:
+				if s==0 and y==0: continue
+				ctx.append(-j-1)
+
 		
 		# count winners
 		for j,s in winners:
@@ -138,17 +167,42 @@ class rsm:
 		for x in X:
 			yield self.transform_one(x)
 	
-	# TODO attention -> sliding window
+	# attention -> sliding window
+	def transform_one___(self, x):
+		self.ctx.clear()
+		M = self.cfg['m']
+		a_w = self.cfg['awidth']
+		a_o = self.cfg['astep']
+		a_w = 20
+		a_o = 10
+		#
+		all_scores = []
+		for i in range(0,len(x),a_o):
+			scores = self.scores(x[i:i+a_w])
+			all_scores += [scores]
+		# agg scores and all_scores
+		scores_agg = []
+		k = 2 # TODO
+		for scores in all_scores:
+			score = 1.0*sum(top(k,scores,values=True))/(M*k)
+			scores_agg += [score]
+		score = sum([1.0 if s>=0.1 else 0 for s in scores_agg])/len(scores_agg)
+		return score
+
+	# NO ATTENTION VERSION
 	def transform_one(self, x):
+		self.ctx.clear()
 		M = self.cfg['m']
 		scores = self.scores(x)
-		k = 2 # TODO
+		k = 6 # TODO
 		score = 1.0*sum(top(k,scores,values=True))/(M*k)
 		return score
 
+	# TODO cutoff jako cfg
 	def score(self, X, Y, kind='acc'):
+		cutoff = self.cfg['cutoff']
 		PY = self.transform(X)
-		c = self.confusion(Y,PY,cutoff=0.1) # TODO cutoff
+		c = self.confusion(Y,PY,cutoff=cutoff)
 		p = float(c['p'])
 		n = float(c['n'])
 		tp = float(c['tp'])
@@ -187,6 +241,13 @@ class rsm:
 				if py>=cutoff: fp+=1
 				else:  tn+=1
 		return dict(p=p,n=n,tp=tp,tn=tn,fp=fp,fn=fn)
+
+	def calibrate(self, X, Y, kind='f1'):
+		for i in range(1,20):
+			c = 0.01*i
+			self.set_params(cutoff=c)
+			s = self.score(X,Y,kind)
+			print'{} {:.3} -> {:.3}'.format(kind,c,s)
 
 	def set_params(self,**kw):
 		self.cfg.update(kw)
