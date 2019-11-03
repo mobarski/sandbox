@@ -77,6 +77,14 @@ def learn_test_split(nl,nt=None):
 	Y2T = Y2[nl:][:nt]
 	return X1L,X2L,Y1L,Y2L,X1T,X2T,Y1T,Y2T
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+import biker
+biker_tokens = list(token_iter([biker.raw]))
+biker_vec = [i_by_t[t] for t in biker_tokens if tf.get(t,0)>=2]
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 if __name__=="__main__":
 	for k in vec_by_cls().keys():
 		print(k)
+	print(len(biker_vec))
+	print(biker_vec)

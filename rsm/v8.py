@@ -184,8 +184,6 @@ class rsm:
 		M = self.cfg['m']
 		a_w = self.cfg['awidth']
 		a_o = self.cfg['astep']
-		a_w = 20
-		a_o = 10
 		#
 		all_scores = []
 		for i in range(0,len(x),a_o):
@@ -263,7 +261,7 @@ class rsm:
 
 	def calibrate(self, X, Y, kind='f1'):
 		for i in range(1,20):
-			c = 0.01*i
+			c = 0.002*i
 			self.set_params(cutoff=c)
 			s = self.score(X,Y,kind)
 			print'{} {:.3} -> {:.3}'.format(kind,c,s)

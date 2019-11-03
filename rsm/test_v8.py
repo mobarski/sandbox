@@ -18,15 +18,15 @@ def test5():
 			dropout=0.5, decay=0.005,
 			c=20, sequence=1,
 			awidth=10, astep=10,
-			cutoff=0.02)
+			cutoff=0.01)
 			
-	for i in range(6):
+	for i in range(13):
 		nn.fit2(X1L, X2L)
 		# current score
 		kind = 'f1'
 		sl = nn.score(XL, YL, kind=kind)
 		st = nn.score(XT, YT, kind=kind)
-		print('{}  ->  {:.3f}   {:.3f}'.format(kind,sl,st)); sys.stdout.flush()
+		print('{}\t{}  ->  {:.3f}   {:.3f}'.format(i+1,kind,sl,st)); sys.stdout.flush()
 	#
 	print('\nMEM:')
 	for j in range(1,20):
@@ -63,6 +63,9 @@ def test5():
 	print()
 	nn.calibrate(XT,YT)
 	#
+	from test_data import biker_vec
+	print('biker mice from mars score:')
+	print(nn.transform_one_v3(biker_vec))
 	
 if __name__=="__main__":
 	test5()
