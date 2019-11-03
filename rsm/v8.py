@@ -176,10 +176,10 @@ class rsm:
 		return list(self._transform(X))
 	def _transform(self, X):
 		for x in X:
-			yield self.transform_one(x)
+			yield self.transform_one_v3(x)
 	
 	# attention -> sliding window
-	def transform_one___(self, x):
+	def transform_one_v3(self, x):
 		self.ctx.clear()
 		M = self.cfg['m']
 		a_w = self.cfg['awidth']
@@ -193,15 +193,14 @@ class rsm:
 			all_scores += [scores]
 		# agg scores and all_scores
 		scores_agg = []
-		k = 2 # TODO
 		for scores in all_scores:
-			score = 1.0*sum(top(k,scores,values=True))/(M*k)
+			score = 1.0*sum(top(1,scores,values=True))/M
 			scores_agg += [score]
-		score = sum([1.0 if s>=0.1 else 0 for s in scores_agg])/len(scores_agg)
+		score = sum(scores_agg)/len(scores_agg)
 		return score
 
 	# NO ATTENTION VERSION
-	def transform_one_(self, x):
+	def transform_one_v1(self, x):
 		self.ctx.clear()
 		M = self.cfg['m']
 		scores = self.scores(x)
@@ -210,7 +209,7 @@ class rsm:
 		return score
 
 	# NO ATTENTION VERSION
-	def transform_one(self, x):
+	def transform_one_v2(self, x):
 		self.ctx.clear()
 		M = self.cfg['m']
 		scores = self.scores(x)

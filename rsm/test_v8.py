@@ -16,11 +16,11 @@ def test5():
 
 	nn = rsm(80, m=40, v=20, k=2, boost=2,
 			dropout=0.5, decay=0.005,
-			c=0, sequence=0,
+			c=20, sequence=1,
 			awidth=10, astep=10,
-			cutoff=0.05)
+			cutoff=0.02)
 			
-	for i in range(4):
+	for i in range(6):
 		nn.fit2(X1L, X2L)
 		# current score
 		kind = 'f1'
