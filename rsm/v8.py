@@ -20,7 +20,8 @@ class rsm:
 		default('k0',self.cfg['k'])
 		default('dropout',0.0)
 		default('boost',1)
-		default('noise',1)
+		default('noise',0.9)
+		default('decay',0.0)
 
 	# ---[ core ]---------------------------------------------------------------
 	
@@ -35,6 +36,7 @@ class rsm:
 		
 		if learning:
 			M = self.cfg['m']
+			N = self.cfg['n']
 			boost = self.cfg['boost']
 			noise = self.cfg['noise']
 			dropout = self.cfg['dropout']
@@ -48,7 +50,7 @@ class rsm:
 			
 			if noise:
 				for j in mem:
-					scores[j] += 0.9*random()
+					scores[j] += noise*random()
 			
 			if dropout:
 				k = int(round(float(dropout)*N))
@@ -57,9 +59,14 @@ class rsm:
 		
 		return scores
 	
-	# TODO attention -> sliding window
-	
+
 	def learn(self,input,y=1):
+		# TODO params
+		for i in range(0,len(input),10):
+			self.learn_part(input[i:i+4],y)
+
+	
+	def learn_part(self,input,y=1):
 		input = set(input)
 		mem = self.mem
 		neg = self.neg
@@ -71,9 +78,9 @@ class rsm:
 		# negative
 		if not y:
 			scores = self.scores(input, learning=False)
-			winners = top(K0,scores)
-			for j in winners:
-			
+			winners = top(K0,scores,items=True)
+			for j,s in winners:
+				if not s: continue
 				common = input & mem[j]
 				unknown = input - neg[j] - mem[j]
 				mem[j].difference_update(common)
@@ -85,19 +92,33 @@ class rsm:
 		
 		# positive
 		else:
+			decay = self.cfg['decay']
 			scores = self.scores(input, learning=True)
-			winners = top(K,scores)
-			for j in winners:
-					
+			winners = top(K,scores,items=True)
+			for j,s in winners:
+
+				# handle decay - POOR RESULTS !!!
+				if decay and random()<decay:
+					decay_candidates = list(mem[j] - input)
+					if decay_candidates:
+						shuffle(decay_candidates)
+						mem[j].remove(decay_candidates[0])
+				
 				common = input & mem[j]
 				old_mem = mem[j] - common
 				unknown = input - mem[j] - neg[j]
 				# TODO mix old_mem and unknown
-				new_mem = list(common) + list(old_mem) + list(unknown)
+				common = list(common)
+				old_mem = list(old_mem)
+				unknown = list(unknown)
+				shuffle(common)
+				shuffle(old_mem)
+				shuffle(unknown)
+				new_mem = common + old_mem + unknown
 				mem[j] = set(new_mem[:M])
 		
 		# count winners
-		for j in winners:
+		for j,s in winners:
 			self.win[y][j] += 1
 	
 	# ---[ aux ]----------------------------------------------------------------
