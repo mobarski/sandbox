@@ -266,6 +266,15 @@ class rsm:
 			s = self.score(X,Y,kind)
 			print'{} {:.3} -> {:.3}'.format(kind,c,s)
 
+	def calibrate2(self, X1, Y1, X2, Y2, kind='f1'):
+		for i in range(1,20):
+			c = 0.002*i
+			self.set_params(cutoff=c)
+			s1 = self.score(X1,Y1,kind)
+			s2 = self.score(X2,Y2,kind)
+			print'{} {:.3} ->\t{:.3}\t{:.3}'.format(kind,c,s1,s2)
+
+
 	def set_params(self,**kw):
 		self.cfg.update(kw)
 

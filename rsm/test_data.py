@@ -11,7 +11,7 @@ from random import shuffle,seed
 ROOT = 'data/reuters_transcribed-mld'
 ROOT = 'data/20_newsgroups'
 
-LIMIT = 200
+LIMIT = 400
 
 C1 = 'sci.space'
 C2 = 'rec.motorcycles'

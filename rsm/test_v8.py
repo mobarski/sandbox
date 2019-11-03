@@ -14,7 +14,7 @@ def test5():
 	t0 = time()
 	# learning
 
-	nn = rsm(80, m=40, v=20, k=2, boost=2,
+	nn = rsm(80, m=40, v=20, k=2, boost=1,
 			dropout=0.5, decay=0.005,
 			c=20, sequence=1,
 			awidth=10, astep=10,
@@ -61,7 +61,7 @@ def test5():
 	print(time()-t0)
 	#
 	print()
-	nn.calibrate(XT,YT)
+	nn.calibrate2(XL,YL,XT,YT)
 	#
 	from test_data import biker_vec
 	print('biker mice from mars score:')
