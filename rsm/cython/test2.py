@@ -8,6 +8,8 @@ V = 20
 
 
 mem = np.random.randint(1,100,size=(N,M), dtype=np.int32)
+hit = np.zeros((N,M), dtype=np.int32)
+used = np.zeros(N, dtype=np.int32)
 mem=np.sort(mem,axis=1)
 neg = np.zeros((N,V), dtype=np.int32)
 out = np.zeros(N, dtype=np.int32)
@@ -29,3 +31,5 @@ dt=perf_counter()-t0
 print(1.0*R/dt)
 
 print(mem)
+
+
