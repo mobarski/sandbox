@@ -3,6 +3,7 @@ import numpy as np
 # random numbers - requires POSIX
 cdef extern from "stdlib.h":
 	double drand48()
+	long int lrand48()
 	void srand48(long int seedval)
 cdef extern from "time.h":
 	long int time(int)
@@ -148,8 +149,10 @@ def learn_positive(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 		shortlist[:] = 0
 		S = M-used[j]
 		if C<S: S=C
-		# TODO randomize (and sort) !!! <------------------------------------- 1
-		shortlist[:S] = candidates[:S]		
+		
+		# randomize
+		shuffle_trim_sort(candidates, shortlist, tmp1, C, S)
+		
 		print(j,'shortlist',S,list(shortlist)) # XXX
 		
 		# add candidates from shortlist to mem and move hit counters
@@ -270,9 +273,8 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 		# shortlist
 		S = V-U
 		if C<S: S=C
-		# TODO randomize and sort <------------------------------------------- 2
-		shortlist[:S] = candidates[:S]
-		print(j,'shortlist',S,list(shortlist))
+		shuffle_trim_sort(candidates, shortlist, tmp1, C, S)
+		print(j,'shortlist',S,list(shortlist)) # XXX
 		
 		
 		# TODO update 
@@ -339,6 +341,44 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 		
 		# update used cells
 		used[j] = xt
+
+
+cdef shuffle_trim_sort(int [:] data, int [:] out, int [:] tmp, int N, int K):
+	"sorted combination from sorted data - works in linear time"
+	cdef int i,j,x
+	out[:] = 0
+	
+	# just rewrite
+	if N==K:
+		out[:N] = data[:N]
+		return
+	
+	# prepare indexes
+	for i in range(N):
+		tmp[i] = i
+		
+	# shuffle indexes using https://en.wikipedia.org/wiki/Fisher-Yates_shuffle
+	for i in range(N-1):
+		j = i + lrand48()%(N-i)
+		tmp[j],tmp[i] = tmp[i],tmp[j] # swap
+	print('tmp after shuffle',list(tmp)) # XXX
+	
+	# sparse output
+	for i in range(K):
+		x = tmp[i]
+		out[x] = data[x]
+	print('output before compact',list(out)) # XXX
+	
+	# compact output
+	cdef int O = out.shape[0]
+	j = 0
+	for i in range(O):
+		if out[i]:
+			out[j] = out[i]
+			if i!=j:
+				out[i] = 0
+			j += 1
+	print('output after compact',list(out)) # XXX
 		
 
 # ------------------------------------------------------------------------------
