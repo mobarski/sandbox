@@ -1,6 +1,7 @@
 from common2 import *
 import v8
-from rsm import scores,learn_positive,learn_negative
+#from rsm import scores,learn_positive,learn_negative
+import rsm
 import numpy as np
 
 class rsmc(v8.rsm):
@@ -26,7 +27,11 @@ class rsmc(v8.rsm):
 		out = self.out
 		hit = self.hit
 		dropout = self.cfg['dropout']
-		s = scores(mem,input,out,hit,dropout)
+		a = np.array(input,dtype=np.int32)
+		a.sort()
+		activated = rsm.scores(mem,a,out,hit,dropout)
+		#activated = rsm.scores(mem,input,out,hit,dropout)
+		return dict(enumerate(out))
 	
 	def learn(self,input,y=1):
 		self.ctx.clear()
@@ -34,7 +39,9 @@ class rsmc(v8.rsm):
 		a_o = self.cfg['astep']
 		input_array = np.array(input, dtype=np.int32)
 		for i in range(0,len(input),a_o):
-			self.learn_part(input_array[i:i+a_w],y)
+			a = input_array[i:i+a_w]
+			a.sort()
+			self.learn_part(a,y)
 	
 	def learn_part(self,input,y=1):
 		mem = self.mem
@@ -45,9 +52,17 @@ class rsmc(v8.rsm):
 		dropout = self.cfg['dropout']
 		
 		if y:
-			learn_positive(mem,neg,input,out,used,hit,dropout=0.0,k=4)
+			rsm.learn_positive(mem,neg,input,out,used,hit,dropout=0.0,k=4)
 		else:
-			learn_negative(mem,neg,input,out,used,hit,dropout=0.0,k=4)
+			rsm.learn_negative(mem,neg,input,out,used,hit,dropout=0.0,k=4)
+
+	# cython vs python: 4.2 vs 44 -> ~11x speedup
+	def _transform(self, X):
+		for x in X:
+			a = np.array(x,dtype=np.int32)
+			a.sort()
+			yield self.transform_one_v1(a)
+			#yield self.transform_one_v1(x)
 
 # ------------------------------------------------------------------------------
 	

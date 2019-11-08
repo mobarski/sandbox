@@ -4,6 +4,7 @@ from random import shuffle, random,seed
 from time import time
 from heapq import nlargest
 from collections import deque,Counter
+from itertools import cycle
 
 import marshal
 from pprint import pprint

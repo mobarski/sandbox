@@ -1,5 +1,5 @@
 from __future__ import print_function
-from v8 import *
+from v9 import *
 
 seed(44)
 
@@ -11,10 +11,10 @@ def test5():
 	XT = X1T+X2T
 	YT = Y1T+Y2T
 	print(sum([len(x) for x in XL]))
-	ITERS = 13
+	ITERS = 11
 
 	nn = rsm(80, m=40, v=20, k=2, boost=1,
-			dropout=0.5, decay=0.005,
+			dropout=0.5, penalty=3,
 			c=20, sequence=1,
 			awidth=10, astep=10,
 			cutoff=0.01)

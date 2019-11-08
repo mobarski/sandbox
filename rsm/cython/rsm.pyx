@@ -32,7 +32,7 @@ def scores(int [:,:] mem, int [:] input, int [:] out, int [:,:] hit, float dropo
 	for j in range(N):
 		if dropout:
 			if drand48() < dropout:
-				print(j,'dropout') # XXX
+				#~#print(j,'dropout') # XXX
 				out[j]=-1
 				continue
 			
@@ -48,8 +48,6 @@ def scores(int [:,:] mem, int [:] input, int [:] out, int [:,:] hit, float dropo
 				break
 			elif input[x]==mem[j,i]:
 				score += 1
-				i += 1
-				x += 1
 				# register hits
 				if 1:
 					if 0: # TODO ktore podejscie wybrac ???
@@ -62,6 +60,9 @@ def scores(int [:,:] mem, int [:] input, int [:] out, int [:,:] hit, float dropo
 							hit[j,i] += 1
 						else:
 							hit[j,i] += 1
+				# 
+				i += 1
+				x += 1
 			elif input[x]<mem[j,i]:
 				x += 1
 			elif input[x]>mem[j,i]:
@@ -91,21 +92,21 @@ def learn_positive(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 	# scores
 	activated = scores(mem, input, out, hit, dropout)
 	if activated==0:
-		print('activated==0') # XXX
 		pass # TODO -- boosting <--------------------------------------------- 3
+		#~#print('activated==0') # XXX
 	
 	# select winners
 	winners = np.argsort(out)[::-1] # descending order of scores
-	print('winners',winners) # XXX
+	#~#print('winners',winners) # XXX
 	
 	# update winners
 	for i in range(k):
 		j = winners[i] # take highest score
-		print # XXX
-		print(j,'score',out[j]) # XXX
+		#~#print # XXX
+		#~#print(j,'score',out[j]) # XXX
 		# handle dropout -> omit neuron
 		if out[j]<0:
-			print(j,'dropout') # XXX
+			#~#print(j,'dropout') # XXX
 			continue
 		
 		# decay items with lowest hits
@@ -117,7 +118,7 @@ def learn_positive(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 		xi,xm,xv = 0,0,0
 		xc = 0
 		while True:
-			# print(j,'candidates loop',xi,xm,xv) # XXX
+			# #~#print(j,'candidates loop',xi,xm,xv) # XXX
 			if xi>=I: break
 			elif input[xi]==0: break
 			elif xv<V and input[xi]==neg[j,xv]:
@@ -139,10 +140,10 @@ def learn_positive(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 				xc += 1
 				xi += 1
 			else:
-				print('X_X') # XXX
+				#~#print('X_X') # XXX
 				return -1 # ERROR ???
 		C = xc
-		print(j,'candidates',C,list(candidates)) # XXX
+		#~#print(j,'candidates',C,list(candidates)) # XXX
 		
 		# shortlist candidates
 		if C==0: continue
@@ -153,14 +154,14 @@ def learn_positive(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 		# randomize
 		shuffle_trim_sort(candidates, shortlist, tmp1, C, S)
 		
-		print(j,'shortlist',S,list(shortlist)) # XXX
+		#~#print(j,'shortlist',S,list(shortlist)) # XXX
 		
 		# add candidates from shortlist to mem and move hit counters
 		tmp1[:] = 0
 		tmp2[:] = 0
 		xm,xs,xt = 0,0,0
 		while True:
-			#print(j,'update loop',xm,xs,xt) # XXX
+			##~#print(j,'update loop',xm,xs,xt) # XXX
 			if xt>=M: break
 			elif (xm>=M or mem[j,xm]==0) and (xs>=S or shortlist[xs]==0): break
 			elif xm>=M or mem[j,xm]==0:
@@ -184,12 +185,12 @@ def learn_positive(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 				xs += 1
 				xt += 1
 			else:
-				print('X_X') # XXX
+				#~#print('X_X') # XXX
 				return -1
 
 		mem[j,:] = tmp1[:]
 		hit[j,:] = tmp2[:]
-		#print(j,'after',list(mem[j,:])) # XXX
+		##~#print(j,'after',list(mem[j,:])) # XXX
 		
 		# update used
 		used[j] = xt
@@ -219,26 +220,27 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 	# scores
 	activated = scores(mem, input, out, hit, dropout)
 	if activated==0:
-		print('activated==0') # XXX
+		pass
+		#~#print('activated==0') # XXX
 
 	# select winners
 	winners = np.argsort(out)[::-1] # descending order of scores
-	print('winners',winners) # XXX
+	#~#print('winners',winners) # XXX
 	
 	# update winners
 	for i in range(k):
 		j = winners[i] # take highest score
-		print # XXX
-		print(j,'score',out[j]) # XXX
+		#~#print # XXX
+		#~#print(j,'score',out[j]) # XXX
 		
 		# handle dropout -> omit neuron
 		if out[j]<0:
-			print(j,'dropout') # XXX
+			#~#print(j,'dropout') # XXX
 			continue
 			
 		# handle no common words -> omit neuron ???
 		if out[j]==0:
-			print(j,'no common words') # XXX
+			#~#print(j,'no common words') # XXX
 			continue
 		
 				
@@ -264,24 +266,24 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 			elif input[xi] > neg[j,xv]:
 				xv += 1
 			else:
-				print('X_X') # ??? ERROR
+				#~#print('X_X') # ??? ERROR
 				return -1
 		U = xv
 		C = xc
-		print(j,'neg candidates',C,list(candidates),U) # XXX
+		#~#print(j,'neg candidates',C,list(candidates),U) # XXX
 			
 		# shortlist
 		S = V-U
 		if C<S: S=C
 		shuffle_trim_sort(candidates, shortlist, tmp1, C, S)
-		print(j,'shortlist',S,list(shortlist)) # XXX
+		#~#print(j,'shortlist',S,list(shortlist)) # XXX
 		
 		
 		# TODO update 
 		xs,xv,xt = 0,0,0
 		tmp3[:] = 0
 		while True:
-			print(j,'neg loop',xv,xi,xt) # XXX
+			#~#print(j,'neg loop',xv,xi,xt) # XXX
 			if xt>=V: break
 			elif (xs>=S or shortlist[xs]==0) and (xv>=V or neg[j,xv]==0): break
 			elif xs>=S or shortlist[xs]==0:
@@ -306,7 +308,7 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 				xv += 1
 				xs += 1
 		neg[j,:] = tmp3[:]
-		print(j,'negative',list(neg[j,:])) # XXX
+		#~#print(j,'negative',list(neg[j,:])) # XXX
 		
 		
 		# remove input from mem and remove hits
@@ -314,7 +316,7 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 		tmp1[:] = 0
 		tmp2[:] = 0
 		while True:
-			print(j,'negative mem loop',xm,xi,xt) # XXX
+			#~#print(j,'negative mem loop',xm,xi,xt) # XXX
 			if xm>=M or mem[j,xm]==0: break
 			elif xi>=I or input[xi]==0:
 				tmp1[xt] = mem[j,xm]
@@ -332,10 +334,10 @@ def learn_negative(int [:,:] mem, int [:,:] neg, int [:] input, int [:] out, int
 			elif mem[j,xm]>input[xi]:
 				xi += 1
 			else:
-				print('X_X') # XXX
+				#~#print('X_X') # XXX
 				return -1 # ERROR
-		print(j,'tmp1',list(tmp1)) # XXX
-		print(j,'tmp2',list(tmp2)) # XXX
+		#~#print(j,'tmp1',list(tmp1)) # XXX
+		#~#print(j,'tmp2',list(tmp2)) # XXX
 		mem[j,:] = tmp1[:]
 		hit[j,:] = tmp2[:]
 		
@@ -361,13 +363,13 @@ cdef shuffle_trim_sort(int [:] data, int [:] out, int [:] tmp, int N, int K):
 	for i in range(N-1):
 		j = i + lrand48()%(N-i)
 		tmp[j],tmp[i] = tmp[i],tmp[j] # swap
-	print('tmp after shuffle',list(tmp)) # XXX
+	#~#print('tmp after shuffle',list(tmp)) # XXX
 	
 	# sparse output
 	for i in range(K):
 		x = tmp[i]
 		out[x] = data[x]
-	print('output before compact',list(out)) # XXX
+	#~#print('output before compact',list(out)) # XXX
 	
 	# compact output
 	cdef int O = out.shape[0]
@@ -378,7 +380,7 @@ cdef shuffle_trim_sort(int [:] data, int [:] out, int [:] tmp, int N, int K):
 			if i!=j:
 				out[i] = 0
 			j += 1
-	print('output after compact',list(out)) # XXX
+	#~#print('output after compact',list(out)) # XXX
 		
 
 # ------------------------------------------------------------------------------

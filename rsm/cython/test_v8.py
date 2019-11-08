@@ -1,7 +1,10 @@
 from __future__ import print_function
-from v8 import *
+import v8
+import v8c
+from common2 import *
+import numpy as np
 
-seed(44)
+v8.seed(44)
 
 def test5():
 	from test_data import learn_test_split,t_by_i,tf
@@ -11,17 +14,18 @@ def test5():
 	XT = X1T+X2T
 	YT = Y1T+Y2T
 	print(sum([len(x) for x in XL]))
-	ITERS = 13
+	t0 = time()
+	# learning
 
-	nn = rsm(80, m=40, v=20, k=2, boost=1,
+	nn = v8c.rsmc(80, m=40, v=20, k=2, boost=1,
+	#nn = v8.rsm(80, m=40, v=20, k=2, boost=1,
 			dropout=0.5, decay=0.005,
 			c=20, sequence=1,
 			awidth=10, astep=10,
 			cutoff=0.01)
-
-	# learning
-	t0 = time()
-	for i in range(ITERS):
+	
+	t0=time()
+	for i in range(13):
 		nn.fit2(X1L, X2L)
 		# current score
 		kind = 'f1'
@@ -29,7 +33,6 @@ def test5():
 		st = nn.score(XT, YT, kind=kind)
 		print('{}\t{}  ->  {:.3f}   {:.3f}'.format(i+1,kind,sl,st)); sys.stdout.flush()
 	print('DONE in {:.2f}s'.format(time()-t0))
-	
 	#
 	print('\nMEM:')
 	for j in range(1,20):
