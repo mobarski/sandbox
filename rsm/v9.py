@@ -56,7 +56,7 @@ class rsm:
 						s = scores[j]
 						free = M-len(mem[j])
 						used = len(mem[j])
-						scores[j] += M+1 if used==0 else 0
+						scores[j] += M+1 if used==0 else 0 # TODO variants
 			
 			if noise:
 				for j in mem:
