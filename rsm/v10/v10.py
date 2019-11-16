@@ -1,6 +1,6 @@
 from common2 import *
 
-# TODO - prog aktywacji >= n wejsc
+# DONE - prog aktywacji >= n wejsc
 # TODO - boost sprawdzic i poprawic
 
 # TODO - boost na podstawie win[0] win[1]
@@ -30,13 +30,15 @@ class rsm:
 		default('c',0)
 		default('k0',self.cfg['k'])
 		default('dropout',0.0)
-		default('boost',1)
+		default('boost_free',0.9)
+		default('boost_rare',0.9)
 		default('noise',0.9)
 		default('sequence',False)
 		default('awidth',10)
 		default('astep',5)
 		default('cutoff',0.1)
 		default('penalty',3)
+		default('activation',2)
 
 	# ---[ core ]---------------------------------------------------------------
 	
@@ -45,25 +47,36 @@ class rsm:
 		input = set(input)
 		scores = {}
 		mem = self.mem
+		activation = self.cfg['activation']
 		
 		for j in mem:
-			scores[j] = len(mem[j] & input)
+			s = len(mem[j] & input)
+			scores[j] = 0 if s<activation else s
 		
 		if learning:
 			M = self.cfg['m']
 			N = self.cfg['n']
-			boost = self.cfg['boost']
+			boost_free = self.cfg['boost_free']
+			boost_rare = self.cfg['boost_rare']
 			noise = self.cfg['noise']
 			dropout = self.cfg['dropout']
 		
-			if boost:
-				max_s = max(scores.values())
-				if max_s <= boost: # NEW
+			if boost_free:
+				for j in mem:
+					free = M-len(mem[j])
+					used = len(mem[j])
+					# variants
+					if 0:
+						scores[j] += M+1 if used==0 else 0 # boost empty
+					if 1:
+						scores[j] += boost_free*free/M
+			
+			if boost_rare:
+				win = self.win[1]
+				max_win = max(win.values())
+				if max_win:
 					for j in mem:
-						s = scores[j]
-						free = M-len(mem[j])
-						used = len(mem[j])
-						scores[j] += M+1 if used==0 else 0 # TODO variants
+						scores[j] += boost_rare * (max_win - win[j])/max_win
 			
 			if noise:
 				for j in mem:

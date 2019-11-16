@@ -46,6 +46,14 @@ def avg(v):
 	"average"
 	return 1.0*sum(v)/len(v)
 
+def gini(data):
+	"gini index"
+	g = 0
+	for a in data:
+		for b in data:
+			g += abs(a-b)
+	return float(g)/(2.0*len(data)*sum(data))
+
 def pick(v_set,n):
 	"select n random values from a set"
 	if n<=0: return []

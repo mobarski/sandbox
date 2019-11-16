@@ -5,8 +5,8 @@ seed(44)
 ITERS = 11
 	
 def test5():
-	N1L = 390; N1T=10; C1 = 'comp.sys.mac.hardware'
-	N2L = 390; N2T=10; C2 = 'comp.windows.x'
+	N1L = 380; N1T=20; C1 = 'comp.sys.mac.hardware'
+	N2L = 380; N2T=20; C2 = 'comp.windows.x'
 
 	# INIT
 	
@@ -41,11 +41,13 @@ def test5():
 
 	# MODEL
 
-	nn = rsm(n=80, m=40, v=80, k=2, boost=1,
+	nn = rsm(n=80, m=80, v=80, k=2,
+			boost_free=0.0, boost_rare=0.9, noise=0.9,
 			dropout=0.5, penalty=3,
 			c=0, sequence=0,
 			awidth=10, astep=10,
-			cutoff=0.016)
+			cutoff=0.01,
+			activation=2)
 
 	# LEARNING
 	t0 = time()
@@ -85,14 +87,16 @@ def test5():
 		print('{}\t-> {:.3f}'.format(kind,s))
 	# win
 	print('\nWIN:')
-	print(nn.win[1])
-	print(nn.win[0])
+	print(gini(nn.win[1].values()),nn.win[1])
+	print(gini(nn.win[0].values()),nn.win[0])
 	#
 	print()
 	print(time()-t0)
 	#
 	print()
+	t0=time()
 	nn.calibrate2(XL,YL,XT,YT)
-	
+	print('\nCALIBRATION done in {:.2f}s'.format(time()-t0))
+
 if __name__=="__main__":
 	test5()
