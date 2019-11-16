@@ -1,9 +1,9 @@
 from common2 import *
 
 # DONE - prog aktywacji >= n wejsc
-# TODO - boost sprawdzic i poprawic
+# DONE - boost sprawdzic i poprawic
+# DONE - boost na podstawie win[1]
 
-# TODO - boost na podstawie win[0] win[1]
 # TODO - prog aktywacji >= n slow (nie poprzednich stanow)
 # TODO - ctx rosnie tylko gdy dobre dopasowanie
 
