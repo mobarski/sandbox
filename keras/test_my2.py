@@ -1,15 +1,17 @@
 from lstm_my2 import setup_encoder,get_xy,get_model,sample,generate,load_model
+from time import time
+t0=time()
 
 text = """
 ala ma kota
 a kot ma ale
 """
-text = open('gh3v2.txt').read(2048).lower()
+text = open('gh3v2.txt').read().lower()
 
 INPUTS = 20
 setup_encoder(text,INPUTS)
 
-if 0:
+if 1:
 	LSTM_UNITS = 30
 	EPOCHS = 40
 	BATCH = 100
@@ -22,4 +24,8 @@ if 0:
 else:
 	model = load_model('lstm_my2.h5')
 
+t1=time()
 print(generate(model,' '*INPUTS,2048,0.5))
+t2=time()
+print(t1-t0)
+print(t2-t0)
