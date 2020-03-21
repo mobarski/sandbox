@@ -1,116 +1,83 @@
-import requests
-import re
-from urllib.parse import unquote
-from zlib import crc32
-from time import sleep
+import sqlite3
 
-url_list = {
-'DM':'https://pl.wikisource.org/wiki/Kolekcja:Literatura_dla_dzieci_i_młodzieży',
-'PH':'https://pl.wikisource.org/wiki/Kolekcja:Powieści_historyczne',
-'PM':'https://pl.wikisource.org/wiki/Kolekcja:Polska_powieść_międzywojenna',
-'SC':'https://pl.wikisource.org/wiki/Kolekcja:W_poszukiwaniu_straconego_czasu',
-'US':'https://pl.wikisource.org/wiki/Kolekcja:Literatura_amerykańska',
-'BB':'https://pl.wikisource.org/wiki/Kolekcja:Biblioteka_Boya',
-'CP':'https://pl.wikisource.org/wiki/Kolekcja:Cykle_powieściowe',
-'DE':'https://pl.wikisource.org/wiki/Kolekcja:Literatura_niemiecka',
-'RU':'https://pl.wikisource.org/wiki/Kolekcja:Literatura_rosyjska',
-'SM':'https://pl.wikisource.org/wiki/Kolekcja:Skarbnica_Milusińskich',
-'FR':'https://pl.wikisource.org/wiki/Kolekcja:Literatura_francuska',
-'KK':'https://pl.wikisource.org/wiki/Kolekcja:Książki_kulinarne',
-'UK':'https://pl.wikisource.org/wiki/Kolekcja:Literatura_angielska',
-'FN':'https://pl.wikisource.org/wiki/Kolekcja:Fantastyka_naukowa',
-}
+# TODO: https://archive.org/download/plwiki-20190201 -> 1.6G bz2
 
-def get_title(url):
-	return url.split('/wiki/')[-1]
+# ---[ INIT ]-------------------------------------------------------------------
 
-def get_local_urls(url):
-	r = requests.get(url)
-	text = r.text
-	links = sorted(set(re.findall('/wiki/[^"]+',text)))
-	out = []
-	for x in links:
-		if re.findall(':|cookie|privacy|warunki_korzystania',x.lower()): continue
-		#x = unquote(x)
-		out += [x]
-	return out
+db = sqlite3.connect('wikisource.sqlite')
+db.execute("""
+	create table if not exists main (
+		key primary key
+		,col
+		,pos
+		,title
+		,col_title
+		,url
+		,text
+		,aux
+	)
+""")
 
-def clean(text):
-	text = re.sub('<[^>]+>','',text) # html
-	text = re.sub('&#\d+;','',text) # ???
-	text = re.sub('\[\d+\]','',text) # przypisy w tekscie
-	text = re.sub('(?m)^↑.*$','',text) # przypisy na koncu
-	if 'nie ma jeszcze tekstu o tytule' in text and 'pl.wikisource.org' in text:
-		return ''
-	else:
-		return text
+# TODO freq.db -> key,col,token_id,token,freq
+# TODO remap freq
+# TODO merge freq
 
-def get_raw_text(local_url,method=''):
-	print('.',end=''); sys.stdout.flush()
-	url = 'https://pl.wikisource.org{}{}'.format(local_url,method)
-	#print('XXX getting url: {}'.format(url))
-	r = requests.get(url)
-	text = r.text
-	#text = re.split("prp-pages-output[^>]+>",text)[-1]
-	text = re.split("prp-pages-output[^>]+>",text,1)[-1]
-	text = re.split("<[^>]+Template_law",text)[0]
-	return text
+# ---[ READ ]-------------------------------------------------------------------
 
+def get_collections():
+	results = db.execute('select distinct col,col_title from main').fetchall()
+	return dict(results)
 
-def get_part_urls(raw):
-	out = []
-	for x in re.findall('/wiki/[^/":]+/[^"]+',raw):
-		if x.count('/')>3: continue
-		if x in out: continue
-		out.append(x)
-	return out
+def get_titles(col):
+	results = db.execute('select key,title from main where col==?',[col]).fetchall()
+	return dict(results)
 
-# ---
+def get_text(key):
+	return db.execute('select text from main where key==?',[key]).fetchone()[0]
+
+# ---[ WRITE ]------------------------------------------------------------------
+
+def add_text(col,pos,title,col_title,url,text,aux=''):
+	key = '{}{}'.format(col,pos)
+	db.execute('insert or replace into main values (?,?,?,?,?,?,?,?)',[key,col,pos,title,col_title,url,text,aux])
+	db.commit()
+
+# ---[ MAIN ]-------------------------------------------------------------------
 
 if __name__=="__main__":
-	import storage
-	import sys
-	for col,url in url_list.items():
-		#if col not in ['SM']: continue
-		for i,local_url in enumerate(get_local_urls(url)):
-			title = get_title(local_url)
-			pos = i+1
-			#if pos not in [75]: continue
-			key = '{}{}'.format(col,pos)
-			print(key,col,pos,unquote(title),end=' ')
-			sys.stdout.flush()
-			method_list = ['/całość','/Całość','']
-			if col in ['SM']:
-				method_list = ['']
+	if 0:
+		#for x in db.execute('select key,title,length(text),length(aux) from main where key=="DM9"'):
+		for x in db.execute('select count(distinct(title)) from main'):
+			print(x)
+	if 0:
+		x = db.execute('select aux from main where key=="DM9"').fetchone()[0]
+		print(x[:10000])
+	if 0:
+		x = get_text('KK1')
+		print(x[:1000])
+	if 0:
+		x = get_collections()
+		for k,t in x.items():
+			print(k,'=>',t)
+	if 0:
+		x = get_titles('SC')
+		for k,t in x.items():
+			print(k,'->',t)
 			
-			# CRAWL
-			for method in method_list:
-				raw = get_raw_text(local_url,method)
-				text = clean(raw)
-				if len(text)>0:
-					break
-			
-			# AUX
-			part_urls = get_part_urls(raw)
-			aux = '\n'.join([unquote(x) for x in part_urls])
-			
-			# PARTS
-			if len(text)<30000 and ('/Tom_' in aux or '/01' in aux or '/Część' in aux or len(aux)>len(text)):
-				print(len(text),end=' ')
-				method_list = ['']
-				if '/Tom_' in aux or '/Część' in aux:
-					method_list = ['/całość','/Całość','']
-				parts = []
-				for part_url in part_urls:
-					for method in method_list:
-						raw = get_raw_text(part_url, method)
-						text = clean(raw)
-						if len(text)>0:
-							break
-					parts.append(text)
-				text = '----------\n\n'.join(parts)
-			print('',len(text));sys.stdout.flush()
-			
-			# STORE
-			storage.add_text(col,pos,unquote(title),text,aux)
-		print()
+	if 1:
+		import re
+		from collections import Counter
+		text = get_text('KK1')
+		tokens = re.findall("(?u)[\w]+|[.!?]+|\n",text)
+		freq = Counter(tokens)
+		print(len(text),len(tokens),len(freq))
+		t2i = {t:i+1 for i,(t,f) in enumerate(freq.most_common())}
+		for x in freq.most_common(10):
+			print(x,t2i[x[0]])
+		vec = [t2i.get(t,0) for t in tokens]
+		print(vec[:10])
+		print(tokens[:10])
+		
+		
+
+
