@@ -50,6 +50,11 @@ def raw_to_records(path):
 					rec['figures'] += [r['text']]
 			yield rec
 
+def all_records(limit=None):
+	from itertools import islice
+	for path in islice(list_data_files(),limit):
+		yield from raw_to_records(path)
+
 # ---[ sentences ]--------------------------------------------------------------
 
 from text import text_to_sentences, text_to_tokens
@@ -63,11 +68,20 @@ def rec_to_sentences(rec):
 			sentences = text_to_sentences(text)
 			yield from sentences			
 
+def rec_to_tokens(rec):
+	tokens = []
+	sentences = rec_to_sentences(rec)
+	for text in sentences:
+		tokens.extend(text_to_tokens(text))
+	return tokens
+
+def all_records_as_tokens(limit=None):
+	for rec in all_records(limit):
+		yield rec_to_tokens(rec)
+
 def all_sentences_as_text(limit=None):
-	from itertools import islice
-	for path in islice(list_data_files(),limit):
-		for rec in raw_to_records(path):
-			yield from rec_to_sentences(rec)
+	for rec in all_records(limit):
+		yield from rec_to_sentences(rec)
 
 def all_sentences_as_tokens(limit=None):
 	for text_sen in all_sentences_as_text(limit):
