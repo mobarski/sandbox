@@ -57,6 +57,8 @@ def all_records(limit=None):
 
 # ---[ sentences ]--------------------------------------------------------------
 
+# TODO - refactor do model_data.py ???
+
 from text import text_to_sentences, text_to_tokens
 
 def rec_to_sentences(rec):

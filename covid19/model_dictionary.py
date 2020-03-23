@@ -1,15 +1,14 @@
 from gensim.corpora.dictionary import Dictionary
 
-from data import all_records_as_tokens
 from util_time import timed
+
+# ---[ MODEL ]------------------------------------------------------------------
 
 class HoracyDictionary():
 	
 	@timed
-	def init_dictionary(self, limit=None):
-		records = all_records_as_tokens(limit)
-		phrased = self.phraser[records]
-		self.dictionary = Dictionary(phrased)
+	def init_dictionary(self):
+		self.dictionary = Dictionary(self.phrased)
 	
 	@timed
 	def save_dictionary(self):
@@ -19,10 +18,15 @@ class HoracyDictionary():
 	def load_dictionary(self):
 		self.dictionary = Dictionary.load('model/dictionary.pkl')
 
+	# TODO bow przeniesc tutaj tak jak phrased w phraser ??? -> raczej tak
+	# TODO rename bow -> corpus
+
+# ---[ DEBUG ]------------------------------------------------------------------
+
 if __name__=="__main__":
 	model = HoracyDictionary()
 	model.load_dictionary()
-	# inspect
+	#
 	d = list(model.dictionary.dfs.items())
 	d.sort(key=lambda x:-x[1])
 	for id,cnt in d[:60]:

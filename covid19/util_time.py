@@ -6,4 +6,5 @@ def timed(fun):
 		t0 = time()
 		out = fun(*args,**kwargs)
 		print(f'{fun.__name__} done in {time()-t0:.02f} seconds',file=sys.stderr)
+		return out
 	return wrapped
