@@ -1,8 +1,8 @@
 from gensim.models.phrases import Phrases, Phraser
 import pickle
 
-from data import all_sentences_as_tokens
-from data import all_records_as_tokens
+# from data import all_sentences_as_tokens
+# from data import all_records_as_tokens
 from util_time import timed
 
 # ---[ MODEL ]------------------------------------------------------------------
@@ -18,7 +18,7 @@ class HoracyPhraser():
 
 	@timed
 	def init_phraser(self, limit=None):
-		sentences = all_sentences_as_tokens(limit)
+		sentences = self.all_sentences(limit)
 		phrases = Phrases(sentences,
 		                  min_count=MIN_COUNT,
 						  threshold=THRESHOLD,
@@ -34,12 +34,23 @@ class HoracyPhraser():
 	def load_phraser(self):
 		self.phraser = Phraser.load('model/phraser.pkl')
 	
+	# TODO rename rec -> doc
+	def rec_to_phrased(self, rec):
+		text = self.rec_to_text(rec)
+		yield from self.text_to_phrased(text)
+	
+	def text_to_phrased(self, text):
+		sentences = self.text_to_sentences(text)
+		for sentence in sentences:
+			tokens = self.text_to_tokens(sentence)
+			yield from self.phraser[tokens]
+	
 	@timed
 	def init_phrased(self, limit=None, materialize=True):
 		# TODO trzeba zapisac gdzies liste id rekordow -> realizujemy model kolumnowy
-		records = all_records_as_tokens(limit)
-		phrased = self.phraser[records]
-		self.phrased = list(phrased) if materialize else phrased
+		records = self.all_records(limit)
+		phrased = map(self.rec_to_phrased, records)
+		self.phrased = list(map(list,phrased)) if materialize else phrased
 	
 	@timed
 	def save_phrased(self):

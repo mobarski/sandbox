@@ -1,3 +1,5 @@
+from model_text       import HoracyText
+from model_input      import HoracyInput
 from model_phraser    import HoracyPhraser
 from model_dictionary import HoracyDictionary
 from model_bow        import HoracyBOW
@@ -7,6 +9,7 @@ from util_time import timed
 
 class HoracyModel(
 		HoracyText,
+		HoracyInput,
 		HoracyPhraser,
 		HoracyDictionary,
 		HoracyBOW,
@@ -29,7 +32,12 @@ class HoracyModel(
 					scored.append((id,score))
 		scored.sort(key=lambda x:x[1],reverse=True)
 		return scored
-	
+
+	def text_to_sparse(self, text):
+		phrased = self.text_to_phrased(text)
+		bow = self.dictionary.doc2bow(phrased)
+		return self.tfidf[bow]
+
 	def load(self):
 		# TODO path prefix
 		self.load_phraser()
@@ -38,27 +46,19 @@ class HoracyModel(
 	
 	def save(self):
 		# TODO path prefix
+		self.save_phraser()
 		self.save_phrased()
 		self.save_dictionary()
 		self.save_bow() # ???
 		self.save_tfidf()
 		self.save_sparse() # ???
 
-	def text_to_sparse(self, text):
-		phrased = []
-		sentences = self.text_to_sentences(text)
-		for sentence in sentences:
-			tokens = self.text_to_tokens(sentence)
-			p = self.phraser[tokens]
-			phrased.extend(p)
-		bow = self.dictionary.doc2bow(phrased)
-		return self.tfidf[bow]
+# ------------------------------------------------------------------------------
 
 if __name__=="__main__":
 	model = HoracyModel()
-	# load
-	model.load_phraser()
 	# init
+	model.init_phraser(100)
 	model.init_phrased(100)
 	model.init_dictionary()
 	model.init_bow()
