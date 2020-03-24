@@ -9,9 +9,6 @@ class HoracyDictionary():
 	@timed
 	def init_dictionary(self):
 		self.dictionary = Dictionary(self.phrased)
-	
-	@timed
-	def save_dictionary(self):
 		self.dictionary.save('model/dictionary.pkl')
 	
 	@timed

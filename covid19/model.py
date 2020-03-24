@@ -4,6 +4,7 @@ from model_phraser    import HoracyPhraser
 from model_dictionary import HoracyDictionary
 from model_bow        import HoracyBOW
 from model_tfidf      import HoracyTFIDF
+from model_lsi        import HoracyLSI
 
 from util_time import timed
 
@@ -13,8 +14,11 @@ class HoracyModel(
 		HoracyPhraser,
 		HoracyDictionary,
 		HoracyBOW,
-		HoracyTFIDF):
+		HoracyTFIDF,
+		HoracyLSI
+	):
 	
+	# porzucamy to podejscie -> zbyt wolne
 	@timed
 	def find(self, query):
 		scored = []
@@ -24,8 +28,7 @@ class HoracyModel(
 		for text,weight in query.items():
 			q = self.text_to_sparse(text)
 			q_weight += [(q,weight)]
-		for doc in self.sparse:
-			id = 0 # TODO
+		for id,doc in enumerate(self.sparse):
 			for q,weight in q_weight:
 				score = sum((doc.get(token,0) for token,_ in q)) * weight
 				if score>0:
@@ -40,33 +43,45 @@ class HoracyModel(
 
 	def load(self):
 		# TODO path prefix
+		self.load_meta()
 		self.load_phraser()
 		self.load_dictionary()
 		self.load_tfidf()
-	
-	def save(self):
-		# TODO path prefix
-		self.save_phraser()
-		self.save_phrased()
-		self.save_dictionary()
-		self.save_bow() # ???
-		self.save_tfidf()
-		self.save_sparse() # ???
+		self.load_lsi()
+		#
+		self.load_phrased()
+		self.load_bow()
+		self.load_sparse()
+		self.load_dense()
 
 # ------------------------------------------------------------------------------
 
 if __name__=="__main__":
 	model = HoracyModel()
-	# init
-	model.init_phraser(100)
-	model.init_phrased(100)
-	model.init_dictionary()
-	model.init_bow()
-	model.init_tfidf()
-	model.init_sparse()
-	# save
-	model.save()
+	if 0:
+		# init
+		model.init_meta(1000)
+		model.init_phraser(1000)
+		model.init_phrased(1000)
+		model.init_dictionary()
+		model.init_bow()
+		model.init_tfidf()
+		model.init_sparse()
+		model.init_lsi(num_topics=50, id2word=model.dictionary)
+		model.init_dense()
+	else:
+		model.load()
 	#
-	query = 'test ventilation outbreak test Wuhan'
+	query = 'test ventilation outbreak test Wuhan model modeling'
+	query = 'TWIRLS test'
+	query = 'ACE2'
+	query = 'TWIRLS'
+	query = 'ventilation data table'
+	query = 'sugar'
+	query = 'homemade'
 	print(model.text_to_sparse(query))
-	print(model.find({query:10}))
+	#top = model.find({query:10})[:10]
+	top = model.find(query)[:10]
+	for id,score in top:
+		m = model.meta[id]
+		print(id,round(score,3),m['paper_title'],'###',' '.join(model.phrased[id]))

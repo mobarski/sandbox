@@ -1,4 +1,7 @@
+from sorbet import sorbet
+
 from data import all_records
+from util_time import timed
 
 class HoracyInput():
 
@@ -12,6 +15,20 @@ class HoracyInput():
 				'\n'.join(rec['bib_titles'])
 			]
 		return '\n\n'.join(values)
+
+	@timed
+	def init_meta(self, limit=None):
+		self.meta = sorbet('model/meta').new()
+		records = all_records(limit)
+		for id,rec in enumerate(records):
+			m = {f:rec[f] for f in ['paper_id','text_id','paper_title']}
+			m['id'] = id # DEBUG
+			self.meta.append(m)
+		self.meta.save()
+	
+	@timed
+	def load_meta(self):
+		self.meta = sorbet('model/meta').load()
 
 	@staticmethod
 	def all_records(limit=None):

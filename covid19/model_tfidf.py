@@ -1,5 +1,5 @@
 from gensim.models import TfidfModel
-import pickle
+from sorbet import sorbet
 
 from util_time import timed
 
@@ -10,9 +10,6 @@ class HoracyTFIDF():
 	@timed
 	def init_tfidf(self, **kwargs):
 		self.tfidf = TfidfModel(self.bow, **kwargs)
-	
-	@timed
-	def save_tfidf(self):
 		self.tfidf.save('model/tfidf.pkl')
 	
 	@timed
@@ -22,15 +19,11 @@ class HoracyTFIDF():
 	@timed
 	def init_sparse(self, materialize=True):
 		sparse = (dict(self.tfidf[bow]) for bow in self.bow)
-		self.sparse = list(sparse) if materialize else sparse
-	
-	@timed
-	def save_sparse(self):
-		pickle.dump(self.sparse, open('model/sparse.pkl','wb'))
-	
+		self.sparse = sorbet('model/sparse').dump(sparse)
+		
 	@timed
 	def load_sparse(self):
-		self.sparse = pickle.load(open('model/sparse.pkl','rb'))
+		self.sparse = sorbet('model/sparse').load()
 
 # ---[ DEBUG ]------------------------------------------------------------------
 
