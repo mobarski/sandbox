@@ -11,26 +11,27 @@ class HoracyLSI():
 	def init_lsi(self, **kwargs):
 		corpus = (s.items() for s in self.sparse)
 		self.lsi = LsiModel(corpus, **kwargs)
-		self.lsi.save('model/lsi.pkl')
+		self.lsi.save(self.path+'lsi.pkl')
 	
 	@timed
 	def load_lsi(self):
-		self.lsi = LsiModel.load('model/lsi.pkl')
+		self.lsi = LsiModel.load(self.path+'lsi.pkl')
 
 	@timed
 	def init_dense(self):
 		corpus = (s.items() for s in self.sparse)
 		dense = (self.lsi[c] for c in corpus)
-		self.dense = sorbet('model/dense').dump(dense)
+		self.dense = sorbet(self.path+'dense').dump(dense)
 		
 	@timed
 	def load_dense(self):
-		self.dense = sorbet('model/dense').load()
+		self.dense = sorbet(self.path+'dense').load()
 
 # ---[ DEBUG ]------------------------------------------------------------------
 
 if __name__=="__main__":
 	model = HoracyLSI()
+	model.path = 'model_100/'
 	model.load_lsi()
 	model.load_dense()
 	#

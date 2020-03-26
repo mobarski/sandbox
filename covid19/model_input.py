@@ -18,7 +18,7 @@ class HoracyInput():
 
 	@timed
 	def init_meta(self, limit=None):
-		self.meta = sorbet('model/meta').new()
+		self.meta = sorbet(self.path+'meta').new()
 		records = all_records(limit)
 		for id,rec in enumerate(records):
 			m = {f:rec[f] for f in ['paper_id','text_id','paper_title']}
@@ -28,7 +28,7 @@ class HoracyInput():
 	
 	@timed
 	def load_meta(self):
-		self.meta = sorbet('model/meta').load()
+		self.meta = sorbet(self.path+'meta').load()
 
 	@staticmethod
 	def all_records(limit=None):
@@ -38,4 +38,4 @@ class HoracyInput():
 	def all_sentences(self, limit=None):
 		for rec in all_records(limit):
 			text = self.rec_to_text(rec)
-			yield from self.text_to_tokens(text)
+			yield self.text_to_tokens(text)

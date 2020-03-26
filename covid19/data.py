@@ -1,8 +1,11 @@
-import os
+"""Access data from json files as paragraph level records (dicts)"""
 
 # ---[ list ]-------------------------------------------------------------------
 
+import os
+
 def list_data_files():
+	"""iterate over paths of all data files"""
 	for dirpath,_,filenames in os.walk('data'):
 		filenames = [f for f in filenames if f.endswith('.json')]
 		if not filenames: continue
@@ -51,6 +54,7 @@ def raw_to_records(path):
 			yield rec
 
 def all_records(limit=None):
+	"""iterate over all records (list of dicts with paragraph level data)"""
 	from itertools import islice
 	for path in islice(list_data_files(),limit):
 		yield from raw_to_records(path)

@@ -9,9 +9,13 @@ from util_time import timed
 
 MIN_COUNT = 3
 THRESHOLD = 1.0
+DELIMITER = b'__'
 COMMON_TERMS = [
-	'to','and','of','the','a','an','in','by','for','on','that','or',
-	'was','this','then','than','is','with','/','*','+','-'
+	'','to','and','of','the','a','an','in','by','for','on','that','or',
+	'was','this','then','than','is','with','/','*','+','-','=',
+	'could','be','here','we','has','are','there','as','did','not',
+	'from','may','have','from','our','et','al','under','were','these',
+	'at','out','but','also','it','into','de','one','two','had','no','not','so'
 ]
 
 class HoracyPhraser():
@@ -22,14 +26,15 @@ class HoracyPhraser():
 		phrases = Phrases(sentences,
 		                  min_count=MIN_COUNT,
 						  threshold=THRESHOLD,
+						  delimiter=DELIMITER,
 		                  common_terms=COMMON_TERMS)
 		self.phraser = Phraser(phrases)
+		self.phraser.save(self.path+'phraser.pkl')
 		del phrases
-		self.phraser.save('model/phraser.pkl')
 
 	@timed
 	def load_phraser(self):
-		self.phraser = Phraser.load('model/phraser.pkl')
+		self.phraser = Phraser.load(self.path+'phraser.pkl')
 	
 	# TODO rename rec -> doc
 	def rec_to_phrased(self, rec):
@@ -47,18 +52,18 @@ class HoracyPhraser():
 		# TODO trzeba zapisac gdzies liste id rekordow -> realizujemy model kolumnowy
 		records = self.all_records(limit)
 		phrased = (list(self.rec_to_phrased(r)) for r in records)
-		self.phrased = sorbet('model/phrased').dump(phrased)
+		self.phrased = sorbet(self.path+'phrased').dump(phrased)
 		
 	@timed
 	def load_phrased(self):
 		#self.phrased = pickle.load(open('model/phrased.pkl','rb'))
-		self.phrased = sorbet('model/phrased').load()
+		self.phrased = sorbet(self.path+'phrased').load()
 
 # ---[ DEBUG ]-------------------------------------------------------------------
 
 if __name__=="__main__":
 	model = HoracyPhraser()
+	model.path = 'model_100/'
 	model.load_phraser()
 	#model.load_phrased()
-	#
-	pass
+	from pprint import pprint

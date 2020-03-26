@@ -1,5 +1,7 @@
 import re
 
+# TODO - przeniesc to do dictionary albo input ???
+
 split_sentences_re = re.compile('(?<!.prof|et al)[.?!]+ (?=[A-Z])')
 split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
 upper_re = re.compile('[A-Z]')
@@ -13,7 +15,7 @@ class HoracyText():
 	@staticmethod
 	def text_to_tokens(text):
 		tokens = split_tokens_re.split(text)
-		return [t.lower() if len(upper_re.findall(t))<2 else t for t in tokens]
+		return [t.lower() if len(t)>1 and len(upper_re.findall(t))<2 else t for t in tokens]
 
 if __name__=="__main__":
 	model = HoracyText()
