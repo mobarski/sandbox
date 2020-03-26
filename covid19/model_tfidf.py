@@ -1,4 +1,5 @@
 from gensim.models import TfidfModel
+from tqdm import tqdm
 from sorbet import sorbet
 
 from util_time import timed
@@ -7,21 +8,24 @@ from util_time import timed
 
 class HoracyTFIDF():
 	
-	@timed
+	#@timed
 	def init_tfidf(self, **kwargs):
-		self.tfidf = TfidfModel(self.bow, **kwargs)
+		bow = self.bow
+		bow = tqdm(bow, desc='tfidf', total=len(bow))
+		self.tfidf = TfidfModel(bow, **kwargs)
 		self.tfidf.save(self.path+'tfidf.pkl')
 	
-	@timed
+	#@timed
 	def load_tfidf(self):
 		self.tfidf = TfidfModel.load(self.path+'tfidf.pkl')
 
-	@timed
+	#@timed
 	def init_sparse(self, materialize=True):
 		sparse = (dict(self.tfidf[bow]) for bow in self.bow)
+		sparse = tqdm(sparse, desc='sparse', total=len(self.bow)) # progress bar
 		self.sparse = sorbet(self.path+'sparse').dump(sparse)
 		
-	@timed
+	#@timed
 	def load_sparse(self):
 		self.sparse = sorbet(self.path+'sparse').load()
 

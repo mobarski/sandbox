@@ -1,6 +1,7 @@
 from time import time
 import sys
 
+# TODO zmienna srodowiskowa sterujaca czy ma byc output i gdzie (out/err)
 def timed(fun):
 	def wrapped(*args,**kwargs):
 		t0 = time()

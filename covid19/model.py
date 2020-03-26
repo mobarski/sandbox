@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 
 from model_text       import HoracyText
 from model_input      import HoracyInput
@@ -37,7 +38,9 @@ class HoracyModel(
 		for text,weight in query.items():
 			q = self.text_to_sparse(text)
 			q_weight += [(q,weight)]
-		for id,doc in enumerate(self.sparse):
+		sparse = self.sparse
+		sparse = tqdm(sparse, desc='find', total=len(sparse))
+		for id,doc in enumerate(sparse):
 			for q,weight in q_weight:
 				score = sum((doc.get(token,0) for token,_ in q)) * weight
 				if score>0:
@@ -71,16 +74,18 @@ class HoracyModel(
 # ------------------------------------------------------------------------------
 
 if __name__=="__main__":
+	# 8000 -> 3094s
 	# 4000 -> 1351s
 	# 2000 -> 512s
 	# 1000 -> 202s
 	#  100 -> 21s
 	from time import time
+	import sys
 	t0=time()
-	model = HoracyModel('model_8000/')
+	model = HoracyModel('model_100/')
 	if 1:
 		# init
-		limit = 8000
+		limit = 500
 		model.init_meta(limit)
 		model.init_phraser(limit)
 		model.init_phrased(limit)
@@ -101,11 +106,16 @@ if __name__=="__main__":
 	query = 'ventilation data table'
 	query = 'sugar'
 	query = 'homemade'
+	print()
 	print('sparse:',model.text_to_sparse(query))
 	print('dense:',model.text_to_dense(query))
+	print()
 	#top = model.find({query:10})[:10]
+	sys.stderr.flush()
+	sys.stdout.flush()
 	top = model.find(query)[:10]
+	print()
 	for id,score in top:
 		m = model.meta[id]
 		print(id,round(score,3),m['paper_title'],'###',' '.join(model.phrased[id]))
-	print(time()-t0)
+	print('\n',time()-t0)

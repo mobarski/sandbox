@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from sorbet import sorbet
 
 from data import all_records
@@ -16,17 +17,18 @@ class HoracyInput():
 			]
 		return '\n\n'.join(values)
 
-	@timed
+	#@timed
 	def init_meta(self, limit=None):
 		self.meta = sorbet(self.path+'meta').new()
 		records = all_records(limit)
+		records = tqdm(records, desc='meta')
 		for id,rec in enumerate(records):
 			m = {f:rec[f] for f in ['paper_id','text_id','paper_title']}
 			m['id'] = id # DEBUG
 			self.meta.append(m)
 		self.meta.save()
 	
-	@timed
+	#@timed
 	def load_meta(self):
 		self.meta = sorbet(self.path+'meta').load()
 

@@ -1,4 +1,5 @@
 from sorbet import sorbet
+from tqdm import tqdm
 
 from util_time import timed
 
@@ -6,12 +7,13 @@ from util_time import timed
 
 class HoracyBOW():
 	
-	@timed
+	#@timed
 	def init_bow(self):
 		bow = (self.dictionary.doc2bow(doc) for doc in self.phrased)
+		bow = tqdm(bow, desc='bow', total=len(self.phrased)) # progress bar
 		self.bow = sorbet(self.path+'bow').dump(bow)
 	
-	@timed
+	#@timed
 	def load_bow(self):
 		self.bow = sorbet(self.path+'bow').load()
 

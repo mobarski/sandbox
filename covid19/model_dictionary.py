@@ -1,4 +1,5 @@
 from gensim.corpora.dictionary import Dictionary
+from tqdm import tqdm
 
 from util_time import timed
 
@@ -6,12 +7,14 @@ from util_time import timed
 
 class HoracyDictionary():
 	
-	@timed
+	#@timed
 	def init_dictionary(self):
-		self.dictionary = Dictionary(self.phrased)
+		phrased = self.phrased
+		phrased = tqdm(phrased, desc='dictionary', total=len(phrased))
+		self.dictionary = Dictionary(phrased)
 		self.dictionary.save(self.path+'dictionary.pkl')
 	
-	@timed
+	#@timed
 	def load_dictionary(self):
 		self.dictionary = Dictionary.load(self.path+'dictionary.pkl')
 
