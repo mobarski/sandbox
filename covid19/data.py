@@ -16,8 +16,8 @@ def list_data_files():
 
 import json
 
-def raw_to_records(path):
-	"""iterate over records from one raw document"""
+def raw_to_docs(path):
+	"""iterate over paragraph level documents from one raw document"""
 	rec = {}
 	doc = json.load(open(path,'rb'))
 	# metadata
@@ -53,11 +53,11 @@ def raw_to_records(path):
 					rec['figures'] += [r['text']]
 			yield rec
 
-def all_records(limit=None):
-	"""iterate over all records (list of dicts with paragraph level data)"""
+def doc_iter(limit=None):
+	"""iterate over all documents (doc = single paragraph)"""
 	from itertools import islice
 	for path in islice(list_data_files(),limit):
-		yield from raw_to_records(path)
+		yield from raw_to_docs(path)
 
 # ------------------------------------------------------------------------------
 

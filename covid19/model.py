@@ -1,22 +1,23 @@
 import os
+import re
 from tqdm import tqdm
 
-from model_text       import HoracyText
-from model_input      import HoracyInput
+from model_meta       import HoracyMeta
 from model_phraser    import HoracyPhraser
 from model_dictionary import HoracyDictionary
-from model_bow        import HoracyBOW
 from model_tfidf      import HoracyTFIDF
 from model_lsi        import HoracyLSI
 
 from util_time import timed
 
+# TODO - podmiana tego w wywolaniu modelu
+split_sentences_re = re.compile('[.?!]+ (?=[A-Z])')
+split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
+
 class HoracyModel(
-		HoracyText,
-		HoracyInput,
+		HoracyMeta,
 		HoracyPhraser,
 		HoracyDictionary,
-		HoracyBOW,
 		HoracyTFIDF,
 		HoracyLSI
 	):
@@ -57,6 +58,20 @@ class HoracyModel(
 		sparse = self.text_to_sparse(text)
 		return self.lsi[sparse]
 
+	@staticmethod
+	def text_to_sentences(text):
+		return split_sentences_re.split(text)
+
+	@staticmethod
+	def text_to_tokens(text):
+		tokens = split_tokens_re.split(text)
+		return [t.lower() for t in tokens]
+
+	@staticmethod
+	def doc_to_text(doc):
+		values = [x for x in doc.values() if type(x) is str]
+		return '\n\n'.join(values)
+
 	def load(self):
 		self.load_meta()
 		self.load_phraser()
@@ -74,48 +89,4 @@ class HoracyModel(
 # ------------------------------------------------------------------------------
 
 if __name__=="__main__":
-	# 8000 -> 3094s
-	# 4000 -> 1351s
-	# 2000 -> 512s
-	# 1000 -> 202s
-	#  100 -> 21s
-	from time import time
-	import sys
-	t0=time()
-	model = HoracyModel('model_100/')
-	if 1:
-		# init
-		limit = 500
-		model.init_meta(limit)
-		model.init_phraser(limit)
-		model.init_phrased(limit)
-		model.init_dictionary()
-		#exit()
-		model.init_bow()
-		model.init_tfidf()
-		model.init_sparse()
-		model.init_lsi(num_topics=50, id2word=model.dictionary)
-		model.init_dense()
-	else:
-		model.load()
-	#
-	query = 'test ventilation outbreak test Wuhan model modeling'
-	query = 'TWIRLS test'
-	query = 'ACE2'
-	query = 'TWIRLS'
-	query = 'ventilation data table'
-	query = 'sugar'
-	query = 'homemade'
-	print()
-	print('sparse:',model.text_to_sparse(query))
-	print('dense:',model.text_to_dense(query))
-	print()
-	#top = model.find({query:10})[:10]
-	sys.stderr.flush()
-	sys.stdout.flush()
-	top = model.find(query)[:10]
-	print()
-	for id,score in top:
-		m = model.meta[id]
-		print(id,round(score,3),m['paper_title'],'###',' '.join(model.phrased[id]))
-	print('\n',time()-t0)
+	pass

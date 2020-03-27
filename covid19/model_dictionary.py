@@ -2,6 +2,7 @@ from gensim.corpora.dictionary import Dictionary
 from tqdm import tqdm
 
 from util_time import timed
+from sorbet import sorbet
 
 # ---[ MODEL ]------------------------------------------------------------------
 
@@ -18,8 +19,15 @@ class HoracyDictionary():
 	def load_dictionary(self):
 		self.dictionary = Dictionary.load(self.path+'dictionary.pkl')
 
-	# TODO bow przeniesc tutaj tak jak phrased w phraser ??? -> raczej tak
-	# TODO rename bow -> corpus
+	#@timed
+	def init_bow(self):
+		bow = (self.dictionary.doc2bow(doc) for doc in self.phrased)
+		bow = tqdm(bow, desc='bow', total=len(self.phrased)) # progress bar
+		self.bow = sorbet(self.path+'bow').dump(bow)
+	
+	#@timed
+	def load_bow(self):
+		self.bow = sorbet(self.path+'bow').load()
 
 # ---[ DEBUG ]------------------------------------------------------------------
 
