@@ -24,7 +24,7 @@ if __name__=="__main__":
 		r = pool.imap(worker,tqdm(data)) # to nie ma sensu -> tqdm powinien byc na wyniku
 		
 	print(f't_map {time()-t0:.02f}')
-	for x in tqdm(r, desc='init_phrased', total=len(data)):
+	for x in tqdm(r, desc='testing', total=len(data)):
 		print(f't_x {time()-t0:.02f}')
 		total += x
 
