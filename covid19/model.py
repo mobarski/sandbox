@@ -7,10 +7,10 @@ from model_phraser    import HoracyPhraser
 from model_dictionary import HoracyDictionary
 from model_tfidf      import HoracyTFIDF
 from model_lsi        import HoracyLSI
+from model_ann        import HoracyANN
 
 from util_time import timed
 
-# TODO - podmiana tego w wywolaniu modelu
 split_sentences_re = re.compile('[.?!]+ (?=[A-Z])')
 split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
 
@@ -19,7 +19,8 @@ class HoracyModel(
 		HoracyPhraser,
 		HoracyDictionary,
 		HoracyTFIDF,
-		HoracyLSI
+		HoracyLSI,
+		HoracyANN
 	):
 	
 	def __init__(self, path='model/'):
@@ -31,7 +32,7 @@ class HoracyModel(
 	
 	# porzucamy to podejscie -> zbyt wolne
 	@timed
-	def find(self, query):
+	def find_old(self, query):
 		scored = []
 		if type(query) is not dict:
 			query = {query:1}
@@ -48,6 +49,14 @@ class HoracyModel(
 					scored.append((id,score))
 		scored.sort(key=lambda x:x[1],reverse=True)
 		return scored
+	
+	@timed
+	def find_sparse(self, text):
+		sparse = self.text_to_sparse(text)
+		i_list,d_list = self.ann_query(sparse)
+		for i,d in zip(i_list,d_list):
+			m = self.meta[i]
+			print(d,i,m) # TODO yield
 
 	def text_to_sparse(self, text):
 		phrased = self.text_to_phrased(text)
@@ -72,12 +81,14 @@ class HoracyModel(
 		values = [x for x in doc.values() if type(x) is str]
 		return '\n\n'.join(values)
 
+	# TODO opcjonalne ladowanie (lsi, dense, ann_sparse, ann_dense)
 	def load(self):
 		self.load_meta()
 		self.load_phraser()
 		self.load_dictionary()
 		self.load_tfidf()
 		self.load_lsi()
+		#self.load_ann()
 		#
 		self.load_phrased()
 		self.load_bow()

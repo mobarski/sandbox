@@ -54,6 +54,9 @@ class sorbet:
 		self.index.append( self.f.tell() )
 		dump(val, self.f)
 	
+	def delete(self):
+		pass # TODO usuniecie plikow
+	
 	def __getitem__(self, key):
 		"""return value for given key or iterator for given slice"""
 		if type(key) is slice:

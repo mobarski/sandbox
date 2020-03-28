@@ -1,7 +1,3 @@
-import re
-
-from model import HoracyModel
-import data
 
 phraser_cfg = {
 	'min_count' : 3,
@@ -31,6 +27,7 @@ def doc_to_text(doc):
 		]
 	return '\n\n'.join(values)
 
+import re
 split_sentences_re = re.compile('(?<!.prof|et al)[.?!]+ (?=[A-Z])')
 split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
 upper_re = re.compile('[A-Z]')
@@ -42,18 +39,20 @@ def text_to_tokens(text):
 	tokens = split_tokens_re.split(text)
 	return [t.lower() if len(t)>1 and len(upper_re.findall(t))<2 else t for t in tokens]
 
-# calculation time:
+# calculation time (no ann):
 #   8000 -> 3094s
 #   4000 -> 1351s
 #   2000 -> 512s
 #   1000 -> 202s
 #    100 -> 21s
+from model import HoracyModel
 model = HoracyModel('model_100/')
 model.text_to_sentences = text_to_sentences
 model.text_to_tokens = text_to_tokens
 model.doc_to_text = doc_to_text
-if 1: # init
-	limit = 100
+if 0: # init
+	import data
+	limit = 500
 	model.init_meta(data.doc_iter(limit), get_meta)
 	model.init_phraser(data.doc_iter(limit), **phraser_cfg)
 	model.init_phrased(data.doc_iter(limit))
@@ -63,9 +62,11 @@ if 1: # init
 	model.init_sparse()
 	model.init_lsi(num_topics=50, id2word=model.dictionary)
 	model.init_dense() # TODO transformation=self.lsi
+	model.init_ann_dense()
 else: # load
 	model.load()
-
+	#model.init_ann_sparse()
+	model.load_ann_sparse()
 
 from time import time
 import sys
@@ -78,9 +79,17 @@ query = 'ventilation data table'
 query = 'sugar'
 query = 'homemade'
 print()
+i = 1
+print(f'sparse[{i}]:',len(model.sparse[i]),model.sparse[i])
+print(f'dense[{i}]:',len(model.dense[i]),model.dense[i])
+print(f'ann[{i}]:',len(model.ann[i]),model.ann[i])
+print()
 print('sparse:',model.text_to_sparse(query))
 print('dense:',model.text_to_dense(query))
 print()
+print('\ntotal:',time()-t0,'\n')
+model.find_sparse('ACE2')
+exit()
 #top = model.find({query:10})[:10]
 sys.stderr.flush()
 sys.stdout.flush()
@@ -89,5 +98,4 @@ print()
 for id,score in top:
 	m = model.meta[id]
 	print(id,round(score,3),m['paper_title'],'###',' '.join(model.phrased[id]))
-print('\n',time()-t0)
 

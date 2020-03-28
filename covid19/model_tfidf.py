@@ -21,7 +21,7 @@ class HoracyTFIDF():
 
 	#@timed
 	def init_sparse(self, materialize=True):
-		sparse = (dict(self.tfidf[bow]) for bow in self.bow)
+		sparse = (self.tfidf[bow] for bow in self.bow)
 		sparse = tqdm(sparse, desc='sparse', total=len(self.bow)) # progress bar
 		self.sparse = sorbet(self.path+'sparse').dump(sparse)
 		

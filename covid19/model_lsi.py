@@ -10,7 +10,7 @@ class HoracyLSI():
 	
 	@timed
 	def init_lsi(self, **kwargs):
-		corpus = (s.items() for s in self.sparse)
+		corpus = self.sparse
 		corpus = tqdm(corpus, desc='lsi_input', total=len(self.sparse)) # progress bar
 		self.lsi = LsiModel(corpus, **kwargs)
 		self.lsi.save(self.path+'lsi.pkl')
@@ -21,7 +21,7 @@ class HoracyLSI():
 
 	#@timed
 	def init_dense(self):
-		corpus = (s.items() for s in self.sparse)
+		corpus = self.sparse
 		dense = (self.lsi[c] for c in corpus)
 		dense = tqdm(dense, desc='dense', total=len(self.sparse)) # progress bar
 		self.dense = sorbet(self.path+'dense').dump(dense)
