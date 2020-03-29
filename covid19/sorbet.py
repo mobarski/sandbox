@@ -5,7 +5,8 @@ Sorbet is fast - on a "standard" laptop it achieves:
 - 300k reads per second.
 """
 
-from pickle import dump,load
+from pickle import dump,load,HIGHEST_PROTOCOL
+import os
 
 # TODO parallel scan -> zwykly nie ma sensu bo jest funkcja filter
 # TODO multiproc scan -> (path,index[lo:hi]->dict)
@@ -16,6 +17,7 @@ class sorbet:
 	def __init__(self, path):
 		"""configure prefix of sorbet files"""
 		self.path = path
+		self.protocol = HIGHEST_PROTOCOL
 	
 	def new(self):
 		"""create new storage for appending data"""
@@ -25,7 +27,7 @@ class sorbet:
 	
 	def save(self):
 		"""save data on disk; removes ability to append new data"""
-		dump(self.index, open(f"{self.path}.index",'wb'))
+		dump(self.index, open(f"{self.path}.index",'wb'), protocol=self.protocol)
 		self.f.close()
 		self.f = open(f"{self.path}.data",'rb')
 		return self
@@ -41,21 +43,24 @@ class sorbet:
 		self.new()
 		f = self.f
 		index = self.index
+		p = self.protocol
 		for val in data:
 			index.append( f.tell() )
-			dump(val, f)
+			dump(val, f, protocol=p)
 		f.close()
-		dump(index, open(f"{self.path}.index",'wb'))
+		dump(index, open(f"{self.path}.index",'wb'), protocol=self.protocol)
 		self.f = open(f"{self.path}.data",'rb')
 		return self
 	
 	def append(self, val):
 		"""append value (of any type) to the dataset"""
 		self.index.append( self.f.tell() )
-		dump(val, self.f)
+		dump(val, self.f, protocol=self.protocol)
 	
 	def delete(self):
-		pass # TODO usuniecie plikow
+		self.f.close()
+		os.remove(f"{self.path}.index")
+		os.remove(f"{self.path}.data")
 	
 	def __getitem__(self, key):
 		"""return value for given key or iterator for given slice"""

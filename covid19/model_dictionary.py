@@ -13,17 +13,25 @@ class HoracyDictionary():
 		phrased = self.phrased
 		phrased = tqdm(phrased, desc='dictionary', total=len(phrased))
 		self.dictionary = Dictionary(phrased)
+		self.dictionary.patch_with_special_tokens({'<PAD>':0})
 		self.dictionary.save(self.path+'dictionary.pkl')
 	
 	#@timed
 	def load_dictionary(self):
 		self.dictionary = Dictionary.load(self.path+'dictionary.pkl')
 
-	#@timed
+	@timed
+	def prune_dictionary(self, **kwargs):
+		self.dictionary.filter_extremes(**kwargs)
+
+	@timed
 	def init_bow(self):
-		bow = (self.dictionary.doc2bow(doc) for doc in self.phrased)
-		bow = tqdm(bow, desc='bow', total=len(self.phrased)) # progress bar
-		self.bow = sorbet(self.path+'bow').dump(bow)
+		self.bow = sorbet(self.path+'bow').new()
+		phrased = tqdm(self.phrased, desc='bow', total=len(self.phrased)) # progress bar
+		for doc in phrased:
+			bow = self.dictionary.doc2bow(doc) or [(0,1)]
+			self.bow.append(bow)
+		self.bow.save()
 	
 	#@timed
 	def load_bow(self):

@@ -13,7 +13,7 @@ class HoracyANN():
 		for i,point in enumerate(dense):
 			self.ann.addDataPoint(i,[x[1] for x in point])
 		self.ann.createIndex(print_progress=True)
-		self.ann.saveIndex(self.path+'ann.bin',save_data=True)
+		self.ann.saveIndex(self.path+'ann_dense.bin',save_data=True)
 
 	@timed
 	def init_ann_sparse(self):
@@ -23,15 +23,15 @@ class HoracyANN():
 		for i,point in enumerate(sparse):
 			self.ann.addDataPoint(i,point)		
 		self.ann.createIndex(print_progress=True)
-		self.ann.saveIndex(self.path+'ann.bin',save_data=True)
+		self.ann.saveIndex(self.path+'ann_sparse.bin',save_data=True)
 
 	def load_ann_dense(self):
 		self.ann = nmslib.init(method='hnsw', space='cosinesimil')
-		self.ann.loadIndex(self.path+'ann.bin',load_data=True)
+		self.ann.loadIndex(self.path+'ann_dense.bin',load_data=True)
 
 	def load_ann_sparse(self):
 		self.ann = nmslib.init(method='hnsw', space='cosinesimil_sparse', data_type=nmslib.DataType.SPARSE_VECTOR)
-		self.ann.loadIndex(self.path+'ann.bin',load_data=True)
+		self.ann.loadIndex(self.path+'ann_sparse.bin',load_data=True)
 
 	def ann_query(self, point, k=10):
 		return self.ann.knnQuery(point, k)
