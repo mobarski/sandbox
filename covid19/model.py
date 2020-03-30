@@ -53,10 +53,18 @@ class HoracyModel(
 	@timed
 	def find_sparse(self, text):
 		sparse = self.text_to_sparse(text)
-		i_list,d_list = self.ann_query(sparse)
+		i_list,d_list = self.sparse_ann_query(sparse)
 		for i,d in zip(i_list,d_list):
 			m = self.meta[i]
-			print(d,i,m) # TODO yield
+			yield i,d,m
+
+	@timed
+	def find_dense(self, text):
+		dense = self.text_to_dense(text)
+		i_list,d_list = self.dense_ann_query(dense)
+		for i,d in zip(i_list,d_list):
+			m = self.meta[i]
+			yield i,d,m
 
 	def text_to_sparse(self, text):
 		phrased = self.text_to_phrased(text)
@@ -87,13 +95,13 @@ class HoracyModel(
 		self.load_phraser()
 		self.load_dictionary()
 		self.load_tfidf()
-		self.load_lsi()
+		#self.load_lsi()
 		#self.load_ann()
 		#
-		self.load_phrased()
-		self.load_bow()
-		self.load_sparse()
-		self.load_dense()
+		#self.load_phrased()
+		#self.load_bow()
+		#self.load_sparse()
+		#self.load_dense()
 		#
 		return self
 

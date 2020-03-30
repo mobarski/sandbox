@@ -30,6 +30,7 @@ class sorbet:
 		dump(self.index, open(f"{self.path}.index",'wb'), protocol=self.protocol)
 		self.f.close()
 		self.f = open(f"{self.path}.data",'rb')
+		print(f"size of {self.path}.data - {os.path.getsize(f'{self.path}.data')/1_000_000:.01f} MB") # XXX
 		return self
 	
 	def load(self):
@@ -50,6 +51,7 @@ class sorbet:
 		f.close()
 		dump(index, open(f"{self.path}.index",'wb'), protocol=self.protocol)
 		self.f = open(f"{self.path}.data",'rb')
+		print(f"size of {self.path}.data - {os.path.getsize(f'{self.path}.data')/1_000_000:.01f} MB") # XXX
 		return self
 	
 	def append(self, val):

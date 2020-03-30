@@ -23,6 +23,7 @@ def raw_to_docs(path):
 	# metadata
 	rec['paper_id'] = doc['paper_id']
 	rec['paper_title'] = doc['metadata']['title']
+	rec['path'] = path
 	# parts
 	text_id = 0
 	for part in ['abstract','body_text']:
@@ -58,6 +59,13 @@ def doc_iter(limit=None):
 	from itertools import islice
 	for path in islice(list_data_files(),limit):
 		yield from raw_to_docs(path)
+
+def get_doc(path,text_id):
+	"""get single document (paragraph)"""
+	docs = raw_to_docs(path)
+	for doc in docs:
+		if doc['text_id']==text_id:
+			return doc
 
 # ------------------------------------------------------------------------------
 
