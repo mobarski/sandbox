@@ -1,5 +1,6 @@
 from gensim.models import LsiModel
 from tqdm import tqdm
+from array import array
 from sorbet import sorbet
 
 from util_time import timed
@@ -23,6 +24,7 @@ class HoracyLSI():
 	def init_dense(self):
 		corpus = self.sparse
 		dense = (self.lsi[c] for c in corpus)
+		dense = (array('f',[x[1] for x in d]) for d in dense)
 		dense = tqdm(dense, desc='dense', total=len(self.sparse)) # progress bar
 		self.dense = sorbet(self.path+'dense').dump(dense)
 		
@@ -34,7 +36,7 @@ class HoracyLSI():
 
 if __name__=="__main__":
 	model = HoracyLSI()
-	model.path = 'model_1000/'
+	model.path = 'model_100/'
 	model.load_lsi()
 	model.load_dense()
 	#

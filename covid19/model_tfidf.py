@@ -33,7 +33,7 @@ class HoracyTFIDF():
 
 if __name__=="__main__":
 	model = HoracyTFIDF()
-	model.path = 'model_1000/'
+	model.path = 'model_100/'
 	model.load_tfidf()
 	tfidf = model.tfidf
 	#
@@ -45,10 +45,10 @@ if __name__=="__main__":
 	model2.path = model.path
 	model2.load_dictionary()
 	d = model2.dictionary
-	for i,cnt in islice(tfidf.dfs.items(),1000):
-		token = d.get(i,'???')
-		#if '__' not in token: continue
-		print(i,token,cnt,
-			round(tfidf.idfs[i],2),
-			round(tfidf.idfs[i]*cnt,1),
+	data = ((i,cnt,tfidf.idfs[i],d.get(i,'???')) for i,cnt in tfidf.dfs.items())
+	data = sorted(data,key=lambda x:x[1],reverse=True)
+	for i,cnt,idf,token in islice(data,40):
+		print(i,cnt,
+			round(idf,1),
+			token,
 			sep='\t')

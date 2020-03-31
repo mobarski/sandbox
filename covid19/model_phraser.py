@@ -9,11 +9,12 @@ from util_time import timed
 class HoracyPhraser():
 
 	@timed
-	def init_phraser(self, doc_iter, **kwargs):
+	def init_phraser(self, doc_iter, components=False, **kwargs):
 		sentences = self.all_sentences(doc_iter)
 		sentences = tqdm(sentences, desc='phraser_input', total=len(self.meta)) # progress bar
 		phrases = Phrases(sentences, **kwargs)
 		self.phraser = Phraser(phrases)
+		self.phraser.components = components
 		self.phraser.save(self.path+'phraser.pkl')
 		del phrases
 
@@ -27,10 +28,14 @@ class HoracyPhraser():
 		yield from self.text_to_phrased(text)
 	
 	def text_to_phrased(self, text):
+		components = self.phraser.components
 		sentences = self.text_to_sentences(text)
 		for sentence in sentences:
 			tokens = self.text_to_tokens(sentence)
-			yield from self.phraser[tokens]
+			phrased = self.phraser[tokens]
+			yield from phrased
+			if components:
+				yield from set(tokens)-set(phrased) 
 	
 	#@timed
 	def init_phrased(self, doc_iter):

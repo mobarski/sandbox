@@ -50,21 +50,23 @@ class HoracyModel(
 		scored.sort(key=lambda x:x[1],reverse=True)
 		return scored
 	
-	@timed
+	#@timed
 	def find_sparse(self, text):
 		sparse = self.text_to_sparse(text)
-		i_list,d_list = self.sparse_ann_query(sparse)
-		for i,d in zip(i_list,d_list):
-			m = self.meta[i]
-			yield i,d,m
+		if sparse:
+			i_list,d_list = self.sparse_ann_query(sparse)
+			for i,d in zip(i_list,d_list):
+				m = self.meta[i]
+				yield i,d,m
 
-	@timed
+	#@timed
 	def find_dense(self, text):
 		dense = self.text_to_dense(text)
-		i_list,d_list = self.dense_ann_query(dense)
-		for i,d in zip(i_list,d_list):
-			m = self.meta[i]
-			yield i,d,m
+		if dense:
+			i_list,d_list = self.dense_ann_query(dense)
+			for i,d in zip(i_list,d_list):
+				m = self.meta[i]
+				yield i,d,m
 
 	def text_to_sparse(self, text):
 		phrased = self.text_to_phrased(text)
@@ -73,7 +75,8 @@ class HoracyModel(
 	
 	def text_to_dense(self, text):
 		sparse = self.text_to_sparse(text)
-		return self.lsi[sparse]
+		dense = self.lsi[sparse]
+		return [x[1] for x in dense]
 
 	@staticmethod
 	def text_to_sentences(text):
@@ -88,6 +91,11 @@ class HoracyModel(
 	def doc_to_text(doc):
 		values = [x for x in doc.values() if type(x) is str]
 		return '\n\n'.join(values)
+
+	def explain(self,id):
+		phrased = self.phrased[id]
+		ids = [self.dictionary.token2id.get(p,-1) for p in phrased]
+		return [p for p,i in zip(phrased,ids) if i>=0]
 
 	# TODO opcjonalne ladowanie (lsi, dense, ann_sparse, ann_dense)
 	def load(self):
