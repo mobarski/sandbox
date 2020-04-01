@@ -10,8 +10,8 @@ class HoracyPhraser():
 
 	@timed
 	def init_phraser(self, doc_iter, components=False, **kwargs):
+		doc_iter = tqdm(doc_iter, desc='phraser_input', total=len(self.meta)) # progress bar
 		sentences = self.all_sentences(doc_iter)
-		sentences = tqdm(sentences, desc='phraser_input', total=len(self.meta)) # progress bar
 		phrases = Phrases(sentences, **kwargs)
 		self.phraser = Phraser(phrases)
 		self.phraser.components = components

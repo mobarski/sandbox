@@ -3,6 +3,7 @@ import re
 from tqdm import tqdm
 
 from model_meta       import HoracyMeta
+from model_sentencer  import HoracySentencer
 from model_phraser    import HoracyPhraser
 from model_dictionary import HoracyDictionary
 from model_tfidf      import HoracyTFIDF
@@ -16,6 +17,7 @@ split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
 
 class HoracyModel(
 		HoracyMeta,
+		HoracySentencer,
 		HoracyPhraser,
 		HoracyDictionary,
 		HoracyTFIDF,

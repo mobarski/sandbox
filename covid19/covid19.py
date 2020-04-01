@@ -45,7 +45,7 @@ def doc_to_text(doc):
 	return '\n'.join(values)
 
 import re
-split_sentences_re = re.compile('(?<!.prof|et al)[.?!]+ (?=[A-Z])')
+split_sentences_re = re.compile('(?<!.prof|et al|. [Ff]ig)[.?!;]+(?: (?=[A-Z\n])|\n)')
 split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
 upper_re = re.compile('[A-Z]')
 
@@ -53,7 +53,7 @@ num_re = re.compile('\d+|\d+[%]|\d+[a-z]|[#]\d+|[~]\d+')
 url_re = re.compile('[hH][tT][tT][pP][sS]?://[a-zA-Z._0-9/=&?,|%-]+')
 
 def text_to_sentences(text):
-	return split_sentences_re.split(text)
+	return [s.strip() for s in split_sentences_re.split(text) if s.strip()]
 
 def text_to_tokens(text):
 	text = url_re.sub('<URL>',text)
@@ -76,6 +76,8 @@ if 1: # init
 	import data
 	limit = 100
 	model.init_meta(data.doc_iter(limit), get_meta)
+	model.init_sentencer(data.doc_iter(limit))
+	#model.explain_sentencer(data.doc_iter(limit),100)
 	model.init_phraser(data.doc_iter(limit), **phraser_cfg)
 	model.init_phrased(data.doc_iter(limit))
 	model.init_dictionary(save=False)
@@ -94,6 +96,7 @@ if 1: # init
 	#model.sparse.delete() # del
 else:
 	model.load_meta()
+	model.load_cleaner()
 	model.load_phraser()
 	model.load_phrased()
 	model.load_dictionary()

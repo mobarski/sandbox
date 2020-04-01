@@ -18,13 +18,3 @@ class HoracyMeta():
 	#@timed
 	def load_meta(self):
 		self.meta = sorbet(self.path+'meta').load()
-	
-	# --- PRZENIESC ------------------------------------------------------------
-
-	# TODO uzywane tylko przez phraser -> przesunac ???
-	def all_sentences(self, doc_iter):
-		for doc in doc_iter:
-			text = self.doc_to_text(doc)
-			yield self.text_to_tokens(text)
-
-	
