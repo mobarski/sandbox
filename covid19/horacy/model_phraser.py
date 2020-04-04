@@ -88,10 +88,13 @@ def phrased_worker(doc_id):
 	meta = model.meta[doc_id]
 	doc = model.get_doc_by_meta(meta)
 	text = model.doc_to_text(doc)
+	components = model.phraser.components
 	for sen in model.text_to_sentences(text):
 		tokens = model.text_to_tokens(sen)
-		out.extend(model.phraser[tokens])
-		# TODO - components
+		phrased = model.phraser[tokens]
+		out.extend(phrased)
+		if components:
+			out.extend(set(tokens)-set(phrased)) 
 	return out
 
 # ---[ DEBUG ]-------------------------------------------------------------------

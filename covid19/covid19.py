@@ -94,7 +94,7 @@ if __name__=="__main__":
 			model.init_phrased_mp(workers)
 		else:
 			model.init_phrased(data.doc_iter(limit))
-		print(model.phrased[0]) ; exit() # !!!!!!!!!!!!!!!!!!!!!!!!!!
+		#print(model.phrased[0]) ; exit() # !!!!!!!!!!!!!!!!!!!!!!!!!!
 		model.init_dictionary(save=False)
 		model.prune_dictionary(**prune_cfg)
 		model.init_bow()
