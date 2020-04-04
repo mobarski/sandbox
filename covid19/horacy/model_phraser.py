@@ -1,8 +1,9 @@
 from gensim.models.phrases import Phrases, Phraser
 from tqdm import tqdm
-from sorbet import sorbet
+import multiprocessing as mp
 
-from util_time import timed
+from .sorbet import sorbet
+from .util_time import timed
 
 # ---[ MODEL ]------------------------------------------------------------------
 
@@ -37,16 +38,61 @@ class HoracyPhraser():
 			if components:
 				yield from set(tokens)-set(phrased) 
 	
-	#@timed
+	@timed
 	def init_phrased(self, doc_iter):
 		records = doc_iter
 		phrased = (list(self.rec_to_phrased(r)) for r in records)
 		phrased = tqdm(phrased, desc='phrased', total=len(self.meta)) # progress bar
 		self.phrased = sorbet(self.path+'phrased').dump(phrased)
+
+	@timed
+	def init_phrased_mp(self, workers=4, chunksize=100):
+		s = sorbet(self.path+'phrased').new()
+		doc_id_iter = range(len(self.meta))
+		doc_id_iter = tqdm(doc_id_iter,'phrased',len(self.meta))
+		with mp.Pool(
+					workers,
+					init_phrased_worker,
+					[
+						self.path,
+						self.get_doc_by_meta,
+						self.doc_to_text,
+						self.text_to_sentences,
+						self.text_to_tokens
+					]
+				) as pool:
+			phrased = pool.imap(phrased_worker, doc_id_iter, chunksize)
+			for p in phrased:
+				s.append(list(p))
+		self.phrased = s.save()
 		
 	#@timed
 	def load_phrased(self):
 		self.phrased = sorbet(self.path+'phrased').load()
+
+# ---[ MULTIPROCESSING ]--------------------------------------------------------
+
+def init_phrased_worker(*args):
+	global model
+	model = HoracyPhraser()
+	model.path              = args[0]
+	model.get_doc_by_meta   = args[1]
+	model.doc_to_text       = args[2]
+	model.text_to_sentences = args[3]
+	model.text_to_tokens    = args[4]
+	model.meta = sorbet(model.path+'meta').load()
+	model.load_phraser()
+	
+def phrased_worker(doc_id):
+	out = []
+	meta = model.meta[doc_id]
+	doc = model.get_doc_by_meta(meta)
+	text = model.doc_to_text(doc)
+	for sen in model.text_to_sentences(text):
+		tokens = model.text_to_tokens(sen)
+		out.extend(model.phraser[tokens])
+		# TODO - components
+	return out
 
 # ---[ DEBUG ]-------------------------------------------------------------------
 

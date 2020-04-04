@@ -11,12 +11,13 @@ import os
 # TODO parallel scan -> zwykly nie ma sensu bo jest funkcja filter
 # TODO multiproc scan -> (path,index[lo:hi]->dict)
 
-class sorbet:
+class sorbet_on_disk:
 	"""frozen sequence storage engine"""
 	
-	def __init__(self, path):
+	def __init__(self, path, mp_pool=None):
 		"""configure prefix of sorbet files"""
 		self.path = path
+		self.mp_pool = mp_pool
 		self.protocol = HIGHEST_PROTOCOL
 	
 	def new(self):
@@ -82,6 +83,103 @@ class sorbet:
 	def __len__(self):
 		"""return number of items"""
 		return len(self.index)
+	
+	# experimental
+	def imap(self, fun):
+		yield from self.mp_pool.imap(fun, self)
+
+# ------------------------------------------------------------------------------
+
+class sorbet_in_mem:
+	"""frozen sequence storage engine"""
+	
+	def __init__(self, path):
+		"""configure prefix of sorbet files"""
+		self.path = path
+		self.protocol = HIGHEST_PROTOCOL
+	
+	def new(self):
+		"""create new storage for appending data"""
+		self.f = open(f"{self.path}.data",'wb')
+		self.data = []
+		return self
+	
+	def save(self):
+		"""save data on disk; removes ability to append new data"""
+		dump(self.data, self.f, protocol=self.protocol)
+		self.f.close()
+		print(f"size of {self.path}.data - {os.path.getsize(f'{self.path}.data')/1_000_000:.01f} MB") # XXX
+		return self
+	
+	def load(self):
+		"""read data from disk"""
+		self.f = open(f"{self.path}.data",'rb')
+		self.data = load(open(f"{self.path}.data",'rb'))
+		return self
+	
+	def dump(self, data):
+		"""save data on disk"""
+		self.new()
+		self.data = list(data)
+		f = self.f
+		p = self.protocol
+		dump(self.data, f, protocol=p)
+		f.close()
+		print(f"size of {self.path}.data - {os.path.getsize(f'{self.path}.data')/1_000_000:.01f} MB") # XXX
+		return self
+	
+	def append(self, val):
+		"""append value (of any type) to the dataset"""
+		self.data.append(val)
+	
+	def delete(self):
+		del self.data
+		os.remove(f"{self.path}.data")
+	
+	def __getitem__(self, key):
+		"""return value for given key or iterator for given slice"""
+		return self.data[key]
+		
+	def __len__(self):
+		"""return number of items"""
+		return len(self.data)
+
+# ------------------------------------------------------------------------------
+
+class sorbet_in_mem_only:
+	"""frozen sequence storage engine"""
+	
+	def __init__(self, path):
+		self.data = []
+	
+	def new(self):
+		return self
+	
+	def save(self):
+		return self
+	
+	def load(self):
+		assert False
+	
+	def dump(self, data):
+		self.data = list(data)
+		return self
+	
+	def append(self, val):
+		self.data.append(val)
+	
+	def delete(self):
+		del self.data
+	
+	def __getitem__(self, key):
+		return self.data[key]
+		
+	def __len__(self):
+		return len(self.data)
+
+# ------------------------------------------------------------------------------
+
+sorbet = sorbet_on_disk
 
 # ---[ TEST ]-------------------------------------------------------------------
 
@@ -89,7 +187,7 @@ if __name__=="__main__":
 	from time import time
 	import sys
 	label = sys.argv[0][:-3]
-	path = f'data/{label}'
+	path = f'../data/{label}'
 	
 	N = 1_100_000
 	if 1:

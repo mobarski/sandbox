@@ -1,7 +1,7 @@
 from tqdm import tqdm
-from sorbet import sorbet
 
-from util_time import timed
+from .sorbet import sorbet
+from .util_time import timed
 
 class HoracyMeta():
 
@@ -18,3 +18,4 @@ class HoracyMeta():
 	#@timed
 	def load_meta(self):
 		self.meta = sorbet(self.path+'meta').load()
+

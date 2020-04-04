@@ -1,4 +1,5 @@
 import multiprocessing as mp
+from multiprocessing.pool import ThreadPool
 from time import time
 from tqdm import tqdm
 
@@ -10,6 +11,7 @@ def worker(x):
 if __name__=="__main__":
 	data = list(range(20))
 	pool = mp.Pool(processes=4)
+	#pool = ThreadPool(processes=4)
 
 	t0=time()
 	total = 0
@@ -26,6 +28,7 @@ if __name__=="__main__":
 	print(f't_map {time()-t0:.02f}')
 	for x in tqdm(r, desc='testing', total=len(data)):
 		print(f't_x {time()-t0:.02f}')
+		print(type(x),x)
 		total += x
 
 	print(f'done in {time()-t0:.0f} seconds')

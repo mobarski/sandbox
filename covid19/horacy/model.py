@@ -2,15 +2,15 @@ import os
 import re
 from tqdm import tqdm
 
-from model_meta       import HoracyMeta
-from model_sentencer  import HoracySentencer
-from model_phraser    import HoracyPhraser
-from model_dictionary import HoracyDictionary
-from model_tfidf      import HoracyTFIDF
-from model_lsi        import HoracyLSI
-from model_ann        import HoracyANN
+from .model_meta       import HoracyMeta
+from .model_sentencer  import HoracySentencer
+from .model_phraser    import HoracyPhraser
+from .model_dictionary import HoracyDictionary
+from .model_tfidf      import HoracyTFIDF
+from .model_lsi        import HoracyLSI
+from .model_ann        import HoracyANN
 
-from util_time import timed
+from .util_time import timed
 
 split_sentences_re = re.compile('[.?!]+ (?=[A-Z])')
 split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
@@ -77,8 +77,7 @@ class HoracyModel(
 	
 	def text_to_dense(self, text):
 		sparse = self.text_to_sparse(text)
-		dense = self.lsi[sparse]
-		return [x[1] for x in dense]
+		return self.sparse_to_dense(sparse)
 
 	@staticmethod
 	def text_to_sentences(text):
@@ -99,21 +98,28 @@ class HoracyModel(
 		ids = [self.dictionary.token2id.get(p,-1) for p in phrased]
 		return [p for p,i in zip(phrased,ids) if i>=0]
 
-	# TODO opcjonalne ladowanie (lsi, dense, ann_sparse, ann_dense)
-	def load(self):
-		self.load_meta()
-		self.load_phraser()
-		self.load_dictionary()
-		self.load_tfidf()
-		#self.load_lsi()
-		#self.load_ann()
+	def load(self, components=[]):
+		if 'meta'       in components: self.load_meta()
+		if 'sentencer'  in components: self.load_sentencer()
+		if 'phraser'    in components: self.load_phraser()
+		if 'dictionary' in components: self.load_dictionary()
+		if 'tfidf'      in components: self.load_tfidf()
+		if 'lsi'        in components: self.load_lsi()
+		if 'sparse_ann' in components: self.load_sparse_ann()
+		if 'dense_ann'  in components: self.load_dense_ann()
 		#
-		#self.load_phrased()
-		#self.load_bow()
-		#self.load_sparse()
-		#self.load_dense()
+		if 'phrased'    in components: self.load_phrased()
+		if 'bow'        in components: self.load_bow()
+		if 'sparse'     in components: self.load_sparse()
+		if 'dense'      in components: self.load_dense()
 		#
 		return self
+
+	# EXPERIMENTAL
+	def get_doc(self, i):
+		"""get single document (paragraph) by index"""
+		meta = self.meta[i]
+		return self.get_doc_by_meta(meta)
 
 # ------------------------------------------------------------------------------
 

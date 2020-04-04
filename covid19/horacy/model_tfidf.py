@@ -1,8 +1,9 @@
 from gensim.models import TfidfModel
 from tqdm import tqdm
-from sorbet import sorbet
+import multiprocessing as mp
 
-from util_time import timed
+from .sorbet import sorbet
+from .util_time import timed
 
 # ---[ MODEL ]------------------------------------------------------------------
 
@@ -28,6 +29,37 @@ class HoracyTFIDF():
 	#@timed
 	def load_sparse(self):
 		self.sparse = sorbet(self.path+'sparse').load()
+	
+	def init_sparse_mp(self, workers=4, chunksize=100):
+		s = sorbet(self.path+'sparse').new()
+		id_iter = range(len(self.meta))
+		id_iter = tqdm(id_iter,'sparse',len(self.meta))
+		with mp.Pool(
+					workers,
+					init_sparse_worker,
+					[
+						self.path,
+					]
+				) as pool:
+			sparse = pool.imap(sparse_worker, id_iter, chunksize)
+			for sp in sparse:
+				s.append(sp)
+		self.sparse = s.save()
+
+# ---[ MULTIPROCESSING ]--------------------------------------------------------
+
+def init_sparse_worker(*args):
+	global model
+	model_path = args[0]
+	model = HoracyTFIDF()
+	model.path = model_path
+	model.bow = sorbet(model.path+'bow').load()
+	model.load_tfidf()
+	
+def sparse_worker(doc_id):
+	bow = model.bow[doc_id]
+	sparse = model.tfidf[bow]
+	return sparse
 
 # ---[ DEBUG ]------------------------------------------------------------------
 

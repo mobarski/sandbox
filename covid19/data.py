@@ -18,17 +18,17 @@ import json
 
 def raw_to_docs(path):
 	"""iterate over paragraph level documents from one raw document"""
-	rec = {}
 	doc = json.load(open(path,'rb'))
-	# metadata
-	rec['paper_id'] = doc['paper_id']
-	rec['paper_title'] = doc['metadata']['title']
-	rec['path'] = path
 	# parts
 	text_id = 0
 	for part in ['abstract','body_text']:
-		rec['part'] = part
 		for x in doc[part]:
+			rec = {}
+			# metadata
+			rec['paper_id'] = doc['paper_id']
+			rec['paper_title'] = doc['metadata']['title']
+			rec['path'] = path
+			rec['part'] = part
 			text_id += 1
 			rec['text_id'] = text_id
 			#
@@ -67,12 +67,45 @@ def get_doc(path,text_id):
 		if doc['text_id']==text_id:
 			return doc
 
+def get_doc_by_meta(meta):
+	path = meta['path']
+	text_id = meta['text_id']
+	return get_doc(path,text_id)
+
 # ------------------------------------------------------------------------------
 
 if __name__=="__main__":
 	from pprint import pprint
-
-			
-
-
-	
+	from itertools import islice
+	from collections import Counter
+	import csv
+	cnt = Counter()
+	empty = 0
+	all = 0
+	with open('data/metadata.csv','r',encoding='utf8') as csv_f:
+		reader = csv.DictReader(csv_f)
+		for row in islice(reader,None):
+			if row['sha']=='':
+				empty += 1
+			else:
+				key = hash(row['title'])
+				cnt[key] += 1
+			all += 1
+		print(empty,all)
+	pprint(cnt.most_common(30))
+	print(sum([1 if c>1 else 0 for h,c in cnt.items()]))
+	print(sum([c if c>1 else 0 for h,c in cnt.items()]))
+	exit()
+	from tqdm import tqdm
+	cnt = {}
+	files = tqdm(list_data_files())
+	for path in files:
+		doc = json.load(open(path,'rb'))
+		t = doc['metadata']['title']
+		if t not in cnt:
+			cnt[t] = [path]
+		else:
+			cnt[t] += [path]
+	by_cnt = list(cnt.items())
+	by_cnt.sort(key=lambda x:len(x[1]),reverse=True)
+	pprint(by_cnt[:10])

@@ -1,29 +1,18 @@
 from setuptools import setup, find_packages
 
 setup(
-	name="horace",
+	name="horacy",
 	version="0.0.1",
-	scripts=[
-		'model.py',
-		'model_ann.py',
-		'model_dictionary.py',
-		'model_lsi.py',
-		'model_meta.py',
-		'model_phraser.py',
-		'model_sentencer.py',
-		'model_tfidf.py',
-		'sorbet.py',
-		'util_coverage.py',
-		'util_time.py',
-	],
-	install_requires=["gensim","nmslib","numpy"],
+	packages=find_packages(),
+	
+	install_requires=["gensim","nmslib","tqdm"],
 	
 	author="Maciej Obarski",
 	author_email="mobarski@gmail.com",
-	description="",
-	keywords="",
+	description="Natural Language Processing (NLP) framework "\
+		"built on top of gensim and nmslib.",
+	keywords="NLP",
 	classifiers=[
 		"License :: OSI Approved :: Python Software Foundation License"
 	]
-	#packages=find_packages()
 )

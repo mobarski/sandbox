@@ -1,8 +1,9 @@
 from gensim.corpora.dictionary import Dictionary
 from tqdm import tqdm
+import re
 
-from util_time import timed
-from sorbet import sorbet
+from .util_time import timed
+from .sorbet import sorbet
 
 # ---[ MODEL ]------------------------------------------------------------------
 
@@ -42,12 +43,18 @@ class HoracyDictionary():
 	#@timed
 	def load_bow(self):
 		self.bow = sorbet(self.path+'bow').load()
+		
+	def dictionary_query(self, query):
+		q = re.compile(query)
+		for i,token in self.dictionary.items():
+			if q.findall(token):
+				yield i,token
 
 # ---[ DEBUG ]------------------------------------------------------------------
 
 if __name__=="__main__":
 	model = HoracyDictionary()
-	model.path = 'model_100/'
+	model.path = '../model_100/'
 	model.load_dictionary()
 	#
 	d = list(model.dictionary.dfs.items())

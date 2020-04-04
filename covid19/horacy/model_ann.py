@@ -1,7 +1,7 @@
 import nmslib
 from tqdm import tqdm
 
-from util_time import timed
+from .util_time import timed
 
 class HoracyANN():
 
