@@ -1,7 +1,10 @@
 import nmslib
 from tqdm import tqdm
 
-from .util_time import timed
+try:
+	from .util_time import timed
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
 
 class HoracyANN():
 

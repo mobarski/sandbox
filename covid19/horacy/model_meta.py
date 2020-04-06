@@ -1,11 +1,15 @@
 from tqdm import tqdm
 
-from .sorbet import sorbet
-from .util_time import timed
+try:
+	from .util_time import timed
+	from .sorbet import sorbet
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
+	from sorbet import sorbet
 
 class HoracyMeta():
 
-	#@timed
+	@timed
 	def init_meta(self, doc_iter, get_meta):
 		self.meta = sorbet(self.path+'meta').new()
 		records = doc_iter
@@ -15,7 +19,6 @@ class HoracyMeta():
 			self.meta.append(m)
 		self.meta.save()
 	
-	#@timed
 	def load_meta(self):
 		self.meta = sorbet(self.path+'meta').load()
 

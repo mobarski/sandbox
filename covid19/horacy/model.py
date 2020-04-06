@@ -1,6 +1,10 @@
 import os
 import re
+import pickle
+from types import FunctionType
+
 from tqdm import tqdm
+import dill
 
 from .model_meta       import HoracyMeta
 from .model_sentencer  import HoracySentencer
@@ -53,19 +57,19 @@ class HoracyModel(
 		return scored
 	
 	#@timed
-	def find_sparse(self, text):
+	def find_sparse(self, text, k=10):
 		sparse = self.text_to_sparse(text)
 		if sparse:
-			i_list,d_list = self.sparse_ann_query(sparse)
+			i_list,d_list = self.sparse_ann_query(sparse,k)
 			for i,d in zip(i_list,d_list):
 				m = self.meta[i]
 				yield i,d,m
 
 	#@timed
-	def find_dense(self, text):
+	def find_dense(self, text, k=10):
 		dense = self.text_to_dense(text)
 		if dense:
-			i_list,d_list = self.dense_ann_query(dense)
+			i_list,d_list = self.dense_ann_query(dense,k)
 			for i,d in zip(i_list,d_list):
 				m = self.meta[i]
 				yield i,d,m
@@ -98,20 +102,27 @@ class HoracyModel(
 		ids = [self.dictionary.token2id.get(p,-1) for p in phrased]
 		return [p for p,i in zip(phrased,ids) if i>=0]
 
+	# TODO opcja do ladowania wszystkiego co jest zapisane
+	# TODO analogiczna funkcja init ala sklearn.model
+	@timed
 	def load(self, components=[]):
-		if 'meta'       in components: self.load_meta()
-		if 'sentencer'  in components: self.load_sentencer()
-		if 'phraser'    in components: self.load_phraser()
-		if 'dictionary' in components: self.load_dictionary()
-		if 'tfidf'      in components: self.load_tfidf()
-		if 'lsi'        in components: self.load_lsi()
-		if 'sparse_ann' in components: self.load_sparse_ann()
-		if 'dense_ann'  in components: self.load_dense_ann()
+		all = not components
+		if 'fun'        in components or all: self.load_fun()
 		#
-		if 'phrased'    in components: self.load_phrased()
-		if 'bow'        in components: self.load_bow()
-		if 'sparse'     in components: self.load_sparse()
-		if 'dense'      in components: self.load_dense()
+		if 'meta'       in components or all: self.load_meta()
+		if 'sentencer'  in components or all: self.load_sentencer()
+		if 'phraser'    in components or all: self.load_phraser()
+		if 'dictionary' in components or all: self.load_dictionary()
+		if 'tfidf'      in components or all: self.load_tfidf()
+		if 'lsi'        in components or all: self.load_lsi()
+		if 'sparse_ann' in components or all: self.load_sparse_ann()
+		if 'dense_ann'  in components or all: self.load_dense_ann()
+		#
+		if 'phrased'    in components or all: self.load_phrased()
+		if 'bow'        in components or all: self.load_bow()
+		if 'sparse'     in components or all: self.load_sparse()
+		if 'dense'      in components or all: self.load_dense()
+		if 'inverted'   in components or all: self.load_inverted()
 		#
 		return self
 
@@ -120,6 +131,22 @@ class HoracyModel(
 		"""get single document (paragraph) by index"""
 		meta = self.meta[i]
 		return self.get_doc_by_meta(meta)
+
+	# EXPERIMENTAL
+	def init_fun(self):
+		fun_dict = {}
+		for name in dir(self):
+			if name[0]=='_':continue
+			fun = getattr(self, name)
+			if type(fun) is FunctionType:
+				fun_dict[name] = fun
+		dill.dump(fun_dict, open(self.path+'fun.dill','wb'), recurse=True)
+
+	# EXPERIMENTAL
+	def load_fun(self):
+		fun_dict = dill.load(open(self.path+'fun.dill','rb'))
+		for name,fun in fun_dict.items():
+			setattr(self, name, fun)
 
 # ------------------------------------------------------------------------------
 

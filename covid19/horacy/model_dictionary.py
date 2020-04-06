@@ -1,15 +1,21 @@
 from gensim.corpora.dictionary import Dictionary
 from tqdm import tqdm
 import re
+import pickle
+from array import array
 
-from .util_time import timed
-from .sorbet import sorbet
+try:
+	from .util_time import timed
+	from .sorbet import sorbet
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
+	from sorbet import sorbet
 
 # ---[ MODEL ]------------------------------------------------------------------
 
 class HoracyDictionary():
 	
-	#@timed
+	@timed
 	def init_dictionary(self, save=True):
 		phrased = self.phrased
 		phrased = tqdm(phrased, desc='dictionary', total=len(phrased))
@@ -18,7 +24,6 @@ class HoracyDictionary():
 		if save:
 			self.dictionary.save(self.path+'dictionary.pkl')
 	
-	#@timed
 	def load_dictionary(self):
 		self.dictionary = Dictionary.load(self.path+'dictionary.pkl')
 
@@ -28,6 +33,7 @@ class HoracyDictionary():
 		if stopwords:
 			bad_ids = [self.dictionary.token2id.get(t,-1) for t in stopwords]
 			self.dictionary.filter_tokens(bad_ids)
+		self.dictionary.compactify()
 		if save:
 			self.dictionary.save(self.path+'dictionary.pkl')
 
@@ -40,7 +46,6 @@ class HoracyDictionary():
 			self.bow.append(bow)
 		self.bow.save()
 	
-	#@timed
 	def load_bow(self):
 		self.bow = sorbet(self.path+'bow').load()
 		
@@ -49,7 +54,26 @@ class HoracyDictionary():
 		for i,token in self.dictionary.items():
 			if q.findall(token):
 				yield i,token
+	
+	@timed
+	def init_inverted(self):
+		inverted = {}
+		bow = tqdm(self.bow, desc='inverted', total=len(self.bow))
+		for i,b in enumerate(bow):
+			for t,cnt in b:
+				if t in inverted:
+					inverted[t] += [i]
+				else:
+					inverted[t] = [i]
+		#
+		self.inverted = sorbet(self.path+'inverted').new()
+		for t in range(max(inverted)):
+			self.inverted.append(set(inverted.get(t,[])))
+		self.inverted.save()
 
+	def load_inverted(self):
+		self.inverted = sorbet(self.path+'inverted').load()
+	
 # ---[ DEBUG ]------------------------------------------------------------------
 
 if __name__=="__main__":

@@ -2,34 +2,37 @@ from gensim.models import TfidfModel
 from tqdm import tqdm
 import multiprocessing as mp
 
-from .sorbet import sorbet
-from .util_time import timed
+try:
+	from .util_time import timed
+	from .sorbet import sorbet
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
+	from sorbet import sorbet
 
 # ---[ MODEL ]------------------------------------------------------------------
 
 class HoracyTFIDF():
 	
-	#@timed
+	@timed
 	def init_tfidf(self, **kwargs):
 		bow = self.bow
 		bow = tqdm(bow, desc='tfidf', total=len(bow))
 		self.tfidf = TfidfModel(bow, **kwargs)
 		self.tfidf.save(self.path+'tfidf.pkl')
 	
-	#@timed
 	def load_tfidf(self):
 		self.tfidf = TfidfModel.load(self.path+'tfidf.pkl')
 
-	#@timed
+	@timed
 	def init_sparse(self, materialize=True):
 		sparse = (self.tfidf[bow] for bow in self.bow)
 		sparse = tqdm(sparse, desc='sparse', total=len(self.bow)) # progress bar
 		self.sparse = sorbet(self.path+'sparse').dump(sparse)
 		
-	#@timed
 	def load_sparse(self):
 		self.sparse = sorbet(self.path+'sparse').load()
 	
+	@timed
 	def init_sparse_mp(self, workers=4, chunksize=100):
 		s = sorbet(self.path+'sparse').new()
 		id_iter = range(len(self.meta))
@@ -65,7 +68,7 @@ def sparse_worker(doc_id):
 
 if __name__=="__main__":
 	model = HoracyTFIDF()
-	model.path = 'model_100/'
+	model.path = '../model_100/'
 	model.load_tfidf()
 	tfidf = model.tfidf
 	#

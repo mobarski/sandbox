@@ -3,8 +3,12 @@ from tqdm import tqdm
 from array import array
 import multiprocessing as mp
 
-from .sorbet import sorbet
-from .util_time import timed
+try:
+	from .util_time import timed
+	from .sorbet import sorbet
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
+	from sorbet import sorbet
 
 # ---[ MODEL ]------------------------------------------------------------------
 
@@ -17,12 +21,11 @@ class HoracyLSI():
 		self.lsi = LsiModel(corpus, **kwargs)
 		self.lsi.save(self.path+'lsi.pkl')
 	
-	#@timed
 	def load_lsi(self):
 		self.lsi = LsiModel.load(self.path+'lsi.pkl')
 
 	# TODO use sparse_to_dense
-	#@timed
+	@timed
 	def init_dense(self):
 		corpus = self.sparse
 		#num_topics = self.lsi.num_topics
@@ -33,7 +36,6 @@ class HoracyLSI():
 		dense = tqdm(dense, desc='dense', total=len(corpus)) # progress bar
 		self.dense = sorbet(self.path+'dense').dump(dense)
 		
-	#@timed
 	def load_dense(self):
 		self.dense = sorbet(self.path+'dense').load()
 	
@@ -42,6 +44,7 @@ class HoracyLSI():
 		dense = [dict(dense).get(i,0) for i in range(self.lsi.num_topics)]
 		return dense
 
+	@timed
 	def init_dense_mp(self, workers=4, chunksize=100):
 		s = sorbet(self.path+'dense').new()
 		id_iter = range(len(self.meta))

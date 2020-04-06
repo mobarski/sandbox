@@ -1,9 +1,14 @@
 from gensim.models.phrases import Phrases, Phraser
 from tqdm import tqdm
 import multiprocessing as mp
+import os
 
-from .sorbet import sorbet
-from .util_time import timed
+try:
+	from .util_time import timed
+	from .sorbet import sorbet
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
+	from sorbet import sorbet
 
 # ---[ MODEL ]------------------------------------------------------------------
 
@@ -18,10 +23,17 @@ class HoracyPhraser():
 		self.phraser.components = components
 		self.phraser.save(self.path+'phraser.pkl')
 		del phrases
+	
+	def skip_phraser(self, *args, **kwargs):
+		self.phraser = None
+		open(self.path+'phraser.pkl','wb') # empty file -> skip_phraser
 
-	#@timed
 	def load_phraser(self):
-		self.phraser = Phraser.load(self.path+'phraser.pkl')
+		path = self.path+'phraser.pkl'
+		if os.path.getsize(path):
+			self.phraser = Phraser.load(path)
+		else:
+			self.phraser = None
 	
 	# TODO rename rec -> doc
 	def rec_to_phrased(self, doc):
@@ -29,14 +41,17 @@ class HoracyPhraser():
 		yield from self.text_to_phrased(text)
 	
 	def text_to_phrased(self, text):
-		components = self.phraser.components
-		sentences = self.text_to_sentences(text)
-		for sentence in sentences:
-			tokens = self.text_to_tokens(sentence)
-			phrased = self.phraser[tokens]
-			yield from phrased
-			if components:
-				yield from set(tokens)-set(phrased) 
+		if self.phraser:
+			components = self.phraser.components
+			sentences = self.text_to_sentences(text)
+			for sentence in sentences:
+				tokens = self.text_to_tokens(sentence)
+				phrased = self.phraser[tokens]
+				yield from phrased
+				if components:
+					yield from set(tokens)-set(phrased)
+		else:
+			yield from self.text_to_tokens(text)
 	
 	@timed
 	def init_phrased(self, doc_iter):
@@ -58,7 +73,8 @@ class HoracyPhraser():
 						self.get_doc_by_meta,
 						self.doc_to_text,
 						self.text_to_sentences,
-						self.text_to_tokens
+						self.text_to_tokens,
+						self.phraser==None
 					]
 				) as pool:
 			phrased = pool.imap(phrased_worker, doc_id_iter, chunksize)
@@ -66,7 +82,6 @@ class HoracyPhraser():
 				s.append(list(p))
 		self.phrased = s.save()
 		
-	#@timed
 	def load_phrased(self):
 		self.phrased = sorbet(self.path+'phrased').load()
 
@@ -80,21 +95,26 @@ def init_phrased_worker(*args):
 	model.doc_to_text       = args[2]
 	model.text_to_sentences = args[3]
 	model.text_to_tokens    = args[4]
+	model.skip_phraser      = args[5]
 	model.meta = sorbet(model.path+'meta').load()
-	model.load_phraser()
+	if not model.skip_phraser:
+		model.load_phraser()
 	
 def phrased_worker(doc_id):
-	out = []
 	meta = model.meta[doc_id]
 	doc = model.get_doc_by_meta(meta)
 	text = model.doc_to_text(doc)
-	components = model.phraser.components
-	for sen in model.text_to_sentences(text):
-		tokens = model.text_to_tokens(sen)
-		phrased = model.phraser[tokens]
-		out.extend(phrased)
-		if components:
-			out.extend(set(tokens)-set(phrased)) 
+	if model.skip_phraser:
+		out = model.text_to_tokens(text)
+	else:
+		out = []
+		components = model.phraser.components
+		for sen in model.text_to_sentences(text):
+			tokens = model.text_to_tokens(sen)
+			phrased = model.phraser[tokens]
+			out.extend(phrased)
+			if components:
+				out.extend(set(tokens)-set(phrased)) 
 	return out
 
 # ---[ DEBUG ]-------------------------------------------------------------------

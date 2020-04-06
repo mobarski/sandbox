@@ -3,12 +3,19 @@ import pickle
 from hashlib import md5
 from collections import Counter
 
+try:
+	from .util_time import timed
+except (ModuleNotFoundError,ImportError):
+	from util_time import timed
+
+
 def my_hash(text):
 	"""64bit hash from text"""
 	return int(md5(text.lower().encode()).hexdigest()[:16],16)
 
 class HoracySentencer:
 
+	@timed
 	def init_sentencer(self, doc_iter, no_above=None, no_matching=None):
 		self.sentencer = sen = Counter()
 		self.sentencer_no_above = no_above

@@ -22,6 +22,7 @@ def raw_to_docs(path):
 	# parts
 	text_id = 0
 	for part in ['abstract','body_text']:
+		if part not in doc: continue
 		for x in doc[part]:
 			rec = {}
 			# metadata
