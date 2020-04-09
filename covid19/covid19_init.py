@@ -26,7 +26,7 @@ phraser_cfg = {
 prune_cfg = {
 	'no_below': 2,
 	'no_above': 0.50,
-	'keep_tokens': ['<PAD>'],
+	'keep_tokens': ['<PAD>','<DNA>'],
 	'stopwords': [],
 }
 
@@ -61,6 +61,7 @@ upper_re = re.compile('[A-Z]')
 
 num_re = re.compile('\d+|\d+[%]|\d+[a-z]|[#]\d+|[~]\d+')
 url_re = re.compile('[hH][tT][tT][pP][sS]?://[a-zA-Z._0-9/=&?,|%-]+')
+dna_re = re.compile('[AGCT]{8,}')
 
 def text_to_sentences(text):
 	return [s.strip() for s in split_sentences_re.split(text) if s.strip()]
@@ -71,6 +72,7 @@ def text_to_tokens(text):
 	tokens = [t.lower() if len(t)>1 and len(upper_re.findall(t))<2 else t for t in tokens]
 	#tokens = [t.lower() for t in tokens]
 	tokens = ['<NUM>' if num_re.match(t) else t for t in tokens]
+	tokens = ['<DNA>' if dna_re.match(t) else t for t in tokens]
 	return tokens
 
 # ------------------------------------------------------------------------------
@@ -79,12 +81,12 @@ if __name__=="__main__":
 	from itertools import islice
 	from time import time
 	t0 = time()
-	from horacy import HoracyModel
+	import inverness
 	import data
 	limit = 1000
-	workers = 1
+	workers = 2
 	label = limit or 'all'
-	model = HoracyModel(f'model_{label}/')
+	model = inverness.Model(f'model_{label}/')
 	model.text_to_sentences = text_to_sentences
 	model.text_to_tokens = text_to_tokens
 	model.doc_to_text = doc_to_text
@@ -136,7 +138,7 @@ if __name__=="__main__":
 		model.load_sparse_ann()
 		model.load_dense_ann()
 
-	print('\ntotal:',time()-t0,'\n\n')
+	print(f'\n\ntotal: {time()-t0:.01}s\n\n')
 
 
 	# ------------------------------------------------------------------------------
@@ -160,32 +162,3 @@ if __name__=="__main__":
 	print('sparse score:',test_model(ids, model.find_sparse))
 	print('dense score: ',test_model(ids, model.find_dense))
 	
-	# ------------------------------------------------------------------------------
-	# ------------------------------------------------------------------------------
-	# ------------------------------------------------------------------------------
-
-	print('inverted[42]:',list(model.inverted[42])[:20])
-
-	# ------------------------------------------------------------------------------
-	# ------------------------------------------------------------------------------
-	# ------------------------------------------------------------------------------
-	
-	q = 'ventil'
-	print('\n')
-	results = [(i,t,model.tfidf.dfs[i]) for i,t in model.dictionary_query(q)]
-	results.sort(key=lambda x:x[2],reverse=True)
-	for i,t,df in islice(results,10):
-		#if '__' in t: continue
-		print(i,t,df)
-
-	# ------------------------------------------------------------------------------
-	# ------------------------------------------------------------------------------
-	# ------------------------------------------------------------------------------
-	
-	print('\n')
-	q = "mechanical ventilation"
-	top = model.find_dense(q,10)
-	for i,d,m in top:
-		doc = model.get_doc(i)
-		print(d,doc['text'])
-		print()

@@ -1,4 +1,4 @@
-from gensim.corpora.dictionary import Dictionary
+from gensim.corpora.dictionary import Dictionary as GensimDictionary
 from tqdm import tqdm
 import re
 import pickle
@@ -13,19 +13,19 @@ except (ModuleNotFoundError,ImportError):
 
 # ---[ MODEL ]------------------------------------------------------------------
 
-class HoracyDictionary():
+class Dictionary():
 	
 	@timed
 	def init_dictionary(self, save=True):
 		phrased = self.phrased
 		phrased = tqdm(phrased, desc='dictionary', total=len(phrased))
-		self.dictionary = Dictionary(phrased)
+		self.dictionary = GensimDictionary(phrased)
 		self.dictionary.patch_with_special_tokens({'<PAD>':0})
 		if save:
 			self.dictionary.save(self.path+'dictionary.pkl')
 	
 	def load_dictionary(self):
-		self.dictionary = Dictionary.load(self.path+'dictionary.pkl')
+		self.dictionary = GensimDictionary.load(self.path+'dictionary.pkl')
 
 	@timed
 	def prune_dictionary(self, stopwords=None, save=True, **kwargs):
@@ -95,7 +95,7 @@ class HoracyDictionary():
 # ---[ DEBUG ]------------------------------------------------------------------
 
 if __name__=="__main__":
-	model = HoracyDictionary()
+	model = Dictionary()
 	model.path = '../model_100/'
 	model.load_dictionary()
 	#

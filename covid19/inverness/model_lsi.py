@@ -12,7 +12,7 @@ except (ModuleNotFoundError,ImportError):
 
 # ---[ MODEL ]------------------------------------------------------------------
 
-class HoracyLSI():
+class LSI():
 	
 	@timed
 	def init_lsi(self, **kwargs):
@@ -67,7 +67,7 @@ class HoracyLSI():
 def init_dense_worker(*args):
 	global model
 	model_path = args[0]
-	model = HoracyLSI()
+	model = LSI()
 	model.path = model_path
 	model.sparse = sorbet(model.path+'sparse').load()
 	model.load_lsi()
@@ -84,7 +84,7 @@ def dense_worker(doc_id):
 # ---[ DEBUG ]------------------------------------------------------------------
 
 if __name__=="__main__":
-	model = HoracyLSI()
+	model = LSI()
 	model.path = 'model_100/'
 	model.load_lsi()
 	model.load_dense()

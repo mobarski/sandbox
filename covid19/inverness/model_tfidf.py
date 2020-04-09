@@ -12,7 +12,7 @@ except (ModuleNotFoundError,ImportError):
 
 # ---[ MODEL ]------------------------------------------------------------------
 
-class HoracyTFIDF():
+class TFIDF():
 	
 	@timed
 	def init_tfidf(self, **kwargs):
@@ -70,7 +70,7 @@ class HoracyTFIDF():
 def init_sparse_worker(*args):
 	global model
 	model_path = args[0]
-	model = HoracyTFIDF()
+	model = TFIDF()
 	model.path = model_path
 	model.bow = sorbet(model.path+'bow').load()
 	model.load_tfidf()
@@ -83,7 +83,7 @@ def sparse_worker(doc_id):
 # ---[ DEBUG ]------------------------------------------------------------------
 
 if __name__=="__main__":
-	model = HoracyTFIDF()
+	model = TFIDF()
 	model.path = '../model_100/'
 	model.load_tfidf()
 	tfidf = model.tfidf
@@ -91,8 +91,8 @@ if __name__=="__main__":
 	from pprint import pprint
 	from itertools import islice
 	#
-	from model_dictionary import HoracyDictionary
-	model2 = HoracyDictionary()
+	from model_dictionary import Dictionary
+	model2 = Dictionary()
 	model2.path = model.path
 	model2.load_dictionary()
 	d = model2.dictionary
