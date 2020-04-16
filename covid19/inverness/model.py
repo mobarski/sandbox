@@ -13,6 +13,7 @@ from .model_dictionary import Dictionary
 from .model_tfidf      import TFIDF
 from .model_lsi        import LSI
 from .model_ann        import ANN
+from .model_subword    import Subword
 
 from .util_time import timed
 
@@ -26,7 +27,8 @@ class Model(
 		Dictionary,
 		TFIDF,
 		LSI,
-		ANN
+		ANN,
+		Subword
 	):
 	
 	def __init__(self, path='model/'):
