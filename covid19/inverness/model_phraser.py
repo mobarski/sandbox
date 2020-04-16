@@ -16,16 +16,15 @@ except (ModuleNotFoundError,ImportError):
 class Phraser():
 
 	@timed
-	def init_phraser(self, doc_iter, components=False, **kwargs):
-		doc_iter = tqdm(doc_iter, desc='phraser_input', total=len(self.meta)) # progress bar
-		sentences = self.all_sentences(doc_iter)
+	def init_phraser(self, components=False, **kwargs):
+		sentences = self.all_sentences(desc='phraser_input')
 		phrases = Phrases(sentences, **kwargs)
 		self.phraser = GensimPhraser(phrases)
 		self.phraser.components = components
 		self.phraser.save(self.path+'phraser.pkl')
 		del phrases
 	
-	def skip_phraser(self, *args, **kwargs):
+	def skip_phraser(self):
 		self.phraser = None
 		open(self.path+'phraser.pkl','wb') # empty file -> skip_phraser
 
@@ -36,8 +35,7 @@ class Phraser():
 		else:
 			self.phraser = None
 	
-	# TODO rename rec -> doc
-	def rec_to_phrased(self, doc):
+	def doc_to_phrased(self, doc):
 		text = self.doc_to_text(doc)
 		yield from self.text_to_phrased(text)
 	
@@ -55,11 +53,11 @@ class Phraser():
 			yield from self.text_to_tokens(text)
 	
 	@timed
-	def init_phrased(self, doc_iter):
-		records = doc_iter
-		phrased = (list(self.rec_to_phrased(r)) for r in records)
+	def init_phrased(self, storage='disk'):
+		documents = self.doc_iter()
+		phrased = (list(self.doc_to_phrased(doc)) for doc in documents)
 		phrased = tqdm(phrased, desc='phrased', total=len(self.meta)) # progress bar
-		self.phrased = sorbet(self.path+'phrased').dump(phrased)
+		self.phrased = sorbet(self.path+'phrased', kind=storage).dump(phrased)
 
 	@timed
 	def init_phrased_mp(self, workers=4, chunksize=100):
@@ -82,9 +80,19 @@ class Phraser():
 			for p in phrased:
 				s.append(list(p))
 		self.phrased = s.save()
-		
-	def load_phrased(self):
-		self.phrased = sorbet(self.path+'phrased').load()
+	
+	def skip_phrased(self):
+		doc_to_text = self.doc_to_text
+		text_to_tokens = self.text_to_tokens
+		doc_iter = self.doc_iter
+		class __phrased:
+			def __iter__(self):
+				return (list(text_to_tokens(doc_to_text(doc))) for doc in doc_iter())
+			def delete(self): pass
+		self.phrased = __phrased()
+	
+	def load_phrased(self, storage='disk'):
+		self.phrased = sorbet(self.path+'phrased', kind=storage).load()
 
 # ---[ MULTIPROCESSING ]--------------------------------------------------------
 

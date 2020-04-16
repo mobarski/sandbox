@@ -86,23 +86,23 @@ class Model(
 	# TODO analogiczna funkcja init ala sklearn.model
 	@timed
 	def load(self, components=[]):
-		all = not components
-		if 'fun'        in components or all: self.load_fun()
+		# TODO wykrywanie ktore komponenty wczytac
+		if 'fun'        in components: self.load_fun()
 		#
-		if 'meta'       in components or all: self.load_meta()
-		if 'sentencer'  in components or all: self.load_sentencer()
-		if 'phraser'    in components or all: self.load_phraser()
-		if 'dictionary' in components or all: self.load_dictionary()
-		if 'tfidf'      in components or all: self.load_tfidf()
-		if 'lsi'        in components or all: self.load_lsi()
-		if 'sparse_ann' in components or all: self.load_sparse_ann()
-		if 'dense_ann'  in components or all: self.load_dense_ann()
+		if 'meta'       in components: self.load_meta()
+		if 'sentencer'  in components: self.load_sentencer()
+		if 'phraser'    in components: self.load_phraser()
+		if 'dictionary' in components: self.load_dictionary()
+		if 'tfidf'      in components: self.load_tfidf()
+		if 'lsi'        in components: self.load_lsi()
+		if 'sparse_ann' in components: self.load_sparse_ann()
+		if 'dense_ann'  in components: self.load_dense_ann()
 		#
-		if 'phrased'    in components or all: self.load_phrased()
-		if 'bow'        in components or all: self.load_bow()
-		if 'sparse'     in components or all: self.load_sparse()
-		if 'dense'      in components or all: self.load_dense()
-		if 'inverted'   in components or all: self.load_inverted()
+		if 'phrased'    in components: self.load_phrased()
+		if 'bow'        in components: self.load_bow()
+		if 'sparse'     in components: self.load_sparse()
+		if 'dense'      in components: self.load_dense()
+		if 'inverted'   in components: self.load_inverted()
 		#
 		return self
 

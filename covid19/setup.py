@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
 	name="inverness",
-	version="0.0.1",
+	version="0.0.3",
 	packages=find_packages(),
 	
 	install_requires=["gensim","nmslib","tqdm","dill"],
@@ -14,6 +14,6 @@ setup(
 		"built on top of gensim and nmslib.",
 	keywords="NLP",
 	classifiers=[
-		"License :: OSI Approved :: Python Software Foundation License"
+		"License :: OSI Approved :: MIT License"
 	]
 )

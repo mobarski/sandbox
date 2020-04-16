@@ -11,15 +11,17 @@ except (ModuleNotFoundError,ImportError):
 	from util_time import timed
 	from sorbet import sorbet
 
+# TODO dodatkowa metoda - zamiast doc->bow doc->ids
+
 # ---[ MODEL ]------------------------------------------------------------------
 
 class Dictionary():
 	
 	@timed
 	def init_dictionary(self, save=True):
-		phrased = self.phrased
-		phrased = tqdm(phrased, desc='dictionary', total=len(phrased))
-		self.dictionary = GensimDictionary(phrased)
+		source = self.phrased
+		src = tqdm(source, desc='dictionary', total=len(self.meta))
+		self.dictionary = GensimDictionary(src)
 		self.dictionary.patch_with_special_tokens({'<PAD>':0})
 		if save:
 			self.dictionary.save(self.path+'dictionary.pkl')
@@ -38,16 +40,17 @@ class Dictionary():
 			self.dictionary.save(self.path+'dictionary.pkl')
 
 	@timed
-	def init_bow(self):
-		self.bow = sorbet(self.path+'bow').new()
-		phrased = tqdm(self.phrased, desc='bow', total=len(self.phrased)) # progress bar
-		for doc in phrased:
+	def init_bow(self, storage='disk'):
+		self.bow = sorbet(self.path+'bow', kind=storage).new()
+		source = self.phrased
+		src = tqdm(source, desc='bow', total=len(self.meta))
+		for doc in src:
 			bow = self.dictionary.doc2bow(doc) or [(0,1)]
 			self.bow.append(bow)
 		self.bow.save()
 	
-	def load_bow(self):
-		self.bow = sorbet(self.path+'bow').load()
+	def load_bow(self, storage='disk'):
+		self.bow = sorbet(self.path+'bow', kind=storage).load()
 			
 	@timed
 	def init_inverted(self):
@@ -96,7 +99,7 @@ class Dictionary():
 
 if __name__=="__main__":
 	model = Dictionary()
-	model.path = '../model_100/'
+	model.path = '../model_10/'
 	model.load_dictionary()
 	#
 	d = list(model.dictionary.dfs.items())

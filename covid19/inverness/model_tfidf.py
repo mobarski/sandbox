@@ -17,7 +17,7 @@ class TFIDF():
 	@timed
 	def init_tfidf(self, **kwargs):
 		bow = self.bow
-		bow = tqdm(bow, desc='tfidf', total=len(bow))
+		bow = tqdm(bow, desc='tfidf', total=len(self.meta))
 		self.tfidf = TfidfModel(bow, **kwargs)
 		self.tfidf.save(self.path+'tfidf.pkl')
 	
@@ -25,13 +25,13 @@ class TFIDF():
 		self.tfidf = TfidfModel.load(self.path+'tfidf.pkl')
 
 	@timed
-	def init_sparse(self, materialize=True):
+	def init_sparse(self, storage='disk'):
 		sparse = (self.tfidf[bow] for bow in self.bow)
-		sparse = tqdm(sparse, desc='sparse', total=len(self.bow)) # progress bar
-		self.sparse = sorbet(self.path+'sparse').dump(sparse)
+		sparse = tqdm(sparse, desc='sparse', total=len(self.meta)) # progress bar
+		self.sparse = sorbet(self.path+'sparse', kind=storage).dump(sparse)
 		
-	def load_sparse(self):
-		self.sparse = sorbet(self.path+'sparse').load()
+	def load_sparse(self, storage='disk'):
+		self.sparse = sorbet(self.path+'sparse', kind=storage).load()
 	
 	@timed
 	def init_sparse_mp(self, workers=4, chunksize=100):

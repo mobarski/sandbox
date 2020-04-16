@@ -5,6 +5,20 @@ Sorbet is fast - on a "standard" laptop it achieves:
 - 300k reads per second.
 """
 
+# ------------------------------------------------------------------------------
+
+def sorbet(path, kind='disk'):
+	if kind=='disk':
+		return sorbet_on_disk(path)
+	elif kind=='mem':
+		return sorbet_in_mem(path)
+	elif kind=='mem_only':
+		return sorbet_in_mem_only(path)
+	else:
+		raise Exception(f"Invalid sorbet kind: '{kind}'")
+		
+# ------------------------------------------------------------------------------
+
 from pickle import dump,load,HIGHEST_PROTOCOL
 import os
 
@@ -177,10 +191,6 @@ class sorbet_in_mem_only:
 	def __len__(self):
 		return len(self.data)
 
-# ------------------------------------------------------------------------------
-
-sorbet = sorbet_on_disk
-
 # ---[ TEST ]-------------------------------------------------------------------
 
 if __name__=="__main__":
@@ -190,13 +200,14 @@ if __name__=="__main__":
 	path = f'../data/{label}'
 	
 	N = 1_100_000
+	kind = 'disk'
 	if 1:
 		data = ({'a':i,'aa':i*10} for i in range(N))
 		t0=time()
-		db = sorbet(path).dump(data)
+		db = sorbet(path,kind).dump(data)
 		print("write time:",f"{time()-t0:.02f}s",f'{N/(time()-t0):.0f} items/s')
 	if 1:
-		db = sorbet(path).load()
+		db = sorbet(path,kind).load()
 		t0=time()
 		for i in range(N):
 			db[i]

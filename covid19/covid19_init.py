@@ -1,27 +1,86 @@
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# ---[ DATA ]-------------------------------------------------------------------
+
+"""Access data from json files as documents (paragraph level dicts)"""
+
+# ---[ list ]-------------------------------------------------------------------
+
+import os
+
+def list_data_files():
+	"""iterate over paths of all data files"""
+	for dirpath,_,filenames in os.walk('data'):
+		filenames = [f for f in filenames if f.endswith('.json')]
+		if not filenames: continue
+		for f in filenames:
+			yield os.path.join(dirpath,f)
+
+# ---[ convert ]----------------------------------------------------------------
+
+import json
+
+def json_to_docs(path):
+	"""iterate over paragraph level documents from one json document"""
+	paper = json.load(open(path,'rb'))
+	# parts
+	text_id = 0
+	for part in ['abstract','body_text']:
+		if part not in paper: continue
+		for x in paper[part]:
+			doc = {}
+			# metadata
+			doc['paper_id'] = paper['paper_id']
+			doc['paper_title'] = paper['metadata']['title']
+			doc['path'] = path
+			doc['part'] = part
+			text_id += 1
+			doc['text_id'] = text_id
+			#
+			doc['text'] = x['text']
+			doc['section'] = x['section']
+			# bib
+			doc['bib_titles'] = []
+			for ref in x['cite_spans']:
+				ref_id = ref['ref_id']
+				if not ref_id: continue 
+				ref_title = paper['bib_entries'][ref_id]['title'] # ERROR
+				doc['bib_titles'] += [ref_title]
+			# ref (tables and figures)
+			doc['tables'] = []
+			doc['figures'] = []
+			for ref in x['ref_spans']:
+				ref_id = ref['ref_id']
+				if not ref_id: continue
+				r = paper['ref_entries'][ref_id] # ERROR
+				if r['type']=='table':
+					doc['tables'] += [r['text']]
+				if r['type']=='figure':
+					doc['figures'] += [r['text']]
+			yield doc
+
+def doc_iter(limit=None):
+	"""iterate over all documents (doc = single paragraph)"""
+	from itertools import islice
+	for path in islice(list_data_files(),limit):
+		yield from json_to_docs(path)
+
+def get_doc(path,text_id):
+	"""get single document (paragraph)"""
+	docs = json_to_docs(path)
+	for doc in docs:
+		if doc['text_id']==text_id:
+			return doc
+
+def get_doc_by_meta(meta):
+	path = meta['path']
+	text_id = meta['text_id']
+	return get_doc(path,text_id)
+
+# ------------------------------------------------------------------------------
+
 import numpy as np
 import re
-
-sentencer_cfg = {'no_matching' : re.compile(
-		'(?i)All rights reserved'+
-		'|No reuse allowed'+
-		'|author/funder'+
-		'|this preprint'
-	)
-}
-
-phraser_cfg = {
-	'min_count' : 3,
-	'threshold' : 1.0,
-	'delimiter' : b'__',
-	'components' : True,
-	'common_terms' : [
-		'','to','and','of','the','a','an','in','by','for','on','that','or',
-		'was','this','then','than','is','with','/','*','+','-','=','<','>',
-		'could','be','here','we','has','are','there','as','did','not',
-		'from','may','have','from','our','et','al','under','were','these',
-		'at','out','but','also','it','into','de','one','two','had','no','not','so'
-	],
-}
 
 prune_cfg = {
 	'no_below': 2,
@@ -39,7 +98,7 @@ lsi_cfg = {
 }
 
 def get_meta(id,doc):
-	m = {f:doc[f] for f in ['paper_id','text_id','paper_title','path']}
+	m = {f:doc[f] for f in ['paper_id','text_id','path']}
 	m['id'] = id # DEBUG
 	return m
 
@@ -55,22 +114,16 @@ def doc_to_text(doc):
 
 # ------------------------------------------------------------------------------
 
-split_sentences_re = re.compile('(?<!.prof|et al|. [Ff]ig)[.?!;]+(?: (?=[A-Z\n])|\n)')
 split_tokens_re = re.compile('[\s.,;!?()\[\]]+')
 upper_re = re.compile('[A-Z]')
-
 num_re = re.compile('\d+|\d+[%]|\d+[a-z]|[#]\d+|[~]\d+')
 url_re = re.compile('[hH][tT][tT][pP][sS]?://[a-zA-Z._0-9/=&?,|%-]+')
 dna_re = re.compile('[AGCT]{8,}')
-
-def text_to_sentences(text):
-	return [s.strip() for s in split_sentences_re.split(text) if s.strip()]
 
 def text_to_tokens(text):
 	text = url_re.sub('<URL>',text)
 	tokens = split_tokens_re.split(text)
 	tokens = [t.lower() if len(t)>1 and len(upper_re.findall(t))<2 else t for t in tokens]
-	#tokens = [t.lower() for t in tokens]
 	tokens = ['<NUM>' if num_re.match(t) else t for t in tokens]
 	tokens = ['<DNA>' if dna_re.match(t) else t for t in tokens]
 	return tokens
@@ -82,63 +135,50 @@ if __name__=="__main__":
 	from time import time
 	t0 = time()
 	import inverness
-	import data
-	limit = 1000
-	workers = 2
+	limit = None
+	workers = 34
 	label = limit or 'all'
-	model = inverness.Model(f'model_{label}/')
-	model.text_to_sentences = text_to_sentences
-	model.text_to_tokens = text_to_tokens
-	model.doc_to_text = doc_to_text
-	model.get_doc_by_meta = data.get_doc_by_meta
+	model = inverness.Model(f'model_{label}_v7/')
+	# functions
 	#
-	if 1:
+	if 0:
+		model.load(['fun','meta','phraser','dictionary','tfidf','lsi','dense_ann'])
+	else:
+		model.text_to_tokens = text_to_tokens
+		model.doc_to_text = doc_to_text
+		model.get_doc_by_meta = get_doc_by_meta
+		model.doc_iter = lambda:doc_iter(limit)
+		model.get_meta = get_meta
 		model.init_fun()
-		model.init_meta(data.doc_iter(limit), get_meta)
-		model.init_sentencer(data.doc_iter(limit), **sentencer_cfg)
-		#model.init_phraser(data.doc_iter(limit), **phraser_cfg)
+		#
+		model.init_meta(storage='disk')
+		exit()
 		model.skip_phraser()
-		if workers>1:
-			model.init_phrased_mp(workers)
-		else:
-			model.init_phrased(data.doc_iter(limit))
-		#print(model.phrased[0]) ; exit() # !!!!!!!!!!!!!!!!!!!!!!!!!!
-		model.init_dictionary(save=False)
+		model.skip_phrased()
+		model.init_dictionary()
 		model.prune_dictionary(**prune_cfg)
-		model.init_bow()
-		#model.phrased.delete() # del
-		model.init_inverted()
+		#print('dfs[0]:',model.dictionary.dfs[0])
+		model.init_bow(storage='disk')
+		#print('bow[0]:',model.bow[0])
+		model.phrased.delete() # del
+		#model.init_inverted()
 		model.init_tfidf(**tfidf_cfg)
 		if workers>1:
 			model.init_sparse_mp(workers)
 		else:
-			model.init_sparse()
-		#model.bow.delete() # del
+			model.init_sparse(storage='disk')
+		print('sparse[0]:',model.sparse[0])
+		model.bow.delete() # del
 		model.init_lsi(**lsi_cfg)
 		if workers>1:
 			model.init_dense_mp(workers)
 		else:
-			model.init_dense()
+			model.init_dense(storage='disk')
+		model.sparse.delete() # del
 		model.init_dense_ann(post=2)
-		#model.dense.delete() # del
-		model.init_sparse_ann(post=2)
-		#model.sparse.delete() # del
-	else:
-		model.load_meta()
-		model.load_sentencer()
-		#model.load_phraser()
-		model.skip_phraser()
-		model.load_phrased()
-		model.load_dictionary()
-		model.load_inverted()
-		model.load_tfidf()
-		model.load_lsi()
-		model.load_sparse()
-		model.load_dense()
-		model.load_sparse_ann()
-		model.load_dense_ann()
+		model.dense.delete() # del
 
-	print(f'\n\ntotal: {time()-t0:.01}s\n\n')
+	print(f'\n\ntotal: {time()-t0:.01f}s\n\n')
 
 
 	# ------------------------------------------------------------------------------
@@ -149,7 +189,7 @@ if __name__=="__main__":
 		ok_cnt = 0
 		for i in ids:
 			m = model.meta[i]
-			query = model.doc_to_text(data.get_doc(m['path'],m['text_id']))
+			query = model.doc_to_text(model.doc_to_text(model.get_doc_by_meta(m)))
 			top = list(fun(query))[:k] # id,score,m
 			top_ids = [x[0] for x in top]
 			if i in top_ids:
@@ -159,6 +199,6 @@ if __name__=="__main__":
 	N = 1000
 	from random import randint
 	ids = [randint(0,len(model.meta)-1) for _ in range(N)]
-	print('sparse score:',test_model(ids, model.find_sparse))
+	#print('sparse score:',test_model(ids, model.find_sparse))
 	print('dense score: ',test_model(ids, model.find_dense))
 	

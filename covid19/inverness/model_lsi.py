@@ -26,7 +26,7 @@ class LSI():
 
 	# TODO use sparse_to_dense
 	@timed
-	def init_dense(self):
+	def init_dense(self, storage='disk'):
 		corpus = self.sparse
 		#num_topics = self.lsi.num_topics
 		#dense = (self.lsi[c] for c in corpus)
@@ -34,10 +34,10 @@ class LSI():
 		dense = (self.sparse_to_dense(c) for c in corpus)
 		dense = (array('f',d) for d in dense) # uses 4x less memory on disk
 		dense = tqdm(dense, desc='dense', total=len(corpus)) # progress bar
-		self.dense = sorbet(self.path+'dense').dump(dense)
+		self.dense = sorbet(self.path+'dense', kind=storage).dump(dense)
 		
-	def load_dense(self):
-		self.dense = sorbet(self.path+'dense').load()
+	def load_dense(self, storage='disk'):
+		self.dense = sorbet(self.path+'dense', kind=storage).load()
 	
 	# TODO gensim.matutils.sparse2full
 	def sparse_to_dense(self, sparse):
