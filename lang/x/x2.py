@@ -107,6 +107,13 @@ includes = '''
 #define charptr char*
 #define voidptr void*
 
+typedef struct {
+	voidptr  data;
+	i32      item_size;
+	i32      len;
+	i32      cap;
+} array;
+
 '''
 
 p = Lark(grammar)
