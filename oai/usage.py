@@ -1,3 +1,10 @@
+# USAGE:
+# ut = DBUsageTracker('usage',100)
+# for _ in range(10):
+#   resp = openai.ChatCompletion.create(**kwargs)
+#   ut.add_resp(resp)
+# print(ut.get_usage())
+
 from random import randint
 
 class UsageTracker:
